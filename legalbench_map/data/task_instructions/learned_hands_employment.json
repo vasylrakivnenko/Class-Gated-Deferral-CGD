@@ -1,0 +1,9 @@
+{
+  "task": "learned_hands_employment",
+  "readme_description": "This is a binary classification task in which the model must determine if a user's post discusses issues related to working at a job, including discrimination and harassment, worker's compensation, workers rights, unions, getting paid, pensions, being fired, and more.",
+  "base_prompt_preamble": "Does the post discuss issues related to working at a job, including discrimination and harassment, worker's compensation, workers rights, unions, getting paid, pensions, being fired, and more?",
+  "labels": [
+    "no",
+    "yes"
+  ]
+}

@@ -1,0 +1,83 @@
+task,model_key,item_idx,text_sha256,gold,raw_output,pred,parse_ok,in_tokens,out_tokens,cached_tokens,cost_usd,latency_s,ts
+supply_chain_disclosure_best_practice_audits,glm-5.3-flash,0,9d54e6c772949bfb6b364e2d7006fb131ac4294d6529566b2d88c78014eb6a1d,yes,Yes.,yes,1,741,159,0,0.0001906500,1.924,2026-09-11T20:54:16+00:00
+supply_chain_disclosure_best_practice_audits,glm-5.3-flash,6,fb9db00dc94a7d11b1f1dc759bdaa0ab4132a345c4f4c79fa1b99a4f3feabec7,yes,"**Yes.**
+
+The disclosure explicitly addresses audits in the ""Supplier Audits"" section, which states: ""Allergan also regularly audits suppliers to confirm compliance with supplier performance and quality standards. Audits are performed by Allergan or third parties contracted by Allergan.""
+
+Additionally, the ""Supplier Assessments and Qualification"" section notes that pre-engagement assessments ""may include supplier questionnaires and audits of supplier facilities."" This satisfies the requirement to disclose whether the company performs audits of its supply chain.","yes
+
+the disclosure explicitly addresses audits in the supplier audits section which states allergan also regularly audits suppliers to confirm compliance with supplier performance and quality standards audits are performed by allergan or third parties contracted by allergan
+
+additionally the supplier assessments and qualification section notes that preengagement assessments may include supplier questionnaires and audits of supplier facilities this satisfies the requirement to disclose whether the company performs audits of its supply chain",0,504,243,0,0.0001971000,2.093,2026-09-11T20:54:16+00:00
+supply_chain_disclosure_best_practice_audits,glm-5.3-flash,4,dd521a35f676e54ddd4c10353a5b613a177a8c4ab4053780ebfac40ccda839f6,yes,"**Yes.**
+
+The disclosure explicitly addresses audits in the ""Third-Party Audits"" section, which states that ""Agilent has the right to audit all suppliers for compliance with the Agilent Supplier Code of Conduct"" and that ""Agilent employs an independent third party to audit and evaluate our suppliers' compliance with our Supplier Code of Conduct."" This satisfies the criterion of disclosing whether the company performs audits or reserves the right to audit.","yes
+
+the disclosure explicitly addresses audits in the thirdparty audits section which states that agilent has the right to audit all suppliers for compliance with the agilent supplier code of conduct and that agilent employs an independent third party to audit and evaluate our suppliers compliance with our supplier code of conduct this satisfies the criterion of disclosing whether the company performs audits or reserves the right to audit",0,670,213,0,0.0002070000,2.116,2026-09-11T20:54:16+00:00
+supply_chain_disclosure_best_practice_audits,glm-5.3-flash,7,a3a6ab356fbf9711c2b5414d31490eead3dd8e73d43141d8c1c133c314b5f163,yes,"**Yes.**
+
+The disclosure states: *""Depending on the supplier, the region and the nature of the commodity, we may conduct due diligence and/or announced internal or external audits on suppliers to assess compliance with Vista Outdoor standards and applicable laws.""*
+
+This satisfies the criteria because the company discloses that it may perform audits (both internal and external, though announced rather than unannounced) of its suppliers to verify compliance with its standards and applicable laws.","yes
+
+the disclosure states depending on the supplier the region and the nature of the commodity we may conduct due diligence andor announced internal or external audits on suppliers to assess compliance with vista outdoor standards and applicable laws
+
+this satisfies the criteria because the company discloses that it may perform audits both internal and external though announced rather than unannounced of its suppliers to verify compliance with its standards and applicable laws",0,338,184,0,0.0001427000,2.160,2026-09-11T20:54:16+00:00
+supply_chain_disclosure_best_practice_audits,glm-5.3-flash,3,2f6b42c2613958a15c6634faad8dce008342e61c935053e805fb0f1fff7e4aa5,yes,"**Yes.**
+
+The disclosure states that ""AGCO's Quality department leads on-site audits of suppliers to determine if new and existing suppliers meet quality and process requirements,"" and that these audits include verifying the supplier's agreement to the Supplier Code of Conduct. It also notes that internal Purchasing and Quality employees regularly visit supplier manufacturing facilities.","yes
+
+the disclosure states that agcos quality department leads onsite audits of suppliers to determine if new and existing suppliers meet quality and process requirements and that these audits include verifying the suppliers agreement to the supplier code of conduct it also notes that internal purchasing and quality employees regularly visit supplier manufacturing facilities",0,1038,241,0,0.0002762000,2.548,2026-09-11T20:54:16+00:00
+supply_chain_disclosure_best_practice_audits,glm-5.3-flash,1,6bd8ec1448ec24fd291dc77052268939f67f9cfea5b76bd69388e542e0b53419,yes,"**Yes.**
+
+The disclosure includes a dedicated ""Supplier audits"" section stating that ""AMD may require a third-party on-site audit of supplier practices and management systems to evaluate supplier compliance with the EICC standards including avoiding human trafficking and slavery in our supply chain and with applicable laws and regulations."" It further specifies that ""these audits may be announced or unannounced depending on the circumstances."" This clearly discloses that AMD performs (or reserves the right to perform) audits of its suppliers.","yes
+
+the disclosure includes a dedicated supplier audits section stating that amd may require a thirdparty onsite audit of supplier practices and management systems to evaluate supplier compliance with the eicc standards including avoiding human trafficking and slavery in our supply chain and with applicable laws and regulations it further specifies that these audits may be announced or unannounced depending on the circumstances this clearly discloses that amd performs or reserves the right to perform audits of its suppliers",0,668,229,0,0.0002147000,2.616,2026-09-11T20:54:16+00:00
+supply_chain_disclosure_best_practice_audits,glm-5.3-flash,5,33e4c0559a94c7dce28fd5c76870036003e5e62eed6cf35cdc1c63a6b0a6569f,yes,"**Yes**
+
+The disclosure explicitly addresses auditing in several ways:
+
+1. **Performs audits**: It states that ""Air Products' Corporate Audit department occasionally conducts audits and verifications of existing contractual agreements within the Supply Chain organization to ensure compliance with contractual terms.""
+
+2. **Reserves the right to audit**: It notes that while Air Products ""generally does not hire third parties to conduct audits or verifications for such purposes, although it reserves the right to do so in appropriate circumstances.""
+
+3. **Additional audit details**: It even specifies that ""audits are generally conducted upon 30 days advance notice.""
+
+This satisfies the California Transparency in Supply Chains Act requirement regarding disclosure of whether the company engages in verification of product supply chains to evaluate risks, conducts audits of suppliers, or reserves the right to do so.","yes
+
+the disclosure explicitly addresses auditing in several ways
+
+1 performs audits it states that air products corporate audit department occasionally conducts audits and verifications of existing contractual agreements within the supply chain organization to ensure compliance with contractual terms
+
+2 reserves the right to audit it notes that while air products generally does not hire third parties to conduct audits or verifications for such purposes although it reserves the right to do so in appropriate circumstances
+
+3 additional audit details it even specifies that audits are generally conducted upon 30 days advance notice
+
+this satisfies the california transparency in supply chains act requirement regarding disclosure of whether the company engages in verification of product supply chains to evaluate risks conducts audits of suppliers or reserves the right to do so",0,567,322,0,0.0002460500,3.472,2026-09-11T20:54:17+00:00
+supply_chain_disclosure_best_practice_audits,glm-5.3-flash,2,cfd25f9be7d33e9e2626fa8f008705300a927fdffb8d298eb046111abadd5313,yes,"**Yes.**
+
+The disclosure explicitly addresses audits in multiple places:
+
+- **Section 2** states that Aeropostale ""conducts audits of suppliers"" and has engaged STR Responsible Sourcing to perform third-party social compliance audits of **all factories** manufacturing Aeropostale products, with audits specifically addressing slavery and human trafficking.
+- **Section 1** notes that all factories are subject to a third-party social compliance audit as part of the factory evaluation process, and that Aeropostale's internal Social Compliance Manager evaluates these audits.
+- **Section 4** describes a reaudit requirement for factories that fail to comply, with production removed if noncompliance continues.
+
+Therefore, the disclosure clearly states that the company performs audits of its supply chain.","yes
+
+the disclosure explicitly addresses audits in multiple places
+
+ section 2 states that aeropostale conducts audits of suppliers and has engaged str responsible sourcing to perform thirdparty social compliance audits of all factories manufacturing aeropostale products with audits specifically addressing slavery and human trafficking
+ section 1 notes that all factories are subject to a thirdparty social compliance audit as part of the factory evaluation process and that aeropostales internal social compliance manager evaluates these audits
+ section 4 describes a reaudit requirement for factories that fail to comply with production removed if noncompliance continues
+
+therefore the disclosure clearly states that the company performs audits of its supply chain",0,843,331,0,0.0002919500,3.582,2026-09-11T20:54:17+00:00
+supply_chain_disclosure_best_practice_audits,glm-5.3-flash,8,7a0cea15013a413c9095a12a26a110ad23082840e0980ef5ea664df3aa587c79,yes,"**Yes.**
+
+The disclosure states that Alpine ""has the right to make periodic, unannounced inspections of our suppliers' facilities and the facilities of our suppliers' contractors and business partners,"" and that ""such inspections may include an audit and review of financial books and records."" This satisfies the criterion, as the company explicitly reserves the right to conduct audits.","yes
+
+the disclosure states that alpine has the right to make periodic unannounced inspections of our suppliers facilities and the facilities of our suppliers contractors and business partners and that such inspections may include an audit and review of financial books and records this satisfies the criterion as the company explicitly reserves the right to conduct audits",0,739,345,0,0.0002833500,2.838,2026-09-11T20:54:18+00:00
+supply_chain_disclosure_best_practice_audits,glm-5.3-flash,9,ded19f85f9c4d9d7f469200e17647cd8ecc12c2da48288385855657ec1b5adf5,yes,"**Yes**
+
+The disclosure explicitly addresses supplier audits in a dedicated section titled ""Supplier audits."" It states that Altria conducts ""periodic supplier reviews, announced assessments, on-farm visits and independent third-party audits"" based on a range of factors including risk evaluation. It further explains that these assessments include a review against Altria's Child & Forced Labor policy and applicable laws, and describes the process for addressing non-compliance, including requiring corrective actions or halting business with the supplier. This clearly satisfies the criterion of disclosing whether the company performs any type of audit.","yes
+
+the disclosure explicitly addresses supplier audits in a dedicated section titled supplier audits it states that altria conducts periodic supplier reviews announced assessments onfarm visits and independent thirdparty audits based on a range of factors including risk evaluation it further explains that these assessments include a review against altrias child  forced labor policy and applicable laws and describes the process for addressing noncompliance including requiring corrective actions or halting business with the supplier this clearly satisfies the criterion of disclosing whether the company performs any type of audit",0,1038,347,0,0.0003292000,3.114,2026-09-11T20:54:19+00:00

@@ -1,0 +1,9 @@
+{
+  "task": "cuad_covenant_not_to_sue",
+  "readme_description": "This is a binary classification task in which the model must determine if a contractual clause falls under the category of \"Covenant Not To Sue\".",
+  "base_prompt_preamble": "Is a party restricted from contesting the validity of the counterparty\u2019s ownership of intellectual property or otherwise bringing a claim against the counterparty for matters unrelated to the contract?",
+  "labels": [
+    "no",
+    "yes"
+  ]
+}

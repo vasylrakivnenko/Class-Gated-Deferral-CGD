@@ -1,0 +1,18 @@
+Adversarial re-derivation, M4 Pro / Python 3.14.3 / torch 2.14.0 / transformers 5.17.0
+FIXED train subset = np.random.RandomState(0).permutation(45615)[:2000]
+FIXED eval set     = tweet_eval sentiment test.select(range(2000))
+
+method                          acc      macroF1  macroRec  train_s
+majority class                  0.4975   --       0.3333    0
+TF-IDF + LR       (n=2000)      0.5000   0.4010   0.4599    <1
+Ettin-68m FT      lr 5e-5       0.5875   0.5800   0.5957    103.2   (0.83 GB MPS)
+ModernBERT-base FT lr 3e-5      0.6380   0.6447   0.6683    265.2
+ModernBERT-base FT lr 5e-5      0.6635   0.6517   0.6423    229.4   (1.80 GB MPS)
+e5-small frozen + LR (n=2000)   0.6645   0.6569   0.6654    ~6
+ModernBERT-base FT lr 2e-5      0.6710   0.6558   0.6394    234.6
+
+Reported by researcher: ModernBERT 0.6200 (below ALL three LRs); e5 0.6575.
+Their TF-IDF n=2000 "0.4837" was measured on the FULL 12284-row test set, not test[:2000].
+TF-IDF full-train (45615): 0.5920 on full test  -- reproduced exactly.
+SST-2 TFIDF full-train: 0.8200 on validation(872) -- reproduced exactly.
+FPB allagree 5-fold CV: 0.8668 -- reproduced exactly, but on mirror TRAIN split (1584), not all 2264.

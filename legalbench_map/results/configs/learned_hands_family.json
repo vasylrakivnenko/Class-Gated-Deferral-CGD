@@ -1,0 +1,27 @@
+{
+  "task": "learned_hands_family",
+  "best_candidate": "embed_base_logreg",
+  "hyperparameters": null,
+  "hyperparameters_note": "The fixed candidate interface (fit_predict_proba -> np.ndarray) returns only probabilities, not hyperparameters; this field is populated only if the candidate module optionally exposes get_last_hyperparams(task_key), else it is null.",
+  "conformal_alpha": 0.05,
+  "conformal_quantiles_all_folds": [
+    0.4713263511657715,
+    0.49206459522247314,
+    0.5838193297386169,
+    0.5551444292068481,
+    0.49887871742248535,
+    0.47146695852279663,
+    0.5741910934448242,
+    0.45573878288269043,
+    0.5856408476829529,
+    0.6437431573867798,
+    0.5109434723854065,
+    0.48111194372177124,
+    0.5597295165061951,
+    0.46655160188674927,
+    0.5351849794387817
+  ],
+  "conformal_quantile_mean_finite": 0.5257023851076762,
+  "folds": 5,
+  "repeats": 3
+}

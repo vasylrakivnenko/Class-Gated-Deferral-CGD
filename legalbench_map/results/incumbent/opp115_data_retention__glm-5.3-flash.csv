@@ -1,0 +1,59 @@
+task,model_key,item_idx,text_sha256,gold,raw_output,pred,parse_ok,in_tokens,out_tokens,cached_tokens,cost_usd,latency_s,ts
+opp115_data_retention,glm-5.3-flash,0,e783d6e5426c4d132ca1198992b63a2b77013808d63e267b499744a4c5d1b11b,yes,"Label: No
+
+This clause describes the circumstances under which Reddit may **disclose** user information (e.g., to comply with laws, regulations, or legal process) and the notice practices surrounding such disclosure. It does not describe how long user information is stored or retained, which is what the ""Yes"" clauses address (e.g., ""we may retain your account information for a reasonable period of time afterward"").","label no
+
+this clause describes the circumstances under which reddit may disclose user information eg to comply with laws regulations or legal process and the notice practices surrounding such disclosure it does not describe how long user information is stored or retained which is what the yes clauses address eg we may retain your account information for a reasonable period of time afterward",0,505,202,0,0.0001767500,2.198,2026-09-11T20:53:36+00:00
+opp115_data_retention,glm-5.3-flash,6,ffcbe512035ce904259b64a9212131a8ddb5ef6916eb7f217c64a5658bd672fd,yes,"**Yes**
+
+This clause describes how long user information is stored. It explicitly addresses data retention by stating that personal information is kept ""as long as it is necessary or relevant for our business,"" and it further specifies retention purposes such as resolving disputes, enforcing agreements, and legal compliance. This is a classic data retention clause, similar to the other ""Yes"" examples that mention retaining account information for a period of time.","yes
+
+this clause describes how long user information is stored it explicitly addresses data retention by stating that personal information is kept as long as it is necessary or relevant for our business and it further specifies retention purposes such as resolving disputes enforcing agreements and legal compliance this is a classic data retention clause similar to the other yes examples that mention retaining account information for a period of time",0,402,234,0,0.0001773000,3.008,2026-09-11T20:53:37+00:00
+opp115_data_retention,glm-5.3-flash,1,ca069ace0fea7074fac7e44b33121935734dd94f589cc9069a738b5884a0f116,no,"Label: No
+
+This clause describes how the Service **uses** personally identifiable information (e.g., to fulfill requests, send confirmations, notify sweepstakes winners, and communicate about new features). It does not mention any retention period or duration for which user information is stored, so it does not describe how long user information is stored.","label no
+
+this clause describes how the service uses personally identifiable information eg to fulfill requests send confirmations notify sweepstakes winners and communicate about new features it does not mention any retention period or duration for which user information is stored so it does not describe how long user information is stored",0,505,303,0,0.0002272500,3.109,2026-09-11T20:53:37+00:00
+opp115_data_retention,glm-5.3-flash,3,ee7f763b4da0bbf780148ff43363b2a907297b4f98c76d7c1e1d2869878a70f8,yes,"**No**
+
+This clause is merely a table of contents listing the sections of a privacy policy (e.g., ""Information we collect about you,"" ""Where we store data,"" ""Data Security,"" etc.). While it mentions topics related to data storage, it does not actually describe how long user information is stored. It contains no retention periods or duration details—it's simply an outline of the policy's structure.","no
+
+this clause is merely a table of contents listing the sections of a privacy policy eg information we collect about you where we store data data security etc while it mentions topics related to data storage it does not actually describe how long user information is stored it contains no retention periods or duration details—its simply an outline of the policys structure",0,475,316,0,0.0002292500,3.719,2026-09-11T20:53:38+00:00
+opp115_data_retention,glm-5.3-flash,4,be54e70c44eb94e44c82413eb316abd303bc0920653e459cc81b65dc610c2c47,yes,"**Label: No**
+
+This clause describes the company's right to contact users regarding services, policy changes, and other matters—even if the user has opted out of promotional communications. It does not address how long user information is stored or retained.","label no
+
+this clause describes the companys right to contact users regarding services policy changes and other matters—even if the user has opted out of promotional communications it does not address how long user information is stored or retained",0,441,380,0,0.0002561500,3.918,2026-09-11T20:53:38+00:00
+opp115_data_retention,glm-5.3-flash,7,9e061b3940805235e0301ddc59cdad769cb39c4672fdac340725b065cca9eb76,no,"**Label: No**
+
+This clause describes **what types of information** are collected (IP addresses, browser types, domain names, anonymous statistical data) and **how** it is collected (through the standard operation of Internet servers). It does not mention anything about the **duration** or **retention period** for which user information is stored.
+
+In contrast, the clauses labeled ""Yes"" in the examples explicitly address retention timeframes, such as retaining account information ""for a reasonable period of time"" after account deletion.","label no
+
+this clause describes what types of information are collected ip addresses browser types domain names anonymous statistical data and how it is collected through the standard operation of internet servers it does not mention anything about the duration or retention period for which user information is stored
+
+in contrast the clauses labeled yes in the examples explicitly address retention timeframes such as retaining account information for a reasonable period of time after account deletion",0,481,340,0,0.0002421500,3.999,2026-09-11T20:53:38+00:00
+opp115_data_retention,glm-5.3-flash,8,11dbaf4848acf49d21fffc81b9b0ac39e736808cb102bd24ec485e1c9793ead1,no,"**Label: No**
+
+This clause describes **who can access or disclose** user information (third-party sharing/disclosure practices), not how long user information is stored. It does not mention any retention period or storage duration, unlike the ""Yes"" examples which explicitly reference retaining information ""for a reasonable period of time.""","label no
+
+this clause describes who can access or disclose user information thirdparty sharingdisclosure practices not how long user information is stored it does not mention any retention period or storage duration unlike the yes examples which explicitly reference retaining information for a reasonable period of time",0,409,209,0,0.0001658500,2.052,2026-09-11T20:53:38+00:00
+opp115_data_retention,glm-5.3-flash,5,bae4eb887d877f453aee88d3761b630e4bc7ff917be76cb60950cca3ae6c909d,yes,"**Label: Yes**
+
+This clause describes how long user information is stored. It states that certain users, such as healthcare providers, ""may be required under HIPAA and other applicable laws or regulations to retain such information for **extended periods of time**.""
+
+This is consistent with the other clauses labeled ""Yes,"" such as the one stating that account information may be retained ""for a reasonable period of time"" after account deletion. Both clauses address the duration of data retention, even though neither specifies an exact timeframe.","label yes
+
+this clause describes how long user information is stored it states that certain users such as healthcare providers may be required under hipaa and other applicable laws or regulations to retain such information for extended periods of time
+
+this is consistent with the other clauses labeled yes such as the one stating that account information may be retained for a reasonable period of time after account deletion both clauses address the duration of data retention even though neither specifies an exact timeframe",0,494,557,0,0.0003526000,5.207,2026-09-11T20:53:39+00:00
+opp115_data_retention,glm-5.3-flash,9,b35466aaf2aa88600ce3febc4691f6c33a5a185d118a53da03fd134b474427c7,yes,"**Label: No**
+
+This clause describes disclosure practices—specifically, whether information entered on a sign-up page is shared with outside entities and under what conditions. While it mentions that consultants ""will not retain the information,"" this refers to third parties not keeping the data, not to how long the user's information is stored. The clause does not specify any retention period or duration for storing user information.","label no
+
+this clause describes disclosure practices—specifically whether information entered on a signup page is shared with outside entities and under what conditions while it mentions that consultants will not retain the information this refers to third parties not keeping the data not to how long the users information is stored the clause does not specify any retention period or duration for storing user information",0,454,316,0,0.0002261000,2.789,2026-09-11T20:53:40+00:00
+opp115_data_retention,glm-5.3-flash,2,94284e1d7b10fa6117e24745885f4a5c871d995ca98a16179c63cacb7e9c8618,no,"**Yes**
+
+The clause addresses the retention of user information. It states that visitors may opt out of having their personally identifiable information ""prospectively retained by SRL,"" which directly relates to how long user information is stored — indicating that information is retained going forward unless the visitor chooses to opt out of that retention.","yes
+
+the clause addresses the retention of user information it states that visitors may opt out of having their personally identifiable information prospectively retained by srl which directly relates to how long user information is stored — indicating that information is retained going forward unless the visitor chooses to opt out of that retention",0,532,2728,0,0.0014438000,29.500,2026-09-11T20:54:04+00:00

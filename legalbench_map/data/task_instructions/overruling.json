@@ -1,0 +1,9 @@
+{
+  "task": "overruling",
+  "readme_description": "This task consists of classifying whether or not a particular sentence of case law overturns the decision of a previous case.",
+  "base_prompt_preamble": "Does the sentence contain language overruling a previous case?",
+  "labels": [
+    "no",
+    "yes"
+  ]
+}

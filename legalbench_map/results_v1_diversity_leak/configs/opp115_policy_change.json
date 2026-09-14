@@ -1,0 +1,27 @@
+{
+  "task": "opp115_policy_change",
+  "best_candidate": "tfidf_logreg",
+  "hyperparameters": null,
+  "hyperparameters_note": "The fixed candidate interface (fit_predict_proba -> np.ndarray) returns only probabilities, not hyperparameters; this field is populated only if the candidate module optionally exposes get_last_hyperparams(task_key), else it is null.",
+  "conformal_alpha": 0.05,
+  "conformal_quantiles_all_folds": [
+    0.5492835683862729,
+    0.8549137532226019,
+    0.6614923995075987,
+    0.663245661408914,
+    0.6789748491612927,
+    0.7863105149258933,
+    0.7027770549195773,
+    0.6644118033981505,
+    0.7042627093866476,
+    0.8561674671187942,
+    0.5680282307525487,
+    0.762794428610722,
+    0.5824396940348686,
+    0.5238341247311222,
+    0.6744332338527861
+  ],
+  "conformal_quantile_mean_finite": 0.6822246328945193,
+  "folds": 5,
+  "repeats": 3
+}

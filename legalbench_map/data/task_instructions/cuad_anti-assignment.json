@@ -1,0 +1,9 @@
+{
+  "task": "cuad_anti-assignment",
+  "readme_description": "This is a binary classification task in which the model must determine if a contractual clause falls under the category of \"Anti-Assignment\".",
+  "base_prompt_preamble": "Does the clause require consent or notice of a party if the contract is assigned to a third party?",
+  "labels": [
+    "no",
+    "yes"
+  ]
+}

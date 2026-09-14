@@ -1,0 +1,9 @@
+{
+  "task": "learned_hands_crime",
+  "readme_description": "This is a binary classification task in which the model must determine if a user's post discusses issues in the criminal system including when people are charged with crimes, go to a criminal trial, go to prison, or are a victim of a crime.",
+  "base_prompt_preamble": "Does the post discuss issues in the criminal system including when people are charged with crimes, go to a criminal trial, go to prison, or are a victim of a crime?",
+  "labels": [
+    "no",
+    "yes"
+  ]
+}

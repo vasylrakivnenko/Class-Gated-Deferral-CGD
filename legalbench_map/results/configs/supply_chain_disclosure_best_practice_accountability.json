@@ -1,0 +1,27 @@
+{
+  "task": "supply_chain_disclosure_best_practice_accountability",
+  "best_candidate": "embed_base_logreg",
+  "hyperparameters": null,
+  "hyperparameters_note": "The fixed candidate interface (fit_predict_proba -> np.ndarray) returns only probabilities, not hyperparameters; this field is populated only if the candidate module optionally exposes get_last_hyperparams(task_key), else it is null.",
+  "conformal_alpha": 0.05,
+  "conformal_quantiles_all_folds": [
+    0.5074985027313232,
+    0.5537925958633423,
+    0.5566127300262451,
+    0.5263833999633789,
+    0.6556252837181091,
+    0.5154297947883606,
+    0.6835407018661499,
+    0.5986628710825107,
+    0.5843854546546936,
+    0.6223676204681396,
+    0.6118866205215454,
+    0.5068807601928711,
+    0.6727896728280285,
+    0.5520085692405701,
+    0.5820882146928246
+  ],
+  "conformal_quantile_mean_finite": 0.5819968528425395,
+  "folds": 5,
+  "repeats": 3
+}

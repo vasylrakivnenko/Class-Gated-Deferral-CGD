@@ -1,0 +1,752 @@
+[
+ {
+  "task": "cuad_anti-assignment",
+  "hf_config": "cuad_anti-assignment",
+  "family": "cuad",
+  "is_reasoning_exception": false,
+  "n_train": 6,
+  "n_test": 1172,
+  "input_columns": [
+   "text"
+  ],
+  "n_classes": 2,
+  "class_distribution": {
+   "yes": 586,
+   "no": 586
+  },
+  "metric": "balanced_accuracy",
+  "test_ge_300": true,
+  "pass_cardinality_filter": true,
+  "notes": "Input columns = all dataset columns except {index, answer, slice, document_name}. index is a row id, not content. answer is the label being predicted. slice (hearsay, personal_jurisdiction) is the paper's own post-hoc analysis category (e.g. hearsay's slice values are strings like 'Standard hearsay' / 'Non-assertive conduct') which leaks the answer and was never part of the original prompt shown to a model -- excluded. document_name (CUAD, contract_nli) is a source-document filename; many rows share one document, so a classifier could memorize filename-to-label associations unrelated to the clause text -- excluded. Columns such as diversity_1's parties_are_diverse/aic_is_met are KEPT: they are genuine compositional task inputs by LegalBench's own design (the model is handed two facts and must combine them), not leaked answers. No exclusions beyond this fixed blocklist were added. This task's 'document_name' column is present and excluded per the rule above. Qualifying task selected via family round-robin (family='cuad')."
+ },
+ {
+  "task": "opp115_data_retention",
+  "hf_config": "opp115_data_retention",
+  "family": "opp115",
+  "is_reasoning_exception": false,
+  "n_train": 8,
+  "n_test": 304,
+  "input_columns": [
+   "text"
+  ],
+  "n_classes": 2,
+  "class_distribution": {
+   "yes": 152,
+   "no": 152
+  },
+  "metric": "balanced_accuracy",
+  "test_ge_300": true,
+  "pass_cardinality_filter": true,
+  "notes": "Input columns = all dataset columns except {index, answer, slice, document_name}. index is a row id, not content. answer is the label being predicted. slice (hearsay, personal_jurisdiction) is the paper's own post-hoc analysis category (e.g. hearsay's slice values are strings like 'Standard hearsay' / 'Non-assertive conduct') which leaks the answer and was never part of the original prompt shown to a model -- excluded. document_name (CUAD, contract_nli) is a source-document filename; many rows share one document, so a classifier could memorize filename-to-label associations unrelated to the clause text -- excluded. Columns such as diversity_1's parties_are_diverse/aic_is_met are KEPT: they are genuine compositional task inputs by LegalBench's own design (the model is handed two facts and must combine them), not leaked answers. No exclusions beyond this fixed blocklist were added. Qualifying task selected via family round-robin (family='opp115')."
+ },
+ {
+  "task": "learned_hands_consumer",
+  "hf_config": "learned_hands_consumer",
+  "family": "learned_hands",
+  "is_reasoning_exception": false,
+  "n_train": 6,
+  "n_test": 614,
+  "input_columns": [
+   "text"
+  ],
+  "n_classes": 2,
+  "class_distribution": {
+   "yes": 307,
+   "no": 307
+  },
+  "metric": "balanced_accuracy",
+  "test_ge_300": true,
+  "pass_cardinality_filter": true,
+  "notes": "Input columns = all dataset columns except {index, answer, slice, document_name}. index is a row id, not content. answer is the label being predicted. slice (hearsay, personal_jurisdiction) is the paper's own post-hoc analysis category (e.g. hearsay's slice values are strings like 'Standard hearsay' / 'Non-assertive conduct') which leaks the answer and was never part of the original prompt shown to a model -- excluded. document_name (CUAD, contract_nli) is a source-document filename; many rows share one document, so a classifier could memorize filename-to-label associations unrelated to the clause text -- excluded. Columns such as diversity_1's parties_are_diverse/aic_is_met are KEPT: they are genuine compositional task inputs by LegalBench's own design (the model is handed two facts and must combine them), not leaked answers. No exclusions beyond this fixed blocklist were added. Qualifying task selected via family round-robin (family='learned_hands')."
+ },
+ {
+  "task": "supply_chain_disclosure_best_practice_accountability",
+  "hf_config": "supply_chain_disclosure_best_practice_accountability",
+  "family": "supply_chain_disclosure",
+  "is_reasoning_exception": false,
+  "n_train": 8,
+  "n_test": 379,
+  "input_columns": [
+   "text"
+  ],
+  "n_classes": 2,
+  "class_distribution": {
+   "yes": 328,
+   "no": 51
+  },
+  "metric": "balanced_accuracy",
+  "test_ge_300": true,
+  "pass_cardinality_filter": true,
+  "notes": "Input columns = all dataset columns except {index, answer, slice, document_name}. index is a row id, not content. answer is the label being predicted. slice (hearsay, personal_jurisdiction) is the paper's own post-hoc analysis category (e.g. hearsay's slice values are strings like 'Standard hearsay' / 'Non-assertive conduct') which leaks the answer and was never part of the original prompt shown to a model -- excluded. document_name (CUAD, contract_nli) is a source-document filename; many rows share one document, so a classifier could memorize filename-to-label associations unrelated to the clause text -- excluded. Columns such as diversity_1's parties_are_diverse/aic_is_met are KEPT: they are genuine compositional task inputs by LegalBench's own design (the model is handed two facts and must combine them), not leaked answers. No exclusions beyond this fixed blocklist were added. Qualifying task selected via family round-robin (family='supply_chain_disclosure')."
+ },
+ {
+  "task": "overruling",
+  "hf_config": "overruling",
+  "family": "single",
+  "is_reasoning_exception": false,
+  "n_train": 6,
+  "n_test": 2394,
+  "input_columns": [
+   "text"
+  ],
+  "n_classes": 2,
+  "class_distribution": {
+   "yes": 1216,
+   "no": 1178
+  },
+  "metric": "balanced_accuracy",
+  "test_ge_300": true,
+  "pass_cardinality_filter": true,
+  "notes": "Input columns = all dataset columns except {index, answer, slice, document_name}. index is a row id, not content. answer is the label being predicted. slice (hearsay, personal_jurisdiction) is the paper's own post-hoc analysis category (e.g. hearsay's slice values are strings like 'Standard hearsay' / 'Non-assertive conduct') which leaks the answer and was never part of the original prompt shown to a model -- excluded. document_name (CUAD, contract_nli) is a source-document filename; many rows share one document, so a classifier could memorize filename-to-label associations unrelated to the clause text -- excluded. Columns such as diversity_1's parties_are_diverse/aic_is_met are KEPT: they are genuine compositional task inputs by LegalBench's own design (the model is handed two facts and must combine them), not leaked answers. No exclusions beyond this fixed blocklist were added. Qualifying task selected via family round-robin (family='single')."
+ },
+ {
+  "task": "cuad_audit_rights",
+  "hf_config": "cuad_audit_rights",
+  "family": "cuad",
+  "is_reasoning_exception": false,
+  "n_train": 6,
+  "n_test": 1216,
+  "input_columns": [
+   "text"
+  ],
+  "n_classes": 2,
+  "class_distribution": {
+   "yes": 608,
+   "no": 608
+  },
+  "metric": "balanced_accuracy",
+  "test_ge_300": true,
+  "pass_cardinality_filter": true,
+  "notes": "Input columns = all dataset columns except {index, answer, slice, document_name}. index is a row id, not content. answer is the label being predicted. slice (hearsay, personal_jurisdiction) is the paper's own post-hoc analysis category (e.g. hearsay's slice values are strings like 'Standard hearsay' / 'Non-assertive conduct') which leaks the answer and was never part of the original prompt shown to a model -- excluded. document_name (CUAD, contract_nli) is a source-document filename; many rows share one document, so a classifier could memorize filename-to-label associations unrelated to the clause text -- excluded. Columns such as diversity_1's parties_are_diverse/aic_is_met are KEPT: they are genuine compositional task inputs by LegalBench's own design (the model is handed two facts and must combine them), not leaked answers. No exclusions beyond this fixed blocklist were added. This task's 'document_name' column is present and excluded per the rule above. Qualifying task selected via family round-robin (family='cuad')."
+ },
+ {
+  "task": "opp115_data_security",
+  "hf_config": "opp115_data_security",
+  "family": "opp115",
+  "is_reasoning_exception": false,
+  "n_train": 8,
+  "n_test": 738,
+  "input_columns": [
+   "text"
+  ],
+  "n_classes": 2,
+  "class_distribution": {
+   "yes": 369,
+   "no": 369
+  },
+  "metric": "balanced_accuracy",
+  "test_ge_300": true,
+  "pass_cardinality_filter": true,
+  "notes": "Input columns = all dataset columns except {index, answer, slice, document_name}. index is a row id, not content. answer is the label being predicted. slice (hearsay, personal_jurisdiction) is the paper's own post-hoc analysis category (e.g. hearsay's slice values are strings like 'Standard hearsay' / 'Non-assertive conduct') which leaks the answer and was never part of the original prompt shown to a model -- excluded. document_name (CUAD, contract_nli) is a source-document filename; many rows share one document, so a classifier could memorize filename-to-label associations unrelated to the clause text -- excluded. Columns such as diversity_1's parties_are_diverse/aic_is_met are KEPT: they are genuine compositional task inputs by LegalBench's own design (the model is handed two facts and must combine them), not leaked answers. No exclusions beyond this fixed blocklist were added. Qualifying task selected via family round-robin (family='opp115')."
+ },
+ {
+  "task": "learned_hands_crime",
+  "hf_config": "learned_hands_crime",
+  "family": "learned_hands",
+  "is_reasoning_exception": false,
+  "n_train": 6,
+  "n_test": 688,
+  "input_columns": [
+   "text"
+  ],
+  "n_classes": 2,
+  "class_distribution": {
+   "yes": 344,
+   "no": 344
+  },
+  "metric": "balanced_accuracy",
+  "test_ge_300": true,
+  "pass_cardinality_filter": true,
+  "notes": "Input columns = all dataset columns except {index, answer, slice, document_name}. index is a row id, not content. answer is the label being predicted. slice (hearsay, personal_jurisdiction) is the paper's own post-hoc analysis category (e.g. hearsay's slice values are strings like 'Standard hearsay' / 'Non-assertive conduct') which leaks the answer and was never part of the original prompt shown to a model -- excluded. document_name (CUAD, contract_nli) is a source-document filename; many rows share one document, so a classifier could memorize filename-to-label associations unrelated to the clause text -- excluded. Columns such as diversity_1's parties_are_diverse/aic_is_met are KEPT: they are genuine compositional task inputs by LegalBench's own design (the model is handed two facts and must combine them), not leaked answers. No exclusions beyond this fixed blocklist were added. Qualifying task selected via family round-robin (family='learned_hands')."
+ },
+ {
+  "task": "supply_chain_disclosure_best_practice_audits",
+  "hf_config": "supply_chain_disclosure_best_practice_audits",
+  "family": "supply_chain_disclosure",
+  "is_reasoning_exception": false,
+  "n_train": 8,
+  "n_test": 379,
+  "input_columns": [
+   "text"
+  ],
+  "n_classes": 2,
+  "class_distribution": {
+   "yes": 260,
+   "no": 119
+  },
+  "metric": "balanced_accuracy",
+  "test_ge_300": true,
+  "pass_cardinality_filter": true,
+  "notes": "Input columns = all dataset columns except {index, answer, slice, document_name}. index is a row id, not content. answer is the label being predicted. slice (hearsay, personal_jurisdiction) is the paper's own post-hoc analysis category (e.g. hearsay's slice values are strings like 'Standard hearsay' / 'Non-assertive conduct') which leaks the answer and was never part of the original prompt shown to a model -- excluded. document_name (CUAD, contract_nli) is a source-document filename; many rows share one document, so a classifier could memorize filename-to-label associations unrelated to the clause text -- excluded. Columns such as diversity_1's parties_are_diverse/aic_is_met are KEPT: they are genuine compositional task inputs by LegalBench's own design (the model is handed two facts and must combine them), not leaked answers. No exclusions beyond this fixed blocklist were added. Qualifying task selected via family round-robin (family='supply_chain_disclosure')."
+ },
+ {
+  "task": "unfair_tos",
+  "hf_config": "unfair_tos",
+  "family": "single",
+  "is_reasoning_exception": false,
+  "n_train": 9,
+  "n_test": 3813,
+  "input_columns": [
+   "text"
+  ],
+  "n_classes": 9,
+  "class_distribution": {
+   "other": 3454,
+   "contract by using": 38,
+   "unilateral termination": 70,
+   "limitation of liability": 98,
+   "arbitration": 15,
+   "content removal": 25,
+   "unilateral change": 53,
+   "choice of law": 28,
+   "jurisdiction": 32
+  },
+  "metric": "balanced_accuracy",
+  "test_ge_300": true,
+  "pass_cardinality_filter": true,
+  "notes": "Input columns = all dataset columns except {index, answer, slice, document_name}. index is a row id, not content. answer is the label being predicted. slice (hearsay, personal_jurisdiction) is the paper's own post-hoc analysis category (e.g. hearsay's slice values are strings like 'Standard hearsay' / 'Non-assertive conduct') which leaks the answer and was never part of the original prompt shown to a model -- excluded. document_name (CUAD, contract_nli) is a source-document filename; many rows share one document, so a classifier could memorize filename-to-label associations unrelated to the clause text -- excluded. Columns such as diversity_1's parties_are_diverse/aic_is_met are KEPT: they are genuine compositional task inputs by LegalBench's own design (the model is handed two facts and must combine them), not leaked answers. No exclusions beyond this fixed blocklist were added. Qualifying task selected via family round-robin (family='single')."
+ },
+ {
+  "task": "cuad_cap_on_liability",
+  "hf_config": "cuad_cap_on_liability",
+  "family": "cuad",
+  "is_reasoning_exception": false,
+  "n_train": 6,
+  "n_test": 1246,
+  "input_columns": [
+   "text"
+  ],
+  "n_classes": 2,
+  "class_distribution": {
+   "yes": 623,
+   "no": 623
+  },
+  "metric": "balanced_accuracy",
+  "test_ge_300": true,
+  "pass_cardinality_filter": true,
+  "notes": "Input columns = all dataset columns except {index, answer, slice, document_name}. index is a row id, not content. answer is the label being predicted. slice (hearsay, personal_jurisdiction) is the paper's own post-hoc analysis category (e.g. hearsay's slice values are strings like 'Standard hearsay' / 'Non-assertive conduct') which leaks the answer and was never part of the original prompt shown to a model -- excluded. document_name (CUAD, contract_nli) is a source-document filename; many rows share one document, so a classifier could memorize filename-to-label associations unrelated to the clause text -- excluded. Columns such as diversity_1's parties_are_diverse/aic_is_met are KEPT: they are genuine compositional task inputs by LegalBench's own design (the model is handed two facts and must combine them), not leaked answers. No exclusions beyond this fixed blocklist were added. This task's 'document_name' column is present and excluded per the rule above. Qualifying task selected via family round-robin (family='cuad')."
+ },
+ {
+  "task": "opp115_first_party_collection_use",
+  "hf_config": "opp115_first_party_collection_use",
+  "family": "opp115",
+  "is_reasoning_exception": false,
+  "n_train": 8,
+  "n_test": 3034,
+  "input_columns": [
+   "text"
+  ],
+  "n_classes": 2,
+  "class_distribution": {
+   "no": 1517,
+   "yes": 1517
+  },
+  "metric": "balanced_accuracy",
+  "test_ge_300": true,
+  "pass_cardinality_filter": true,
+  "notes": "Input columns = all dataset columns except {index, answer, slice, document_name}. index is a row id, not content. answer is the label being predicted. slice (hearsay, personal_jurisdiction) is the paper's own post-hoc analysis category (e.g. hearsay's slice values are strings like 'Standard hearsay' / 'Non-assertive conduct') which leaks the answer and was never part of the original prompt shown to a model -- excluded. document_name (CUAD, contract_nli) is a source-document filename; many rows share one document, so a classifier could memorize filename-to-label associations unrelated to the clause text -- excluded. Columns such as diversity_1's parties_are_diverse/aic_is_met are KEPT: they are genuine compositional task inputs by LegalBench's own design (the model is handed two facts and must combine them), not leaked answers. No exclusions beyond this fixed blocklist were added. Qualifying task selected via family round-robin (family='opp115')."
+ },
+ {
+  "task": "learned_hands_employment",
+  "hf_config": "learned_hands_employment",
+  "family": "learned_hands",
+  "is_reasoning_exception": false,
+  "n_train": 6,
+  "n_test": 710,
+  "input_columns": [
+   "text"
+  ],
+  "n_classes": 2,
+  "class_distribution": {
+   "yes": 355,
+   "no": 355
+  },
+  "metric": "balanced_accuracy",
+  "test_ge_300": true,
+  "pass_cardinality_filter": true,
+  "notes": "Input columns = all dataset columns except {index, answer, slice, document_name}. index is a row id, not content. answer is the label being predicted. slice (hearsay, personal_jurisdiction) is the paper's own post-hoc analysis category (e.g. hearsay's slice values are strings like 'Standard hearsay' / 'Non-assertive conduct') which leaks the answer and was never part of the original prompt shown to a model -- excluded. document_name (CUAD, contract_nli) is a source-document filename; many rows share one document, so a classifier could memorize filename-to-label associations unrelated to the clause text -- excluded. Columns such as diversity_1's parties_are_diverse/aic_is_met are KEPT: they are genuine compositional task inputs by LegalBench's own design (the model is handed two facts and must combine them), not leaked answers. No exclusions beyond this fixed blocklist were added. Qualifying task selected via family round-robin (family='learned_hands')."
+ },
+ {
+  "task": "supply_chain_disclosure_best_practice_certification",
+  "hf_config": "supply_chain_disclosure_best_practice_certification",
+  "family": "supply_chain_disclosure",
+  "is_reasoning_exception": false,
+  "n_train": 8,
+  "n_test": 378,
+  "input_columns": [
+   "text"
+  ],
+  "n_classes": 2,
+  "class_distribution": {
+   "yes": 284,
+   "no": 94
+  },
+  "metric": "balanced_accuracy",
+  "test_ge_300": true,
+  "pass_cardinality_filter": true,
+  "notes": "Input columns = all dataset columns except {index, answer, slice, document_name}. index is a row id, not content. answer is the label being predicted. slice (hearsay, personal_jurisdiction) is the paper's own post-hoc analysis category (e.g. hearsay's slice values are strings like 'Standard hearsay' / 'Non-assertive conduct') which leaks the answer and was never part of the original prompt shown to a model -- excluded. document_name (CUAD, contract_nli) is a source-document filename; many rows share one document, so a classifier could memorize filename-to-label associations unrelated to the clause text -- excluded. Columns such as diversity_1's parties_are_diverse/aic_is_met are KEPT: they are genuine compositional task inputs by LegalBench's own design (the model is handed two facts and must combine them), not leaked answers. No exclusions beyond this fixed blocklist were added. Qualifying task selected via family round-robin (family='supply_chain_disclosure')."
+ },
+ {
+  "task": "cuad_change_of_control",
+  "hf_config": "cuad_change_of_control",
+  "family": "cuad",
+  "is_reasoning_exception": false,
+  "n_train": 6,
+  "n_test": 416,
+  "input_columns": [
+   "text"
+  ],
+  "n_classes": 2,
+  "class_distribution": {
+   "yes": 208,
+   "no": 208
+  },
+  "metric": "balanced_accuracy",
+  "test_ge_300": true,
+  "pass_cardinality_filter": true,
+  "notes": "Input columns = all dataset columns except {index, answer, slice, document_name}. index is a row id, not content. answer is the label being predicted. slice (hearsay, personal_jurisdiction) is the paper's own post-hoc analysis category (e.g. hearsay's slice values are strings like 'Standard hearsay' / 'Non-assertive conduct') which leaks the answer and was never part of the original prompt shown to a model -- excluded. document_name (CUAD, contract_nli) is a source-document filename; many rows share one document, so a classifier could memorize filename-to-label associations unrelated to the clause text -- excluded. Columns such as diversity_1's parties_are_diverse/aic_is_met are KEPT: they are genuine compositional task inputs by LegalBench's own design (the model is handed two facts and must combine them), not leaked answers. No exclusions beyond this fixed blocklist were added. This task's 'document_name' column is present and excluded per the rule above. Qualifying task selected via family round-robin (family='cuad')."
+ },
+ {
+  "task": "opp115_international_and_specific_audiences",
+  "hf_config": "opp115_international_and_specific_audiences",
+  "family": "opp115",
+  "is_reasoning_exception": false,
+  "n_train": 8,
+  "n_test": 694,
+  "input_columns": [
+   "text"
+  ],
+  "n_classes": 2,
+  "class_distribution": {
+   "yes": 347,
+   "no": 347
+  },
+  "metric": "balanced_accuracy",
+  "test_ge_300": true,
+  "pass_cardinality_filter": true,
+  "notes": "Input columns = all dataset columns except {index, answer, slice, document_name}. index is a row id, not content. answer is the label being predicted. slice (hearsay, personal_jurisdiction) is the paper's own post-hoc analysis category (e.g. hearsay's slice values are strings like 'Standard hearsay' / 'Non-assertive conduct') which leaks the answer and was never part of the original prompt shown to a model -- excluded. document_name (CUAD, contract_nli) is a source-document filename; many rows share one document, so a classifier could memorize filename-to-label associations unrelated to the clause text -- excluded. Columns such as diversity_1's parties_are_diverse/aic_is_met are KEPT: they are genuine compositional task inputs by LegalBench's own design (the model is handed two facts and must combine them), not leaked answers. No exclusions beyond this fixed blocklist were added. Qualifying task selected via family round-robin (family='opp115')."
+ },
+ {
+  "task": "learned_hands_family",
+  "hf_config": "learned_hands_family",
+  "family": "learned_hands",
+  "is_reasoning_exception": false,
+  "n_train": 6,
+  "n_test": 2265,
+  "input_columns": [
+   "text"
+  ],
+  "n_classes": 2,
+  "class_distribution": {
+   "yes": 1133,
+   "no": 1132
+  },
+  "metric": "balanced_accuracy",
+  "test_ge_300": true,
+  "pass_cardinality_filter": true,
+  "notes": "Input columns = all dataset columns except {index, answer, slice, document_name}. index is a row id, not content. answer is the label being predicted. slice (hearsay, personal_jurisdiction) is the paper's own post-hoc analysis category (e.g. hearsay's slice values are strings like 'Standard hearsay' / 'Non-assertive conduct') which leaks the answer and was never part of the original prompt shown to a model -- excluded. document_name (CUAD, contract_nli) is a source-document filename; many rows share one document, so a classifier could memorize filename-to-label associations unrelated to the clause text -- excluded. Columns such as diversity_1's parties_are_diverse/aic_is_met are KEPT: they are genuine compositional task inputs by LegalBench's own design (the model is handed two facts and must combine them), not leaked answers. No exclusions beyond this fixed blocklist were added. Qualifying task selected via family round-robin (family='learned_hands')."
+ },
+ {
+  "task": "supply_chain_disclosure_best_practice_training",
+  "hf_config": "supply_chain_disclosure_best_practice_training",
+  "family": "supply_chain_disclosure",
+  "is_reasoning_exception": false,
+  "n_train": 8,
+  "n_test": 379,
+  "input_columns": [
+   "text"
+  ],
+  "n_classes": 2,
+  "class_distribution": {
+   "yes": 272,
+   "no": 107
+  },
+  "metric": "balanced_accuracy",
+  "test_ge_300": true,
+  "pass_cardinality_filter": true,
+  "notes": "Input columns = all dataset columns except {index, answer, slice, document_name}. index is a row id, not content. answer is the label being predicted. slice (hearsay, personal_jurisdiction) is the paper's own post-hoc analysis category (e.g. hearsay's slice values are strings like 'Standard hearsay' / 'Non-assertive conduct') which leaks the answer and was never part of the original prompt shown to a model -- excluded. document_name (CUAD, contract_nli) is a source-document filename; many rows share one document, so a classifier could memorize filename-to-label associations unrelated to the clause text -- excluded. Columns such as diversity_1's parties_are_diverse/aic_is_met are KEPT: they are genuine compositional task inputs by LegalBench's own design (the model is handed two facts and must combine them), not leaked answers. No exclusions beyond this fixed blocklist were added. Qualifying task selected via family round-robin (family='supply_chain_disclosure')."
+ },
+ {
+  "task": "cuad_covenant_not_to_sue",
+  "hf_config": "cuad_covenant_not_to_sue",
+  "family": "cuad",
+  "is_reasoning_exception": false,
+  "n_train": 6,
+  "n_test": 308,
+  "input_columns": [
+   "text"
+  ],
+  "n_classes": 2,
+  "class_distribution": {
+   "yes": 154,
+   "no": 154
+  },
+  "metric": "balanced_accuracy",
+  "test_ge_300": true,
+  "pass_cardinality_filter": true,
+  "notes": "Input columns = all dataset columns except {index, answer, slice, document_name}. index is a row id, not content. answer is the label being predicted. slice (hearsay, personal_jurisdiction) is the paper's own post-hoc analysis category (e.g. hearsay's slice values are strings like 'Standard hearsay' / 'Non-assertive conduct') which leaks the answer and was never part of the original prompt shown to a model -- excluded. document_name (CUAD, contract_nli) is a source-document filename; many rows share one document, so a classifier could memorize filename-to-label associations unrelated to the clause text -- excluded. Columns such as diversity_1's parties_are_diverse/aic_is_met are KEPT: they are genuine compositional task inputs by LegalBench's own design (the model is handed two facts and must combine them), not leaked answers. No exclusions beyond this fixed blocklist were added. This task's 'document_name' column is present and excluded per the rule above. Qualifying task selected via family round-robin (family='cuad')."
+ },
+ {
+  "task": "opp115_policy_change",
+  "hf_config": "opp115_policy_change",
+  "family": "opp115",
+  "is_reasoning_exception": false,
+  "n_train": 8,
+  "n_test": 362,
+  "input_columns": [
+   "text"
+  ],
+  "n_classes": 2,
+  "class_distribution": {
+   "no": 181,
+   "yes": 181
+  },
+  "metric": "balanced_accuracy",
+  "test_ge_300": true,
+  "pass_cardinality_filter": true,
+  "notes": "Input columns = all dataset columns except {index, answer, slice, document_name}. index is a row id, not content. answer is the label being predicted. slice (hearsay, personal_jurisdiction) is the paper's own post-hoc analysis category (e.g. hearsay's slice values are strings like 'Standard hearsay' / 'Non-assertive conduct') which leaks the answer and was never part of the original prompt shown to a model -- excluded. document_name (CUAD, contract_nli) is a source-document filename; many rows share one document, so a classifier could memorize filename-to-label associations unrelated to the clause text -- excluded. Columns such as diversity_1's parties_are_diverse/aic_is_met are KEPT: they are genuine compositional task inputs by LegalBench's own design (the model is handed two facts and must combine them), not leaked answers. No exclusions beyond this fixed blocklist were added. Qualifying task selected via family round-robin (family='opp115')."
+ },
+ {
+  "task": "learned_hands_housing",
+  "hf_config": "learned_hands_housing",
+  "family": "learned_hands",
+  "is_reasoning_exception": false,
+  "n_train": 6,
+  "n_test": 4494,
+  "input_columns": [
+   "text"
+  ],
+  "n_classes": 2,
+  "class_distribution": {
+   "yes": 2247,
+   "no": 2247
+  },
+  "metric": "balanced_accuracy",
+  "test_ge_300": true,
+  "pass_cardinality_filter": true,
+  "notes": "Input columns = all dataset columns except {index, answer, slice, document_name}. index is a row id, not content. answer is the label being predicted. slice (hearsay, personal_jurisdiction) is the paper's own post-hoc analysis category (e.g. hearsay's slice values are strings like 'Standard hearsay' / 'Non-assertive conduct') which leaks the answer and was never part of the original prompt shown to a model -- excluded. document_name (CUAD, contract_nli) is a source-document filename; many rows share one document, so a classifier could memorize filename-to-label associations unrelated to the clause text -- excluded. Columns such as diversity_1's parties_are_diverse/aic_is_met are KEPT: they are genuine compositional task inputs by LegalBench's own design (the model is handed two facts and must combine them), not leaked answers. No exclusions beyond this fixed blocklist were added. Qualifying task selected via family round-robin (family='learned_hands')."
+ },
+ {
+  "task": "supply_chain_disclosure_best_practice_verification",
+  "hf_config": "supply_chain_disclosure_best_practice_verification",
+  "family": "supply_chain_disclosure",
+  "is_reasoning_exception": false,
+  "n_train": 8,
+  "n_test": 379,
+  "input_columns": [
+   "text"
+  ],
+  "n_classes": 2,
+  "class_distribution": {
+   "yes": 213,
+   "no": 166
+  },
+  "metric": "balanced_accuracy",
+  "test_ge_300": true,
+  "pass_cardinality_filter": true,
+  "notes": "Input columns = all dataset columns except {index, answer, slice, document_name}. index is a row id, not content. answer is the label being predicted. slice (hearsay, personal_jurisdiction) is the paper's own post-hoc analysis category (e.g. hearsay's slice values are strings like 'Standard hearsay' / 'Non-assertive conduct') which leaks the answer and was never part of the original prompt shown to a model -- excluded. document_name (CUAD, contract_nli) is a source-document filename; many rows share one document, so a classifier could memorize filename-to-label associations unrelated to the clause text -- excluded. Columns such as diversity_1's parties_are_diverse/aic_is_met are KEPT: they are genuine compositional task inputs by LegalBench's own design (the model is handed two facts and must combine them), not leaked answers. No exclusions beyond this fixed blocklist were added. Qualifying task selected via family round-robin (family='supply_chain_disclosure')."
+ },
+ {
+  "task": "cuad_exclusivity",
+  "hf_config": "cuad_exclusivity",
+  "family": "cuad",
+  "is_reasoning_exception": false,
+  "n_train": 6,
+  "n_test": 762,
+  "input_columns": [
+   "text"
+  ],
+  "n_classes": 2,
+  "class_distribution": {
+   "yes": 381,
+   "no": 381
+  },
+  "metric": "balanced_accuracy",
+  "test_ge_300": true,
+  "pass_cardinality_filter": true,
+  "notes": "Input columns = all dataset columns except {index, answer, slice, document_name}. index is a row id, not content. answer is the label being predicted. slice (hearsay, personal_jurisdiction) is the paper's own post-hoc analysis category (e.g. hearsay's slice values are strings like 'Standard hearsay' / 'Non-assertive conduct') which leaks the answer and was never part of the original prompt shown to a model -- excluded. document_name (CUAD, contract_nli) is a source-document filename; many rows share one document, so a classifier could memorize filename-to-label associations unrelated to the clause text -- excluded. Columns such as diversity_1's parties_are_diverse/aic_is_met are KEPT: they are genuine compositional task inputs by LegalBench's own design (the model is handed two facts and must combine them), not leaked answers. No exclusions beyond this fixed blocklist were added. This task's 'document_name' column is present and excluded per the rule above. Qualifying task selected via family round-robin (family='cuad')."
+ },
+ {
+  "task": "opp115_third_party_sharing_collection",
+  "hf_config": "opp115_third_party_sharing_collection",
+  "family": "opp115",
+  "is_reasoning_exception": false,
+  "n_train": 8,
+  "n_test": 2364,
+  "input_columns": [
+   "text"
+  ],
+  "n_classes": 2,
+  "class_distribution": {
+   "yes": 1182,
+   "no": 1182
+  },
+  "metric": "balanced_accuracy",
+  "test_ge_300": true,
+  "pass_cardinality_filter": true,
+  "notes": "Input columns = all dataset columns except {index, answer, slice, document_name}. index is a row id, not content. answer is the label being predicted. slice (hearsay, personal_jurisdiction) is the paper's own post-hoc analysis category (e.g. hearsay's slice values are strings like 'Standard hearsay' / 'Non-assertive conduct') which leaks the answer and was never part of the original prompt shown to a model -- excluded. document_name (CUAD, contract_nli) is a source-document filename; many rows share one document, so a classifier could memorize filename-to-label associations unrelated to the clause text -- excluded. Columns such as diversity_1's parties_are_diverse/aic_is_met are KEPT: they are genuine compositional task inputs by LegalBench's own design (the model is handed two facts and must combine them), not leaked answers. No exclusions beyond this fixed blocklist were added. Qualifying task selected via family round-robin (family='opp115')."
+ },
+ {
+  "task": "learned_hands_torts",
+  "hf_config": "learned_hands_torts",
+  "family": "learned_hands",
+  "is_reasoning_exception": false,
+  "n_train": 6,
+  "n_test": 432,
+  "input_columns": [
+   "text"
+  ],
+  "n_classes": 2,
+  "class_distribution": {
+   "yes": 216,
+   "no": 216
+  },
+  "metric": "balanced_accuracy",
+  "test_ge_300": true,
+  "pass_cardinality_filter": true,
+  "notes": "Input columns = all dataset columns except {index, answer, slice, document_name}. index is a row id, not content. answer is the label being predicted. slice (hearsay, personal_jurisdiction) is the paper's own post-hoc analysis category (e.g. hearsay's slice values are strings like 'Standard hearsay' / 'Non-assertive conduct') which leaks the answer and was never part of the original prompt shown to a model -- excluded. document_name (CUAD, contract_nli) is a source-document filename; many rows share one document, so a classifier could memorize filename-to-label associations unrelated to the clause text -- excluded. Columns such as diversity_1's parties_are_diverse/aic_is_met are KEPT: they are genuine compositional task inputs by LegalBench's own design (the model is handed two facts and must combine them), not leaked answers. No exclusions beyond this fixed blocklist were added. Qualifying task selected via family round-robin (family='learned_hands')."
+ },
+ {
+  "task": "supply_chain_disclosure_disclosed_accountability",
+  "hf_config": "supply_chain_disclosure_disclosed_accountability",
+  "family": "supply_chain_disclosure",
+  "is_reasoning_exception": false,
+  "n_train": 8,
+  "n_test": 378,
+  "input_columns": [
+   "text"
+  ],
+  "n_classes": 2,
+  "class_distribution": {
+   "yes": 357,
+   "no": 21
+  },
+  "metric": "balanced_accuracy",
+  "test_ge_300": true,
+  "pass_cardinality_filter": true,
+  "notes": "Input columns = all dataset columns except {index, answer, slice, document_name}. index is a row id, not content. answer is the label being predicted. slice (hearsay, personal_jurisdiction) is the paper's own post-hoc analysis category (e.g. hearsay's slice values are strings like 'Standard hearsay' / 'Non-assertive conduct') which leaks the answer and was never part of the original prompt shown to a model -- excluded. document_name (CUAD, contract_nli) is a source-document filename; many rows share one document, so a classifier could memorize filename-to-label associations unrelated to the clause text -- excluded. Columns such as diversity_1's parties_are_diverse/aic_is_met are KEPT: they are genuine compositional task inputs by LegalBench's own design (the model is handed two facts and must combine them), not leaked answers. No exclusions beyond this fixed blocklist were added. Qualifying task selected via family round-robin (family='supply_chain_disclosure')."
+ },
+ {
+  "task": "cuad_expiration_date",
+  "hf_config": "cuad_expiration_date",
+  "family": "cuad",
+  "is_reasoning_exception": false,
+  "n_train": 6,
+  "n_test": 876,
+  "input_columns": [
+   "text"
+  ],
+  "n_classes": 2,
+  "class_distribution": {
+   "yes": 438,
+   "no": 438
+  },
+  "metric": "balanced_accuracy",
+  "test_ge_300": true,
+  "pass_cardinality_filter": true,
+  "notes": "Input columns = all dataset columns except {index, answer, slice, document_name}. index is a row id, not content. answer is the label being predicted. slice (hearsay, personal_jurisdiction) is the paper's own post-hoc analysis category (e.g. hearsay's slice values are strings like 'Standard hearsay' / 'Non-assertive conduct') which leaks the answer and was never part of the original prompt shown to a model -- excluded. document_name (CUAD, contract_nli) is a source-document filename; many rows share one document, so a classifier could memorize filename-to-label associations unrelated to the clause text -- excluded. Columns such as diversity_1's parties_are_diverse/aic_is_met are KEPT: they are genuine compositional task inputs by LegalBench's own design (the model is handed two facts and must combine them), not leaked answers. No exclusions beyond this fixed blocklist were added. This task's 'document_name' column is present and excluded per the rule above. Qualifying task selected via family round-robin (family='cuad')."
+ },
+ {
+  "task": "opp115_user_access,_edit_and_deletion",
+  "hf_config": "opp115_user_access,_edit_and_deletion",
+  "family": "opp115",
+  "is_reasoning_exception": false,
+  "n_train": 8,
+  "n_test": 452,
+  "input_columns": [
+   "text"
+  ],
+  "n_classes": 2,
+  "class_distribution": {
+   "no": 226,
+   "yes": 226
+  },
+  "metric": "balanced_accuracy",
+  "test_ge_300": true,
+  "pass_cardinality_filter": true,
+  "notes": "Input columns = all dataset columns except {index, answer, slice, document_name}. index is a row id, not content. answer is the label being predicted. slice (hearsay, personal_jurisdiction) is the paper's own post-hoc analysis category (e.g. hearsay's slice values are strings like 'Standard hearsay' / 'Non-assertive conduct') which leaks the answer and was never part of the original prompt shown to a model -- excluded. document_name (CUAD, contract_nli) is a source-document filename; many rows share one document, so a classifier could memorize filename-to-label associations unrelated to the clause text -- excluded. Columns such as diversity_1's parties_are_diverse/aic_is_met are KEPT: they are genuine compositional task inputs by LegalBench's own design (the model is handed two facts and must combine them), not leaked answers. No exclusions beyond this fixed blocklist were added. Qualifying task selected via family round-robin (family='opp115')."
+ },
+ {
+  "task": "hearsay",
+  "hf_config": "hearsay",
+  "family": "exception",
+  "is_reasoning_exception": true,
+  "n_train": 5,
+  "n_test": 94,
+  "input_columns": [
+   "text"
+  ],
+  "n_classes": 2,
+  "class_distribution": {
+   "no": 53,
+   "yes": 41
+  },
+  "metric": "balanced_accuracy",
+  "test_ge_300": false,
+  "pass_cardinality_filter": true,
+  "notes": "Input columns = all dataset columns except {index, answer, slice, document_name}. index is a row id, not content. answer is the label being predicted. slice (hearsay, personal_jurisdiction) is the paper's own post-hoc analysis category (e.g. hearsay's slice values are strings like 'Standard hearsay' / 'Non-assertive conduct') which leaks the answer and was never part of the original prompt shown to a model -- excluded. document_name (CUAD, contract_nli) is a source-document filename; many rows share one document, so a classifier could memorize filename-to-label associations unrelated to the clause text -- excluded. Columns such as diversity_1's parties_are_diverse/aic_is_met are KEPT: they are genuine compositional task inputs by LegalBench's own design (the model is handed two facts and must combine them), not leaked answers. No exclusions beyond this fixed blocklist were added. This task's 'slice' column is present and excluded per the rule above. Reasoning-exception task: included regardless of the 24-28 qualifying-task filters/budget."
+ },
+ {
+  "task": "personal_jurisdiction",
+  "hf_config": "personal_jurisdiction",
+  "family": "exception",
+  "is_reasoning_exception": true,
+  "n_train": 4,
+  "n_test": 50,
+  "input_columns": [
+   "text"
+  ],
+  "n_classes": 2,
+  "class_distribution": {
+   "no": 29,
+   "yes": 21
+  },
+  "metric": "balanced_accuracy",
+  "test_ge_300": false,
+  "pass_cardinality_filter": true,
+  "notes": "Input columns = all dataset columns except {index, answer, slice, document_name}. index is a row id, not content. answer is the label being predicted. slice (hearsay, personal_jurisdiction) is the paper's own post-hoc analysis category (e.g. hearsay's slice values are strings like 'Standard hearsay' / 'Non-assertive conduct') which leaks the answer and was never part of the original prompt shown to a model -- excluded. document_name (CUAD, contract_nli) is a source-document filename; many rows share one document, so a classifier could memorize filename-to-label associations unrelated to the clause text -- excluded. Columns such as diversity_1's parties_are_diverse/aic_is_met are KEPT: they are genuine compositional task inputs by LegalBench's own design (the model is handed two facts and must combine them), not leaked answers. No exclusions beyond this fixed blocklist were added. This task's 'slice' column is present and excluded per the rule above. Reasoning-exception task: included regardless of the 24-28 qualifying-task filters/budget."
+ },
+ {
+  "task": "abercrombie",
+  "hf_config": "abercrombie",
+  "family": "exception",
+  "is_reasoning_exception": true,
+  "n_train": 5,
+  "n_test": 95,
+  "input_columns": [
+   "text"
+  ],
+  "n_classes": 5,
+  "class_distribution": {
+   "generic": 19,
+   "descriptive": 19,
+   "suggestive": 19,
+   "arbitrary": 19,
+   "fanciful": 19
+  },
+  "metric": "balanced_accuracy",
+  "test_ge_300": false,
+  "pass_cardinality_filter": true,
+  "notes": "Input columns = all dataset columns except {index, answer, slice, document_name}. index is a row id, not content. answer is the label being predicted. slice (hearsay, personal_jurisdiction) is the paper's own post-hoc analysis category (e.g. hearsay's slice values are strings like 'Standard hearsay' / 'Non-assertive conduct') which leaks the answer and was never part of the original prompt shown to a model -- excluded. document_name (CUAD, contract_nli) is a source-document filename; many rows share one document, so a classifier could memorize filename-to-label associations unrelated to the clause text -- excluded. Columns such as diversity_1's parties_are_diverse/aic_is_met are KEPT: they are genuine compositional task inputs by LegalBench's own design (the model is handed two facts and must combine them), not leaked answers. No exclusions beyond this fixed blocklist were added. Reasoning-exception task: included regardless of the 24-28 qualifying-task filters/budget."
+ },
+ {
+  "task": "diversity_1",
+  "hf_config": "diversity_1",
+  "family": "exception",
+  "is_reasoning_exception": true,
+  "n_train": 6,
+  "n_test": 300,
+  "input_columns": [
+   "text"
+  ],
+  "n_classes": 2,
+  "class_distribution": {
+   "no": 229,
+   "yes": 71
+  },
+  "metric": "balanced_accuracy",
+  "test_ge_300": true,
+  "pass_cardinality_filter": true,
+  "notes": "CORRECTED (leak fix). Input columns = ['text'] only -- exactly the {{placeholders}} in this task's original base_prompt.txt, i.e. exactly what the LLM saw when the published score was produced. The dataset also ships parties_are_diverse and aic_is_met, which are the paper's gold annotations of the two intermediate reasoning steps, NOT prompt inputs. An earlier version of this registry kept them (wrongly reasoning they were 'compositional inputs by design'); with them present a logistic regression learns answer = diverse AND aic and scores ~100%, which is a leak, not a result. Rule now enforced by tests/test_input_columns_match_prompt.py against data/prompt_placeholders.json."
+ },
+ {
+  "task": "diversity_2",
+  "hf_config": "diversity_2",
+  "family": "exception",
+  "is_reasoning_exception": true,
+  "n_train": 6,
+  "n_test": 300,
+  "input_columns": [
+   "text"
+  ],
+  "n_classes": 2,
+  "class_distribution": {
+   "no": 224,
+   "yes": 76
+  },
+  "metric": "balanced_accuracy",
+  "test_ge_300": true,
+  "pass_cardinality_filter": true,
+  "notes": "CORRECTED (leak fix). Input columns = ['text'] only -- exactly the {{placeholders}} in this task's original base_prompt.txt, i.e. exactly what the LLM saw when the published score was produced. The dataset also ships parties_are_diverse and aic_is_met, which are the paper's gold annotations of the two intermediate reasoning steps, NOT prompt inputs. An earlier version of this registry kept them (wrongly reasoning they were 'compositional inputs by design'); with them present a logistic regression learns answer = diverse AND aic and scores ~100%, which is a leak, not a result. Rule now enforced by tests/test_input_columns_match_prompt.py against data/prompt_placeholders.json."
+ },
+ {
+  "task": "diversity_3",
+  "hf_config": "diversity_3",
+  "family": "exception",
+  "is_reasoning_exception": true,
+  "n_train": 6,
+  "n_test": 300,
+  "input_columns": [
+   "text"
+  ],
+  "n_classes": 2,
+  "class_distribution": {
+   "no": 124,
+   "yes": 176
+  },
+  "metric": "balanced_accuracy",
+  "test_ge_300": true,
+  "pass_cardinality_filter": true,
+  "notes": "CORRECTED (leak fix). Input columns = ['text'] only -- exactly the {{placeholders}} in this task's original base_prompt.txt, i.e. exactly what the LLM saw when the published score was produced. The dataset also ships parties_are_diverse and aic_is_met, which are the paper's gold annotations of the two intermediate reasoning steps, NOT prompt inputs. An earlier version of this registry kept them (wrongly reasoning they were 'compositional inputs by design'); with them present a logistic regression learns answer = diverse AND aic and scores ~100%, which is a leak, not a result. Rule now enforced by tests/test_input_columns_match_prompt.py against data/prompt_placeholders.json."
+ },
+ {
+  "task": "diversity_4",
+  "hf_config": "diversity_4",
+  "family": "exception",
+  "is_reasoning_exception": true,
+  "n_train": 6,
+  "n_test": 300,
+  "input_columns": [
+   "text"
+  ],
+  "n_classes": 2,
+  "class_distribution": {
+   "yes": 160,
+   "no": 140
+  },
+  "metric": "balanced_accuracy",
+  "test_ge_300": true,
+  "pass_cardinality_filter": true,
+  "notes": "CORRECTED (leak fix). Input columns = ['text'] only -- exactly the {{placeholders}} in this task's original base_prompt.txt, i.e. exactly what the LLM saw when the published score was produced. The dataset also ships parties_are_diverse and aic_is_met, which are the paper's gold annotations of the two intermediate reasoning steps, NOT prompt inputs. An earlier version of this registry kept them (wrongly reasoning they were 'compositional inputs by design'); with them present a logistic regression learns answer = diverse AND aic and scores ~100%, which is a leak, not a result. Rule now enforced by tests/test_input_columns_match_prompt.py against data/prompt_placeholders.json."
+ },
+ {
+  "task": "diversity_5",
+  "hf_config": "diversity_5",
+  "family": "exception",
+  "is_reasoning_exception": true,
+  "n_train": 6,
+  "n_test": 300,
+  "input_columns": [
+   "text"
+  ],
+  "n_classes": 2,
+  "class_distribution": {
+   "yes": 172,
+   "no": 128
+  },
+  "metric": "balanced_accuracy",
+  "test_ge_300": true,
+  "pass_cardinality_filter": true,
+  "notes": "CORRECTED (leak fix). Input columns = ['text'] only -- exactly the {{placeholders}} in this task's original base_prompt.txt, i.e. exactly what the LLM saw when the published score was produced. The dataset also ships parties_are_diverse and aic_is_met, which are the paper's gold annotations of the two intermediate reasoning steps, NOT prompt inputs. An earlier version of this registry kept them (wrongly reasoning they were 'compositional inputs by design'); with them present a logistic regression learns answer = diverse AND aic and scores ~100%, which is a leak, not a result. Rule now enforced by tests/test_input_columns_match_prompt.py against data/prompt_placeholders.json."
+ },
+ {
+  "task": "diversity_6",
+  "hf_config": "diversity_6",
+  "family": "exception",
+  "is_reasoning_exception": true,
+  "n_train": 6,
+  "n_test": 300,
+  "input_columns": [
+   "text"
+  ],
+  "n_classes": 2,
+  "class_distribution": {
+   "yes": 159,
+   "no": 141
+  },
+  "metric": "balanced_accuracy",
+  "test_ge_300": true,
+  "pass_cardinality_filter": true,
+  "notes": "CORRECTED (leak fix). Input columns = ['text'] only -- exactly the {{placeholders}} in this task's original base_prompt.txt, i.e. exactly what the LLM saw when the published score was produced. The dataset also ships parties_are_diverse and aic_is_met, which are the paper's gold annotations of the two intermediate reasoning steps, NOT prompt inputs. An earlier version of this registry kept them (wrongly reasoning they were 'compositional inputs by design'); with them present a logistic regression learns answer = diverse AND aic and scores ~100%, which is a leak, not a result. Rule now enforced by tests/test_input_columns_match_prompt.py against data/prompt_placeholders.json."
+ }
+]

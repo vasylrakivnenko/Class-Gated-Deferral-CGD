@@ -1,0 +1,27 @@
+{
+  "task": "overruling",
+  "best_candidate": "tfidf_logreg",
+  "hyperparameters": null,
+  "hyperparameters_note": "The fixed candidate interface (fit_predict_proba -> np.ndarray) returns only probabilities, not hyperparameters; this field is populated only if the candidate module optionally exposes get_last_hyperparams(task_key), else it is null.",
+  "conformal_alpha": 0.05,
+  "conformal_quantiles_all_folds": [
+    0.43932342015120407,
+    0.5108826675846466,
+    0.4198053009019208,
+    0.5599941571494992,
+    0.5433940725339347,
+    0.4930909981759588,
+    0.496155542346002,
+    0.4528708360844347,
+    0.542526571499911,
+    0.4587086805737911,
+    0.5059071726508975,
+    0.6285152851588066,
+    0.46606890445178806,
+    0.46908008138200064,
+    0.4560675989082956
+  ],
+  "conformal_quantile_mean_finite": 0.4961594193035394,
+  "folds": 5,
+  "repeats": 3
+}

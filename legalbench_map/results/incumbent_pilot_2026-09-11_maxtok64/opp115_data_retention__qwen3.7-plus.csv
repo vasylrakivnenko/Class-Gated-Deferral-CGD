@@ -1,0 +1,4 @@
+task,model_key,item_idx,text_sha256,gold,raw_output,pred,parse_ok,in_tokens,out_tokens,cached_tokens,cost_usd,latency_s,ts
+opp115_data_retention,qwen3.7-plus,1,ca069ace0fea7074fac7e44b33121935734dd94f589cc9069a738b5884a0f116,no,<error: NotFoundError>,,0,0,0,0,0.0000000000,0.096,2026-09-11T20:34:58+00:00
+opp115_data_retention,qwen3.7-plus,2,94284e1d7b10fa6117e24745885f4a5c871d995ca98a16179c63cacb7e9c8618,no,<error: NotFoundError>,,0,0,0,0,0.0000000000,0.095,2026-09-11T20:34:58+00:00
+opp115_data_retention,qwen3.7-plus,0,e783d6e5426c4d132ca1198992b63a2b77013808d63e267b499744a4c5d1b11b,yes,<error: NotFoundError>,,0,0,0,0,0.0000000000,0.103,2026-09-11T20:34:58+00:00

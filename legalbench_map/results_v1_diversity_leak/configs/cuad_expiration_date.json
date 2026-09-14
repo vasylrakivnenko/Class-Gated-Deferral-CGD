@@ -1,0 +1,27 @@
+{
+  "task": "cuad_expiration_date",
+  "best_candidate": "tfidf_logreg",
+  "hyperparameters": null,
+  "hyperparameters_note": "The fixed candidate interface (fit_predict_proba -> np.ndarray) returns only probabilities, not hyperparameters; this field is populated only if the candidate module optionally exposes get_last_hyperparams(task_key), else it is null.",
+  "conformal_alpha": 0.05,
+  "conformal_quantiles_all_folds": [
+    0.38217686092094194,
+    0.6129407875371549,
+    0.4553140098735312,
+    0.3889863122161058,
+    0.5285972742523704,
+    0.478585315818557,
+    0.5554565240626639,
+    0.5769352908978091,
+    0.40089050171404617,
+    0.3584216165926062,
+    0.27209957270625496,
+    0.3630641133900129,
+    0.40031026680009485,
+    0.45945266782891436,
+    0.6316728924202711
+  ],
+  "conformal_quantile_mean_finite": 0.4576602671354223,
+  "folds": 5,
+  "repeats": 3
+}

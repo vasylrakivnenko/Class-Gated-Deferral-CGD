@@ -1,0 +1,634 @@
+{
+  "task": "opp115_data_retention",
+  "model_key": "gpt-oss-120b-fireworks",
+  "scoring": "lenient",
+  "scoring_note": "lenient: the earliest whole-word label occurrence in the normalized output (ties -> longest label); no label anywhere -> unparseable, counts as wrong. Reported alongside exact, never instead of it. Measures whether the model KNOWS the answer rather than whether it obeys a 2023 completion-style format; the cascade decision uses this scoring.",
+  "candidate": "embed_base_logreg",
+  "classes": [
+    "no",
+    "yes"
+  ],
+  "n_items": 304,
+  "n_test_expected": 304,
+  "pilot": false,
+  "pilot_stamp": null,
+  "api_error_stamp": null,
+  "repeats": [
+    0,
+    1,
+    2
+  ],
+  "delta": 0.01,
+  "holm_alpha": 0.05,
+  "n_boot": 10000,
+  "seed": 0,
+  "asymmetry_note": "ASYMMETRY (chosen, not hidden): the incumbent is a SINGLE temperature-0 pass; the cheap side has one out-of-fold prediction per item per CV repeat (normally 3). Every paired statistic pairs the cheap model's repeat-r OOF prediction with the same single incumbent prediction, and is reported per repeat and as the mean across repeats.",
+  "incumbent_alone": {
+    "label": "measured",
+    "n": 304,
+    "n_api_errors": 0,
+    "accuracy": 0.7302631578947368,
+    "accuracy_wilson95_lo": 0.6777279672923913,
+    "accuracy_wilson95_hi": 0.777051582337877,
+    "balanced_accuracy": 0.7302631578947368,
+    "parse_fail_rate": 0.0,
+    "n_parse_fail": 0,
+    "mean_in_tokens": 530.266447368421,
+    "mean_out_tokens": 211.54605263157896,
+    "mean_cached_tokens": 360.6842105263158,
+    "mean_latency_s": 1.6570263157894736,
+    "total_cost_usd": 0.04796367,
+    "cost_per_1k_items_usd": 0.1577752302631579
+  },
+  "published_2023": {
+    "label": "published-2023",
+    "best_score": 0.705,
+    "best_model": "GPT-3.5",
+    "metric": "balanced_accuracy",
+    "source_url": "https://arxiv.org/pdf/2308.11462 (Table 76, page 132)"
+  },
+  "per_repeat": {
+    "0": {
+      "n": 304,
+      "cheap_alone": {
+        "label": "CV-estimated",
+        "accuracy": 0.7828947368421053,
+        "balanced_accuracy": 0.7828947368421053,
+        "keep_rate": 0.5493421052631579
+      },
+      "paired_all": {
+        "mcnemar_cheap_vs_incumbent": {
+          "acc_a": 0.7828947368421053,
+          "acc_b": 0.7302631578947368,
+          "diff": 0.052631578947368474,
+          "n_both_right": 184,
+          "n_both_wrong": 28,
+          "n_a_only": 54,
+          "n_b_only": 38,
+          "n_discordant": 92,
+          "diff_ci_lo": -0.009868421052631526,
+          "diff_ci_hi": 0.11513157894736836,
+          "p_value": 0.09656519729770471,
+          "test_used": "McNemar mid-p"
+        },
+        "ni_cheap_vs_incumbent": {
+          "candidate_acc": 0.7828947368421053,
+          "baseline_acc": 0.7302631578947368,
+          "diff": 0.052631578947368474,
+          "margin": 0.01,
+          "diff_ci_lo": 0.0,
+          "diff_ci_hi": 0.10526315789473684,
+          "p_value": 0.0199,
+          "passes": true,
+          "verdict": "non-inferior (and not worse on the point estimate)"
+        }
+      },
+      "sent_subset": {
+        "n_sent": 137,
+        "sent_share": 0.4506578947368421,
+        "incumbent_accuracy": 0.6934306569343066,
+        "cheap_accuracy": 0.6277372262773723,
+        "incumbent_accuracy_on_kept": 0.7604790419161677,
+        "cheap_accuracy_on_kept": 0.9101796407185628,
+        "mcnemar_cheap_vs_incumbent": {
+          "acc_a": 0.6277372262773723,
+          "acc_b": 0.6934306569343066,
+          "diff": -0.06569343065693434,
+          "n_both_right": 63,
+          "n_both_wrong": 19,
+          "n_a_only": 23,
+          "n_b_only": 32,
+          "n_discordant": 55,
+          "diff_ci_lo": -0.16788321167883213,
+          "diff_ci_hi": 0.04379562043795615,
+          "p_value": 0.22880554123435604,
+          "test_used": "McNemar mid-p"
+        }
+      },
+      "cascade": {
+        "accuracy": 0.8125,
+        "balanced_accuracy": 0.8125,
+        "llm_share": 0.45065789473684215,
+        "n_sent": 137,
+        "cost_per_1k_items_usd": 0.07110265311201525,
+        "mcnemar_vs_cheap": {
+          "acc_a": 0.8125,
+          "acc_b": 0.7828947368421053,
+          "diff": 0.02960526315789469,
+          "n_both_right": 215,
+          "n_both_wrong": 34,
+          "n_a_only": 32,
+          "n_b_only": 23,
+          "n_discordant": 55,
+          "diff_ci_lo": -0.016447368421052655,
+          "diff_ci_hi": 0.07565789473684215,
+          "p_value": 0.228805541234356,
+          "test_used": "McNemar mid-p"
+        },
+        "ni_vs_cheap": {
+          "candidate_acc": 0.8125,
+          "baseline_acc": 0.7828947368421053,
+          "diff": 0.02960526315789469,
+          "margin": 0.01,
+          "diff_ci_lo": -0.009868421052631637,
+          "diff_ci_hi": 0.06907894736842102,
+          "p_value": 0.0415,
+          "passes": true,
+          "verdict": "non-inferior (and not worse on the point estimate)"
+        },
+        "mcnemar_vs_incumbent": {
+          "acc_a": 0.8125,
+          "acc_b": 0.7302631578947368,
+          "diff": 0.08223684210526316,
+          "n_both_right": 216,
+          "n_both_wrong": 51,
+          "n_a_only": 31,
+          "n_b_only": 6,
+          "n_discordant": 37,
+          "diff_ci_lo": 0.046052631578947345,
+          "diff_ci_hi": 0.12171052631578949,
+          "p_value": 2.4342560209333846e-05,
+          "test_used": "McNemar mid-p"
+        },
+        "ni_vs_incumbent": {
+          "candidate_acc": 0.8125,
+          "baseline_acc": 0.7302631578947368,
+          "diff": 0.08223684210526316,
+          "margin": 0.01,
+          "diff_ci_lo": 0.049342105263157965,
+          "diff_ci_hi": 0.11513157894736836,
+          "p_value": 0.0,
+          "passes": true,
+          "verdict": "non-inferior (and not worse on the point estimate)"
+        }
+      },
+      "oracle_gate": {
+        "accuracy": 0.9078947368421053,
+        "llm_share": 0.2171052631578947,
+        "n_sent": 66
+      },
+      "holm": {
+        "alpha": 0.05,
+        "family_size": 4,
+        "raw_p": {
+          "paired_all": 0.09656519729770471,
+          "sent": 0.22880554123435604,
+          "cascade_vs_cheap": 0.228805541234356,
+          "cascade_vs_incumbent": 2.4342560209333846e-05
+        },
+        "survives": {
+          "paired_all": false,
+          "sent": false,
+          "cascade_vs_cheap": false,
+          "cascade_vs_incumbent": true
+        }
+      },
+      "verdict_inputs": {
+        "cheap_ni_passes": true,
+        "cascade_ni_passes": true,
+        "cheaper": true,
+        "cascade_beats_cheap_after_holm": false
+      },
+      "verdict": "cheap-alone"
+    },
+    "1": {
+      "n": 304,
+      "cheap_alone": {
+        "label": "CV-estimated",
+        "accuracy": 0.8092105263157895,
+        "balanced_accuracy": 0.8092105263157895,
+        "keep_rate": 0.40460526315789475
+      },
+      "paired_all": {
+        "mcnemar_cheap_vs_incumbent": {
+          "acc_a": 0.8092105263157895,
+          "acc_b": 0.7302631578947368,
+          "diff": 0.07894736842105265,
+          "n_both_right": 189,
+          "n_both_wrong": 25,
+          "n_a_only": 57,
+          "n_b_only": 33,
+          "n_discordant": 90,
+          "diff_ci_lo": 0.019736842105263164,
+          "diff_ci_hi": 0.13815789473684215,
+          "p_value": 0.011456340539425654,
+          "test_used": "McNemar mid-p"
+        },
+        "ni_cheap_vs_incumbent": {
+          "candidate_acc": 0.8092105263157895,
+          "baseline_acc": 0.7302631578947368,
+          "diff": 0.07894736842105265,
+          "margin": 0.01,
+          "diff_ci_lo": 0.02960526315789469,
+          "diff_ci_hi": 0.12828947368421062,
+          "p_value": 0.0009,
+          "passes": true,
+          "verdict": "non-inferior (and not worse on the point estimate)"
+        }
+      },
+      "sent_subset": {
+        "n_sent": 181,
+        "sent_share": 0.5953947368421053,
+        "incumbent_accuracy": 0.7016574585635359,
+        "cheap_accuracy": 0.7182320441988951,
+        "incumbent_accuracy_on_kept": 0.7723577235772358,
+        "cheap_accuracy_on_kept": 0.943089430894309,
+        "mcnemar_cheap_vs_incumbent": {
+          "acc_a": 0.7182320441988951,
+          "acc_b": 0.7016574585635359,
+          "diff": 0.016574585635359185,
+          "n_both_right": 97,
+          "n_both_wrong": 21,
+          "n_a_only": 33,
+          "n_b_only": 30,
+          "n_discordant": 63,
+          "diff_ci_lo": -0.06643646408839661,
+          "diff_ci_hi": 0.10497237569060769,
+          "p_value": 0.707980754134764,
+          "test_used": "McNemar mid-p"
+        }
+      },
+      "cascade": {
+        "accuracy": 0.7993421052631579,
+        "balanced_accuracy": 0.7993421052631579,
+        "llm_share": 0.5953947368421053,
+        "n_sent": 181,
+        "cost_per_1k_items_usd": 0.09393854170273547,
+        "mcnemar_vs_cheap": {
+          "acc_a": 0.7993421052631579,
+          "acc_b": 0.8092105263157895,
+          "diff": -0.009868421052631637,
+          "n_both_right": 213,
+          "n_both_wrong": 28,
+          "n_a_only": 30,
+          "n_b_only": 33,
+          "n_discordant": 63,
+          "diff_ci_lo": -0.05921052631578949,
+          "diff_ci_hi": 0.042763157894736836,
+          "p_value": 0.707980754134764,
+          "test_used": "McNemar mid-p"
+        },
+        "ni_vs_cheap": {
+          "candidate_acc": 0.7993421052631579,
+          "baseline_acc": 0.8092105263157895,
+          "diff": -0.009868421052631637,
+          "margin": 0.01,
+          "diff_ci_lo": -0.05263157894736836,
+          "diff_ci_hi": 0.03289473684210531,
+          "p_value": 0.4761,
+          "passes": false,
+          "verdict": "inconclusive -- test set too small to rule out a 1% loss"
+        },
+        "mcnemar_vs_incumbent": {
+          "acc_a": 0.7993421052631579,
+          "acc_b": 0.7302631578947368,
+          "diff": 0.06907894736842102,
+          "n_both_right": 219,
+          "n_both_wrong": 58,
+          "n_a_only": 24,
+          "n_b_only": 3,
+          "n_discordant": 27,
+          "diff_ci_lo": 0.03618421052631582,
+          "diff_ci_hi": 0.10197368421052633,
+          "p_value": 2.7440488338470425e-05,
+          "test_used": "McNemar mid-p"
+        },
+        "ni_vs_incumbent": {
+          "candidate_acc": 0.7993421052631579,
+          "baseline_acc": 0.7302631578947368,
+          "diff": 0.06907894736842102,
+          "margin": 0.01,
+          "diff_ci_lo": 0.042763157894736836,
+          "diff_ci_hi": 0.09539473684210531,
+          "p_value": 0.0,
+          "passes": true,
+          "verdict": "non-inferior (and not worse on the point estimate)"
+        }
+      },
+      "oracle_gate": {
+        "accuracy": 0.9177631578947368,
+        "llm_share": 0.1907894736842105,
+        "n_sent": 58
+      },
+      "holm": {
+        "alpha": 0.05,
+        "family_size": 4,
+        "raw_p": {
+          "paired_all": 0.011456340539425654,
+          "sent": 0.707980754134764,
+          "cascade_vs_cheap": 0.707980754134764,
+          "cascade_vs_incumbent": 2.7440488338470425e-05
+        },
+        "survives": {
+          "paired_all": true,
+          "sent": false,
+          "cascade_vs_cheap": false,
+          "cascade_vs_incumbent": true
+        }
+      },
+      "verdict_inputs": {
+        "cheap_ni_passes": true,
+        "cascade_ni_passes": true,
+        "cheaper": true,
+        "cascade_beats_cheap_after_holm": false
+      },
+      "verdict": "cheap-alone"
+    },
+    "2": {
+      "n": 304,
+      "cheap_alone": {
+        "label": "CV-estimated",
+        "accuracy": 0.7993421052631579,
+        "balanced_accuracy": 0.799342105263158,
+        "keep_rate": 0.4506578947368421
+      },
+      "paired_all": {
+        "mcnemar_cheap_vs_incumbent": {
+          "acc_a": 0.7993421052631579,
+          "acc_b": 0.7302631578947368,
+          "diff": 0.06907894736842102,
+          "n_both_right": 187,
+          "n_both_wrong": 26,
+          "n_a_only": 56,
+          "n_b_only": 35,
+          "n_discordant": 91,
+          "diff_ci_lo": 0.006578947368421129,
+          "diff_ci_hi": 0.13157894736842102,
+          "p_value": 0.028016901958946693,
+          "test_used": "McNemar mid-p"
+        },
+        "ni_cheap_vs_incumbent": {
+          "candidate_acc": 0.7993421052631579,
+          "baseline_acc": 0.7302631578947368,
+          "diff": 0.06907894736842102,
+          "margin": 0.01,
+          "diff_ci_lo": 0.016447368421052655,
+          "diff_ci_hi": 0.12171052631578938,
+          "p_value": 0.0034,
+          "passes": true,
+          "verdict": "non-inferior (and not worse on the point estimate)"
+        }
+      },
+      "sent_subset": {
+        "n_sent": 167,
+        "sent_share": 0.5493421052631579,
+        "incumbent_accuracy": 0.6766467065868264,
+        "cheap_accuracy": 0.6766467065868264,
+        "incumbent_accuracy_on_kept": 0.7956204379562044,
+        "cheap_accuracy_on_kept": 0.948905109489051,
+        "mcnemar_cheap_vs_incumbent": {
+          "acc_a": 0.6766467065868264,
+          "acc_b": 0.6766467065868264,
+          "diff": 0.0,
+          "n_both_right": 81,
+          "n_both_wrong": 22,
+          "n_a_only": 32,
+          "n_b_only": 32,
+          "n_discordant": 64,
+          "diff_ci_lo": -0.09580838323353291,
+          "diff_ci_hi": 0.09580838323353291,
+          "p_value": 0.9006532462520331,
+          "test_used": "McNemar mid-p"
+        }
+      },
+      "cascade": {
+        "accuracy": 0.7993421052631579,
+        "balanced_accuracy": 0.7993421052631579,
+        "llm_share": 0.549342105263158,
+        "n_sent": 167,
+        "cost_per_1k_items_usd": 0.08667257715114267,
+        "mcnemar_vs_cheap": {
+          "acc_a": 0.7993421052631579,
+          "acc_b": 0.7993421052631579,
+          "diff": 0.0,
+          "n_both_right": 211,
+          "n_both_wrong": 29,
+          "n_a_only": 32,
+          "n_b_only": 32,
+          "n_discordant": 64,
+          "diff_ci_lo": -0.05263157894736836,
+          "diff_ci_hi": 0.05263157894736836,
+          "p_value": 0.9006532462520331,
+          "test_used": "McNemar mid-p"
+        },
+        "ni_vs_cheap": {
+          "candidate_acc": 0.7993421052631579,
+          "baseline_acc": 0.7993421052631579,
+          "diff": 0.0,
+          "margin": 0.01,
+          "diff_ci_lo": -0.042763157894736836,
+          "diff_ci_hi": 0.042763157894736836,
+          "p_value": 0.3373,
+          "passes": false,
+          "verdict": "inconclusive -- test set too small to rule out a 1% loss"
+        },
+        "mcnemar_vs_incumbent": {
+          "acc_a": 0.7993421052631579,
+          "acc_b": 0.7302631578947368,
+          "diff": 0.06907894736842102,
+          "n_both_right": 219,
+          "n_both_wrong": 58,
+          "n_a_only": 24,
+          "n_b_only": 3,
+          "n_discordant": 27,
+          "diff_ci_lo": 0.03618421052631582,
+          "diff_ci_hi": 0.10197368421052633,
+          "p_value": 2.7440488338470425e-05,
+          "test_used": "McNemar mid-p"
+        },
+        "ni_vs_incumbent": {
+          "candidate_acc": 0.7993421052631579,
+          "baseline_acc": 0.7302631578947368,
+          "diff": 0.06907894736842102,
+          "margin": 0.01,
+          "diff_ci_lo": 0.042763157894736836,
+          "diff_ci_hi": 0.09868421052631571,
+          "p_value": 0.0,
+          "passes": true,
+          "verdict": "non-inferior (and not worse on the point estimate)"
+        }
+      },
+      "oracle_gate": {
+        "accuracy": 0.9144736842105263,
+        "llm_share": 0.20065789473684215,
+        "n_sent": 61
+      },
+      "holm": {
+        "alpha": 0.05,
+        "family_size": 4,
+        "raw_p": {
+          "paired_all": 0.028016901958946693,
+          "sent": 0.9006532462520331,
+          "cascade_vs_cheap": 0.9006532462520331,
+          "cascade_vs_incumbent": 2.7440488338470425e-05
+        },
+        "survives": {
+          "paired_all": false,
+          "sent": false,
+          "cascade_vs_cheap": false,
+          "cascade_vs_incumbent": true
+        }
+      },
+      "verdict_inputs": {
+        "cheap_ni_passes": true,
+        "cascade_ni_passes": true,
+        "cheaper": true,
+        "cascade_beats_cheap_after_holm": false
+      },
+      "verdict": "cheap-alone"
+    }
+  },
+  "mean_over_repeats": {
+    "n": 304.0,
+    "cheap_alone": {
+      "label": "CV-estimated",
+      "accuracy": 0.7971491228070176,
+      "balanced_accuracy": 0.7971491228070176,
+      "keep_rate": 0.4682017543859649
+    },
+    "paired_all": {
+      "mcnemar_cheap_vs_incumbent": {
+        "acc_a": 0.7971491228070176,
+        "acc_b": 0.7302631578947368,
+        "diff": 0.06688596491228072,
+        "n_both_right": 186.66666666666666,
+        "n_both_wrong": 26.333333333333332,
+        "n_a_only": 55.666666666666664,
+        "n_b_only": 35.333333333333336,
+        "n_discordant": 91.0,
+        "diff_ci_lo": 0.005482456140350922,
+        "diff_ci_hi": 0.1282894736842105,
+        "p_value": 0.04534614659869235,
+        "test_used": "McNemar mid-p"
+      },
+      "ni_cheap_vs_incumbent": {
+        "candidate_acc": 0.7971491228070176,
+        "baseline_acc": 0.7302631578947368,
+        "diff": 0.06688596491228072,
+        "margin": 0.01,
+        "diff_ci_lo": 0.015350877192982448,
+        "diff_ci_hi": 0.11842105263157894,
+        "p_value": 0.008066666666666668,
+        "passes": 1.0,
+        "verdict": "non-inferior (and not worse on the point estimate)"
+      }
+    },
+    "sent_subset": {
+      "n_sent": 161.66666666666666,
+      "sent_share": 0.5317982456140351,
+      "incumbent_accuracy": 0.690578274028223,
+      "cheap_accuracy": 0.6742053256876979,
+      "incumbent_accuracy_on_kept": 0.7761524011498692,
+      "cheap_accuracy_on_kept": 0.9340580603673075,
+      "mcnemar_cheap_vs_incumbent": {
+        "acc_a": 0.6742053256876979,
+        "acc_b": 0.690578274028223,
+        "diff": -0.01637294834052505,
+        "n_both_right": 80.33333333333333,
+        "n_both_wrong": 20.666666666666668,
+        "n_a_only": 29.333333333333332,
+        "n_b_only": 31.333333333333332,
+        "n_discordant": 60.666666666666664,
+        "diff_ci_lo": -0.11004268633358721,
+        "diff_ci_hi": 0.08152545978736558,
+        "p_value": 0.6124798472070511,
+        "test_used": "McNemar mid-p"
+      }
+    },
+    "cascade": {
+      "accuracy": 0.8037280701754387,
+      "balanced_accuracy": 0.8037280701754387,
+      "llm_share": 0.5317982456140351,
+      "n_sent": 161.66666666666666,
+      "cost_per_1k_items_usd": 0.0839045906552978,
+      "mcnemar_vs_cheap": {
+        "acc_a": 0.8037280701754387,
+        "acc_b": 0.7971491228070176,
+        "diff": 0.006578947368421018,
+        "n_both_right": 213.0,
+        "n_both_wrong": 30.333333333333332,
+        "n_a_only": 31.333333333333332,
+        "n_b_only": 29.333333333333332,
+        "n_discordant": 60.666666666666664,
+        "diff_ci_lo": -0.042763157894736836,
+        "diff_ci_hi": 0.05701754385964911,
+        "p_value": 0.6124798472070511,
+        "test_used": "McNemar mid-p"
+      },
+      "ni_vs_cheap": {
+        "candidate_acc": 0.8037280701754387,
+        "baseline_acc": 0.7971491228070176,
+        "diff": 0.006578947368421018,
+        "margin": 0.01,
+        "diff_ci_lo": -0.03508771929824561,
+        "diff_ci_hi": 0.048245614035087724,
+        "p_value": 0.28496666666666665,
+        "passes": 0.3333333333333333,
+        "verdict": null
+      },
+      "mcnemar_vs_incumbent": {
+        "acc_a": 0.8037280701754387,
+        "acc_b": 0.7302631578947368,
+        "diff": 0.07346491228070173,
+        "n_both_right": 218.0,
+        "n_both_wrong": 55.666666666666664,
+        "n_a_only": 26.333333333333332,
+        "n_b_only": 4.0,
+        "n_discordant": 30.333333333333332,
+        "diff_ci_lo": 0.03947368421052633,
+        "diff_ci_hi": 0.10855263157894739,
+        "p_value": 2.6407845628758237e-05,
+        "test_used": "McNemar mid-p"
+      },
+      "ni_vs_incumbent": {
+        "candidate_acc": 0.8037280701754387,
+        "baseline_acc": 0.7302631578947368,
+        "diff": 0.07346491228070173,
+        "margin": 0.01,
+        "diff_ci_lo": 0.044956140350877215,
+        "diff_ci_hi": 0.10307017543859646,
+        "p_value": 0.0,
+        "passes": 1.0,
+        "verdict": "non-inferior (and not worse on the point estimate)"
+      }
+    },
+    "oracle_gate": {
+      "accuracy": 0.913377192982456,
+      "llm_share": 0.20285087719298245,
+      "n_sent": 61.666666666666664
+    },
+    "holm": {
+      "alpha": 0.05000000000000001,
+      "family_size": 4.0,
+      "raw_p": {
+        "paired_all": 0.04534614659869235,
+        "sent": 0.6124798472070511,
+        "cascade_vs_cheap": 0.6124798472070511,
+        "cascade_vs_incumbent": 2.6407845628758237e-05
+      },
+      "survives": {
+        "paired_all": 0.3333333333333333,
+        "sent": 0.0,
+        "cascade_vs_cheap": 0.0,
+        "cascade_vs_incumbent": 1.0
+      }
+    },
+    "verdict_inputs": {
+      "cheap_ni_passes": 1.0,
+      "cascade_ni_passes": 1.0,
+      "cheaper": 1.0,
+      "cascade_beats_cheap_after_holm": 0.0
+    },
+    "verdict": "cheap-alone"
+  },
+  "per_repeat_verdicts": [
+    "cheap-alone",
+    "cheap-alone",
+    "cheap-alone"
+  ],
+  "verdict": "cheap-alone",
+  "meta": {
+    "file_a": "results_phase2_cv/per_item/opp115_data_retention__embed_base_logreg.csv",
+    "file_b": "results_stage1/incumbent/opp115_data_retention__gpt-oss-120b-fireworks.csv"
+  }
+}

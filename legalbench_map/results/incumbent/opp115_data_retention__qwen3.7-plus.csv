@@ -1,0 +1,11 @@
+task,model_key,item_idx,text_sha256,gold,raw_output,pred,parse_ok,in_tokens,out_tokens,cached_tokens,cost_usd,latency_s,ts
+opp115_data_retention,qwen3.7-plus,2,94284e1d7b10fa6117e24745885f4a5c871d995ca98a16179c63cacb7e9c8618,no,<error: NotFoundError>,,0,0,0,0,0.0000000000,0.119,2026-09-11T20:54:12+00:00
+opp115_data_retention,qwen3.7-plus,5,bae4eb887d877f453aee88d3761b630e4bc7ff917be76cb60950cca3ae6c909d,yes,<error: NotFoundError>,,0,0,0,0,0.0000000000,0.110,2026-09-11T20:54:12+00:00
+opp115_data_retention,qwen3.7-plus,1,ca069ace0fea7074fac7e44b33121935734dd94f589cc9069a738b5884a0f116,no,<error: NotFoundError>,,0,0,0,0,0.0000000000,0.125,2026-09-11T20:54:12+00:00
+opp115_data_retention,qwen3.7-plus,4,be54e70c44eb94e44c82413eb316abd303bc0920653e459cc81b65dc610c2c47,yes,<error: NotFoundError>,,0,0,0,0,0.0000000000,0.115,2026-09-11T20:54:12+00:00
+opp115_data_retention,qwen3.7-plus,3,ee7f763b4da0bbf780148ff43363b2a907297b4f98c76d7c1e1d2869878a70f8,yes,<error: NotFoundError>,,0,0,0,0,0.0000000000,0.121,2026-09-11T20:54:12+00:00
+opp115_data_retention,qwen3.7-plus,0,e783d6e5426c4d132ca1198992b63a2b77013808d63e267b499744a4c5d1b11b,yes,<error: NotFoundError>,,0,0,0,0,0.0000000000,0.138,2026-09-11T20:54:12+00:00
+opp115_data_retention,qwen3.7-plus,6,ffcbe512035ce904259b64a9212131a8ddb5ef6916eb7f217c64a5658bd672fd,yes,<error: NotFoundError>,,0,0,0,0,0.0000000000,0.147,2026-09-11T20:54:12+00:00
+opp115_data_retention,qwen3.7-plus,7,9e061b3940805235e0301ddc59cdad769cb39c4672fdac340725b065cca9eb76,no,<error: NotFoundError>,,0,0,0,0,0.0000000000,0.150,2026-09-11T20:54:12+00:00
+opp115_data_retention,qwen3.7-plus,8,11dbaf4848acf49d21fffc81b9b0ac39e736808cb102bd24ec485e1c9793ead1,no,<error: NotFoundError>,,0,0,0,0,0.0000000000,0.045,2026-09-11T20:54:12+00:00
+opp115_data_retention,qwen3.7-plus,9,b35466aaf2aa88600ce3febc4691f6c33a5a185d118a53da03fd134b474427c7,yes,<error: NotFoundError>,,0,0,0,0,0.0000000000,0.052,2026-09-11T20:54:12+00:00

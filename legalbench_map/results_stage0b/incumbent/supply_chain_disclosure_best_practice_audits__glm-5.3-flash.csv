@@ -1,0 +1,11 @@
+task,model_key,item_idx,text_sha256,gold,raw_output,pred,parse_ok,in_tokens,out_tokens,cached_tokens,cost_usd,latency_s,ts
+supply_chain_disclosure_best_practice_audits,glm-5.3-flash,0,9d54e6c772949bfb6b364e2d7006fb131ac4294d6529566b2d88c78014eb6a1d,yes,Yes,yes,1,751,96,0,0.0001606500,1.369,2026-09-11T21:21:08+00:00
+supply_chain_disclosure_best_practice_audits,glm-5.3-flash,1,6bd8ec1448ec24fd291dc77052268939f67f9cfea5b76bd69388e542e0b53419,yes,Yes,yes,1,678,122,0,0.0001627000,1.417,2026-09-11T21:21:08+00:00
+supply_chain_disclosure_best_practice_audits,glm-5.3-flash,2,cfd25f9be7d33e9e2626fa8f008705300a927fdffb8d298eb046111abadd5313,yes,Yes,yes,1,853,127,0,0.0001914500,1.525,2026-09-11T21:21:08+00:00
+supply_chain_disclosure_best_practice_audits,glm-5.3-flash,3,2f6b42c2613958a15c6634faad8dce008342e61c935053e805fb0f1fff7e4aa5,yes,Yes,yes,1,1048,121,0,0.0002177000,1.671,2026-09-11T21:21:08+00:00
+supply_chain_disclosure_best_practice_audits,glm-5.3-flash,4,dd521a35f676e54ddd4c10353a5b613a177a8c4ab4053780ebfac40ccda839f6,yes,Yes,yes,1,680,102,0,0.0001530000,1.229,2026-09-11T21:21:09+00:00
+supply_chain_disclosure_best_practice_audits,glm-5.3-flash,7,a3a6ab356fbf9711c2b5414d31490eead3dd8e73d43141d8c1c133c314b5f163,yes,Yes,yes,1,348,88,0,0.0000962000,1.009,2026-09-11T21:21:09+00:00
+supply_chain_disclosure_best_practice_audits,glm-5.3-flash,6,fb9db00dc94a7d11b1f1dc759bdaa0ab4132a345c4f4c79fa1b99a4f3feabec7,yes,Yes,yes,1,514,111,0,0.0001326000,1.571,2026-09-11T21:21:10+00:00
+supply_chain_disclosure_best_practice_audits,glm-5.3-flash,9,ded19f85f9c4d9d7f469200e17647cd8ecc12c2da48288385855657ec1b5adf5,yes,Yes,yes,1,1048,87,0,0.0002007000,1.026,2026-09-11T21:21:10+00:00
+supply_chain_disclosure_best_practice_audits,glm-5.3-flash,5,33e4c0559a94c7dce28fd5c76870036003e5e62eed6cf35cdc1c63a6b0a6569f,yes,Yes,yes,1,577,148,0,0.0001605500,2.468,2026-09-11T21:21:11+00:00
+supply_chain_disclosure_best_practice_audits,glm-5.3-flash,8,7a0cea15013a413c9095a12a26a110ad23082840e0980ef5ea664df3aa587c79,yes,Yes,yes,1,749,107,0,0.0001658500,1.322,2026-09-11T21:21:11+00:00

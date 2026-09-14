@@ -1,0 +1,27 @@
+{
+  "task": "diversity_6",
+  "best_candidate": "tfidf_logreg",
+  "hyperparameters": null,
+  "hyperparameters_note": "The fixed candidate interface (fit_predict_proba -> np.ndarray) returns only probabilities, not hyperparameters; this field is populated only if the candidate module optionally exposes get_last_hyperparams(task_key), else it is null.",
+  "conformal_alpha": 0.05,
+  "conformal_quantiles_all_folds": [
+    0.9280421922488389,
+    0.9542692850695947,
+    0.9224337870544331,
+    0.6857202407580777,
+    0.5255245275774223,
+    0.7142001833727843,
+    0.7274388317071563,
+    0.7045473494105774,
+    0.9634285796183916,
+    0.9219546513646805,
+    0.9439436871344242,
+    0.961673706007734,
+    0.5815254854776712,
+    0.9004895807059208,
+    0.9469621190037404
+  ],
+  "conformal_quantile_mean_finite": 0.8254769471007631,
+  "folds": 5,
+  "repeats": 3
+}

@@ -1,0 +1,34 @@
+[project]
+name = "downshift"
+version = "0.1.0"
+description = "Drop a labeled dataset, get the cheapest model and prompt that clears your accuracy bar."
+requires-python = ">=3.10,<3.15"
+
+# Versions are the ones this was actually built and measured against on
+# 2026-09-09 (macOS 15, Apple M4 Pro). Two pins matter more than the rest:
+#   dspy>=3.3.1   -- GEPA validates its metric signature at construction and
+#                    requires exactly (gold, pred, trace, pred_name, pred_trace).
+#   transformers>=5 -- v5 removed `reference_compile` and renamed
+#                    `evaluation_strategy`/`use_mps_device`; v4 tutorials break.
+dependencies = [
+    "dspy==3.3.1",
+    "litellm==1.100.0",
+    "datasets==5.0.1",
+    "scikit-learn==1.9.0",
+    "numpy==2.5.3",
+    "scipy==1.18.1",
+    "matplotlib==3.11.1",
+    "python-dotenv",
+]
+
+[project.optional-dependencies]
+# The encoder leg. Heavy, and only needed for the fine-tuned/frozen rows.
+encoders = [
+    "torch==2.14.0",
+    "transformers==5.17.0",
+    "sentence-transformers==6.0.1",
+    "accelerate==1.15.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]

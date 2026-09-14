@@ -1,0 +1,27 @@
+{
+  "task": "opp115_data_retention",
+  "best_candidate": "embed_large_logreg",
+  "hyperparameters": null,
+  "hyperparameters_note": "The fixed candidate interface (fit_predict_proba -> np.ndarray) returns only probabilities, not hyperparameters; this field is populated only if the candidate module optionally exposes get_last_hyperparams(task_key), else it is null.",
+  "conformal_alpha": 0.05,
+  "conformal_quantiles_all_folds": [
+    0.718538761138916,
+    0.7922825695234155,
+    0.7463987843275433,
+    0.6076635718345642,
+    0.6888498273149082,
+    0.7200633883476257,
+    0.6787539720535278,
+    0.5636448692189195,
+    0.6787556612120766,
+    0.6679591536521912,
+    0.8360581522592627,
+    0.8123565791196141,
+    0.5072693975946128,
+    0.7118889305558482,
+    0.8336321711540222
+  ],
+  "conformal_quantile_mean_finite": 0.7042743859538032,
+  "folds": 5,
+  "repeats": 3
+}

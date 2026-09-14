@@ -1,0 +1,27 @@
+{
+  "task": "opp115_user_access,_edit_and_deletion",
+  "best_candidate": "tfidf_logreg",
+  "hyperparameters": null,
+  "hyperparameters_note": "The fixed candidate interface (fit_predict_proba -> np.ndarray) returns only probabilities, not hyperparameters; this field is populated only if the candidate module optionally exposes get_last_hyperparams(task_key), else it is null.",
+  "conformal_alpha": 0.05,
+  "conformal_quantiles_all_folds": [
+    0.5741991869996037,
+    0.7388112420428474,
+    0.6201594715138699,
+    0.5232528117156346,
+    0.7636183031403805,
+    0.6029058827088836,
+    0.8161246649071369,
+    0.5559856207990999,
+    0.7329388409419919,
+    0.6747818365572426,
+    0.5325530016600122,
+    0.5253838185408106,
+    0.6455455488003337,
+    0.5466648740413109,
+    0.5228479489030537
+  ],
+  "conformal_quantile_mean_finite": 0.6250515368848142,
+  "folds": 5,
+  "repeats": 3
+}

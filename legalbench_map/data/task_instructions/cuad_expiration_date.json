@@ -1,0 +1,9 @@
+{
+  "task": "cuad_expiration_date",
+  "readme_description": "This is a binary classification task in which the model must determine if a contractual clause falls under the category of \"Expiration Date\".",
+  "base_prompt_preamble": "Does the clause specify the date upon which the initial term expires?",
+  "labels": [
+    "no",
+    "yes"
+  ]
+}

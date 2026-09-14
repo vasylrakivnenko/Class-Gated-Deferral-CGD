@@ -1,0 +1,4 @@
+task,model_key,item_idx,text_sha256,gold,raw_output,pred,parse_ok,in_tokens,out_tokens,cached_tokens,cost_usd,latency_s,ts
+opp115_data_retention,glm-5.3-flash,2,94284e1d7b10fa6117e24745885f4a5c871d995ca98a16179c63cacb7e9c8618,no,,,0,532,64,0,0.0001118000,1.117,2026-09-11T20:34:57+00:00
+opp115_data_retention,glm-5.3-flash,0,e783d6e5426c4d132ca1198992b63a2b77013808d63e267b499744a4c5d1b11b,yes,,,0,505,64,0,0.0001077500,1.187,2026-09-11T20:34:57+00:00
+opp115_data_retention,glm-5.3-flash,1,ca069ace0fea7074fac7e44b33121935734dd94f589cc9069a738b5884a0f116,no,,,0,505,64,0,0.0001077500,1.243,2026-09-11T20:34:57+00:00

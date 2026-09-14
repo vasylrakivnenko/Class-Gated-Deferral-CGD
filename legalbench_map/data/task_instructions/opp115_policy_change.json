@@ -1,0 +1,9 @@
+{
+  "task": "opp115_policy_change",
+  "readme_description": "This is a binary classification task in which the LLM must answer the following annotation intent for clauses in privacy policies.\n\n```text\nDoes the clause describe if and how users will be informed about changes to the privacy policy?\n```",
+  "base_prompt_preamble": "Does the clause describe if and how users will be informed about changes to the privacy policy?",
+  "labels": [
+    "no",
+    "yes"
+  ]
+}

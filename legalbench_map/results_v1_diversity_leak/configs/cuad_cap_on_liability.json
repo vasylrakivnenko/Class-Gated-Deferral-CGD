@@ -1,0 +1,27 @@
+{
+  "task": "cuad_cap_on_liability",
+  "best_candidate": "tfidf_logreg",
+  "hyperparameters": null,
+  "hyperparameters_note": "The fixed candidate interface (fit_predict_proba -> np.ndarray) returns only probabilities, not hyperparameters; this field is populated only if the candidate module optionally exposes get_last_hyperparams(task_key), else it is null.",
+  "conformal_alpha": 0.05,
+  "conformal_quantiles_all_folds": [
+    0.41648863249783175,
+    0.34363083643382475,
+    0.4773223035785189,
+    0.39246605180747063,
+    0.4948403242783612,
+    0.4582854510769502,
+    0.4018443670462659,
+    0.45948155759850995,
+    0.36381367367640316,
+    0.4281225663083299,
+    0.34696046411817805,
+    0.3703016172592335,
+    0.34712407753136865,
+    0.41334704382549936,
+    0.3168633110610959
+  ],
+  "conformal_quantile_mean_finite": 0.40205948520652274,
+  "folds": 5,
+  "repeats": 3
+}

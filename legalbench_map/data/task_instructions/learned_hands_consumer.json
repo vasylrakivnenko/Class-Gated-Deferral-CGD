@@ -1,0 +1,9 @@
+{
+  "task": "learned_hands_consumer",
+  "readme_description": "This is a binary classification task in which the model must determine if a user's post discusses issues people face regarding money, insurance, consumer goods and contracts, taxes, and small claims about quality of service.",
+  "base_prompt_preamble": "Does the post discuss issues people face regarding money, insurance, consumer goods and contracts, taxes, and small claims about quality of service?",
+  "labels": [
+    "no",
+    "yes"
+  ]
+}

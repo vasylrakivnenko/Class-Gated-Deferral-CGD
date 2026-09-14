@@ -1,0 +1,3934 @@
+{
+  "abercrombie": {
+    "task": "abercrombie",
+    "family": "exception",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 5,
+    "n_test": 95,
+    "columns": [
+      "index",
+      "answer",
+      "text"
+    ],
+    "raw_value_counts_test": {
+      "generic": 19,
+      "descriptive": 19,
+      "suggestive": 19,
+      "arbitrary": 19,
+      "fanciful": 19
+    },
+    "normalized_value_counts_test": {
+      "generic": 19,
+      "descriptive": 19,
+      "suggestive": 19,
+      "arbitrary": 19,
+      "fanciful": 19
+    },
+    "n_classes_normalized": 5,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "contract_nli_limited_use": {
+    "task": "contract_nli_limited_use",
+    "family": "contract_nli",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 8,
+    "n_test": 208,
+    "columns": [
+      "index",
+      "answer",
+      "text",
+      "document_name"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 97,
+      "No": 111
+    },
+    "normalized_value_counts_test": {
+      "yes": 97,
+      "no": 111
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "contract_nli_survival_of_obligations": {
+    "task": "contract_nli_survival_of_obligations",
+    "family": "contract_nli",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 8,
+    "n_test": 157,
+    "columns": [
+      "index",
+      "answer",
+      "text",
+      "document_name"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 74,
+      "No": 83
+    },
+    "normalized_value_counts_test": {
+      "yes": 74,
+      "no": 83
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "contract_nli_permissible_acquirement_of_similar_information": {
+    "task": "contract_nli_permissible_acquirement_of_similar_information",
+    "family": "contract_nli",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 8,
+    "n_test": 178,
+    "columns": [
+      "index",
+      "answer",
+      "text",
+      "document_name"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 89,
+      "No": 89
+    },
+    "normalized_value_counts_test": {
+      "yes": 89,
+      "no": 89
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "contract_nli_no_licensing": {
+    "task": "contract_nli_no_licensing",
+    "family": "contract_nli",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 8,
+    "n_test": 162,
+    "columns": [
+      "index",
+      "answer",
+      "text",
+      "document_name"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 80,
+      "No": 82
+    },
+    "normalized_value_counts_test": {
+      "yes": 80,
+      "no": 82
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "contract_nli_notice_on_compelled_disclosure": {
+    "task": "contract_nli_notice_on_compelled_disclosure",
+    "family": "contract_nli",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 8,
+    "n_test": 142,
+    "columns": [
+      "index",
+      "answer",
+      "text",
+      "document_name"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 71,
+      "No": 71
+    },
+    "normalized_value_counts_test": {
+      "yes": 71,
+      "no": 71
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "contract_nli_confidentiality_of_agreement": {
+    "task": "contract_nli_confidentiality_of_agreement",
+    "family": "contract_nli",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 8,
+    "n_test": 82,
+    "columns": [
+      "index",
+      "answer",
+      "text",
+      "document_name"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 41,
+      "No": 41
+    },
+    "normalized_value_counts_test": {
+      "yes": 41,
+      "no": 41
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "contract_nli_explicit_identification": {
+    "task": "contract_nli_explicit_identification",
+    "family": "contract_nli",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 8,
+    "n_test": 109,
+    "columns": [
+      "index",
+      "answer",
+      "text",
+      "document_name"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 20,
+      "No": 89
+    },
+    "normalized_value_counts_test": {
+      "yes": 20,
+      "no": 89
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "cuad_affiliate_license-licensee": {
+    "task": "cuad_affiliate_license-licensee",
+    "family": "cuad",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 6,
+    "n_test": 198,
+    "columns": [
+      "index",
+      "text",
+      "answer",
+      "document_name"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 99,
+      "No": 99
+    },
+    "normalized_value_counts_test": {
+      "yes": 99,
+      "no": 99
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "contract_nli_sharing_with_employees": {
+    "task": "contract_nli_sharing_with_employees",
+    "family": "contract_nli",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 8,
+    "n_test": 170,
+    "columns": [
+      "index",
+      "answer",
+      "text",
+      "document_name"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 88,
+      "No": 82
+    },
+    "normalized_value_counts_test": {
+      "yes": 88,
+      "no": 82
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "contract_nli_inclusion_of_verbally_conveyed_information": {
+    "task": "contract_nli_inclusion_of_verbally_conveyed_information",
+    "family": "contract_nli",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 8,
+    "n_test": 139,
+    "columns": [
+      "index",
+      "answer",
+      "text",
+      "document_name"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 68,
+      "No": 71
+    },
+    "normalized_value_counts_test": {
+      "yes": 68,
+      "no": 71
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "contract_nli_permissible_post-agreement_possession": {
+    "task": "contract_nli_permissible_post-agreement_possession",
+    "family": "contract_nli",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 8,
+    "n_test": 111,
+    "columns": [
+      "index",
+      "answer",
+      "text",
+      "document_name"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 28,
+      "No": 83
+    },
+    "normalized_value_counts_test": {
+      "yes": 28,
+      "no": 83
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "contract_nli_sharing_with_third-parties": {
+    "task": "contract_nli_sharing_with_third-parties",
+    "family": "contract_nli",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 8,
+    "n_test": 180,
+    "columns": [
+      "index",
+      "answer",
+      "text",
+      "document_name"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 71,
+      "No": 109
+    },
+    "normalized_value_counts_test": {
+      "yes": 71,
+      "no": 109
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "contract_nli_permissible_development_of_similar_information": {
+    "task": "contract_nli_permissible_development_of_similar_information",
+    "family": "contract_nli",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 8,
+    "n_test": 136,
+    "columns": [
+      "index",
+      "answer",
+      "text",
+      "document_name"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 68,
+      "No": 68
+    },
+    "normalized_value_counts_test": {
+      "yes": 68,
+      "no": 68
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "contract_nli_permissible_copy": {
+    "task": "contract_nli_permissible_copy",
+    "family": "contract_nli",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 8,
+    "n_test": 87,
+    "columns": [
+      "index",
+      "answer",
+      "text",
+      "document_name"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 18,
+      "No": 69
+    },
+    "normalized_value_counts_test": {
+      "yes": 18,
+      "no": 69
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "contract_nli_return_of_confidential_information": {
+    "task": "contract_nli_return_of_confidential_information",
+    "family": "contract_nli",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 8,
+    "n_test": 66,
+    "columns": [
+      "index",
+      "answer",
+      "text",
+      "document_name"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 32,
+      "No": 34
+    },
+    "normalized_value_counts_test": {
+      "yes": 32,
+      "no": 34
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "cuad_audit_rights": {
+    "task": "cuad_audit_rights",
+    "family": "cuad",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 6,
+    "n_test": 1216,
+    "columns": [
+      "index",
+      "text",
+      "answer",
+      "document_name"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 608,
+      "No": 608
+    },
+    "normalized_value_counts_test": {
+      "yes": 608,
+      "no": 608
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "cuad_affiliate_license-licensor": {
+    "task": "cuad_affiliate_license-licensor",
+    "family": "cuad",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 6,
+    "n_test": 88,
+    "columns": [
+      "index",
+      "text",
+      "answer",
+      "document_name"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 44,
+      "No": 44
+    },
+    "normalized_value_counts_test": {
+      "yes": 44,
+      "no": 44
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "cuad_anti-assignment": {
+    "task": "cuad_anti-assignment",
+    "family": "cuad",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 6,
+    "n_test": 1172,
+    "columns": [
+      "index",
+      "text",
+      "answer",
+      "document_name"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 586,
+      "No": 586
+    },
+    "normalized_value_counts_test": {
+      "yes": 586,
+      "no": 586
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "cuad_competitive_restriction_exception": {
+    "task": "cuad_competitive_restriction_exception",
+    "family": "cuad",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 6,
+    "n_test": 220,
+    "columns": [
+      "index",
+      "text",
+      "answer",
+      "document_name"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 110,
+      "No": 110
+    },
+    "normalized_value_counts_test": {
+      "yes": 110,
+      "no": 110
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "cuad_change_of_control": {
+    "task": "cuad_change_of_control",
+    "family": "cuad",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 6,
+    "n_test": 416,
+    "columns": [
+      "index",
+      "text",
+      "answer",
+      "document_name"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 208,
+      "No": 208
+    },
+    "normalized_value_counts_test": {
+      "yes": 208,
+      "no": 208
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "cuad_irrevocable_or_perpetual_license": {
+    "task": "cuad_irrevocable_or_perpetual_license",
+    "family": "cuad",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 6,
+    "n_test": 280,
+    "columns": [
+      "index",
+      "text",
+      "answer",
+      "document_name"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 140,
+      "No": 140
+    },
+    "normalized_value_counts_test": {
+      "yes": 140,
+      "no": 140
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "cuad_cap_on_liability": {
+    "task": "cuad_cap_on_liability",
+    "family": "cuad",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 6,
+    "n_test": 1246,
+    "columns": [
+      "index",
+      "text",
+      "answer",
+      "document_name"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 623,
+      "No": 623
+    },
+    "normalized_value_counts_test": {
+      "yes": 623,
+      "no": 623
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "cuad_expiration_date": {
+    "task": "cuad_expiration_date",
+    "family": "cuad",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 6,
+    "n_test": 876,
+    "columns": [
+      "index",
+      "text",
+      "answer",
+      "document_name"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 438,
+      "No": 438
+    },
+    "normalized_value_counts_test": {
+      "yes": 438,
+      "no": 438
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "cuad_ip_ownership_assignment": {
+    "task": "cuad_ip_ownership_assignment",
+    "family": "cuad",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 6,
+    "n_test": 576,
+    "columns": [
+      "index",
+      "text",
+      "answer",
+      "document_name"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 288,
+      "No": 288
+    },
+    "normalized_value_counts_test": {
+      "yes": 288,
+      "no": 288
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "cuad_insurance": {
+    "task": "cuad_insurance",
+    "family": "cuad",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 6,
+    "n_test": 1030,
+    "columns": [
+      "index",
+      "text",
+      "answer",
+      "document_name"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 515,
+      "No": 515
+    },
+    "normalized_value_counts_test": {
+      "yes": 515,
+      "no": 515
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "cuad_governing_law": {
+    "task": "cuad_governing_law",
+    "family": "cuad",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 6,
+    "n_test": 876,
+    "columns": [
+      "index",
+      "text",
+      "answer",
+      "document_name"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 438,
+      "No": 438
+    },
+    "normalized_value_counts_test": {
+      "yes": 438,
+      "no": 438
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "cuad_joint_ip_ownership": {
+    "task": "cuad_joint_ip_ownership",
+    "family": "cuad",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 6,
+    "n_test": 192,
+    "columns": [
+      "index",
+      "text",
+      "answer",
+      "document_name"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 96,
+      "No": 96
+    },
+    "normalized_value_counts_test": {
+      "yes": 96,
+      "no": 96
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "cuad_effective_date": {
+    "task": "cuad_effective_date",
+    "family": "cuad",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 6,
+    "n_test": 236,
+    "columns": [
+      "index",
+      "text",
+      "answer",
+      "document_name"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 118,
+      "No": 118
+    },
+    "normalized_value_counts_test": {
+      "yes": 118,
+      "no": 118
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "cuad_covenant_not_to_sue": {
+    "task": "cuad_covenant_not_to_sue",
+    "family": "cuad",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 6,
+    "n_test": 308,
+    "columns": [
+      "index",
+      "text",
+      "answer",
+      "document_name"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 154,
+      "No": 154
+    },
+    "normalized_value_counts_test": {
+      "yes": 154,
+      "no": 154
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "cuad_exclusivity": {
+    "task": "cuad_exclusivity",
+    "family": "cuad",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 6,
+    "n_test": 762,
+    "columns": [
+      "index",
+      "text",
+      "answer",
+      "document_name"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 381,
+      "No": 381
+    },
+    "normalized_value_counts_test": {
+      "yes": 381,
+      "no": 381
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "cuad_license_grant": {
+    "task": "cuad_license_grant",
+    "family": "cuad",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 6,
+    "n_test": 1396,
+    "columns": [
+      "index",
+      "text",
+      "answer",
+      "document_name"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 698,
+      "No": 698
+    },
+    "normalized_value_counts_test": {
+      "yes": 698,
+      "no": 698
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "cuad_liquidated_damages": {
+    "task": "cuad_liquidated_damages",
+    "family": "cuad",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 6,
+    "n_test": 220,
+    "columns": [
+      "index",
+      "text",
+      "answer",
+      "document_name"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 110,
+      "No": 110
+    },
+    "normalized_value_counts_test": {
+      "yes": 110,
+      "no": 110
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "cuad_minimum_commitment": {
+    "task": "cuad_minimum_commitment",
+    "family": "cuad",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 6,
+    "n_test": 772,
+    "columns": [
+      "index",
+      "text",
+      "answer",
+      "document_name"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 386,
+      "No": 386
+    },
+    "normalized_value_counts_test": {
+      "yes": 386,
+      "no": 386
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "cuad_most_favored_nation": {
+    "task": "cuad_most_favored_nation",
+    "family": "cuad",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 6,
+    "n_test": 64,
+    "columns": [
+      "index",
+      "text",
+      "answer",
+      "document_name"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 32,
+      "No": 32
+    },
+    "normalized_value_counts_test": {
+      "yes": 32,
+      "no": 32
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "cuad_no-solicit_of_customers": {
+    "task": "cuad_no-solicit_of_customers",
+    "family": "cuad",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 6,
+    "n_test": 84,
+    "columns": [
+      "index",
+      "text",
+      "answer",
+      "document_name"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 42,
+      "No": 42
+    },
+    "normalized_value_counts_test": {
+      "yes": 42,
+      "no": 42
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "cuad_non-compete": {
+    "task": "cuad_non-compete",
+    "family": "cuad",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 6,
+    "n_test": 442,
+    "columns": [
+      "index",
+      "text",
+      "answer",
+      "document_name"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 221,
+      "No": 221
+    },
+    "normalized_value_counts_test": {
+      "yes": 221,
+      "no": 221
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "cuad_post-termination_services": {
+    "task": "cuad_post-termination_services",
+    "family": "cuad",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 6,
+    "n_test": 808,
+    "columns": [
+      "index",
+      "text",
+      "answer",
+      "document_name"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 404,
+      "No": 404
+    },
+    "normalized_value_counts_test": {
+      "yes": 404,
+      "no": 404
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "cuad_non-disparagement": {
+    "task": "cuad_non-disparagement",
+    "family": "cuad",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 6,
+    "n_test": 100,
+    "columns": [
+      "index",
+      "text",
+      "answer",
+      "document_name"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 50,
+      "No": 50
+    },
+    "normalized_value_counts_test": {
+      "yes": 50,
+      "no": 50
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "cuad_price_restrictions": {
+    "task": "cuad_price_restrictions",
+    "family": "cuad",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 6,
+    "n_test": 46,
+    "columns": [
+      "index",
+      "text",
+      "answer",
+      "document_name"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 23,
+      "No": 23
+    },
+    "normalized_value_counts_test": {
+      "yes": 23,
+      "no": 23
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "cuad_no-solicit_of_employees": {
+    "task": "cuad_no-solicit_of_employees",
+    "family": "cuad",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 6,
+    "n_test": 142,
+    "columns": [
+      "index",
+      "text",
+      "answer",
+      "document_name"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 71,
+      "No": 71
+    },
+    "normalized_value_counts_test": {
+      "yes": 71,
+      "no": 71
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "cuad_renewal_term": {
+    "task": "cuad_renewal_term",
+    "family": "cuad",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 6,
+    "n_test": 386,
+    "columns": [
+      "index",
+      "text",
+      "answer",
+      "document_name"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 193,
+      "No": 193
+    },
+    "normalized_value_counts_test": {
+      "yes": 193,
+      "no": 193
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "cuad_rofr-rofo-rofn": {
+    "task": "cuad_rofr-rofo-rofn",
+    "family": "cuad",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 6,
+    "n_test": 690,
+    "columns": [
+      "index",
+      "text",
+      "answer",
+      "document_name"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 345,
+      "No": 345
+    },
+    "normalized_value_counts_test": {
+      "yes": 345,
+      "no": 345
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "cuad_notice_period_to_terminate_renewal": {
+    "task": "cuad_notice_period_to_terminate_renewal",
+    "family": "cuad",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 6,
+    "n_test": 222,
+    "columns": [
+      "index",
+      "text",
+      "answer",
+      "document_name"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 111,
+      "No": 111
+    },
+    "normalized_value_counts_test": {
+      "yes": 111,
+      "no": 111
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "cuad_termination_for_convenience": {
+    "task": "cuad_termination_for_convenience",
+    "family": "cuad",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 6,
+    "n_test": 430,
+    "columns": [
+      "index",
+      "text",
+      "answer",
+      "document_name"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 215,
+      "No": 215
+    },
+    "normalized_value_counts_test": {
+      "yes": 215,
+      "no": 215
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "cuad_non-transferable_license": {
+    "task": "cuad_non-transferable_license",
+    "family": "cuad",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 6,
+    "n_test": 542,
+    "columns": [
+      "index",
+      "text",
+      "answer",
+      "document_name"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 271,
+      "No": 271
+    },
+    "normalized_value_counts_test": {
+      "yes": 271,
+      "no": 271
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "cuad_source_code_escrow": {
+    "task": "cuad_source_code_escrow",
+    "family": "cuad",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 6,
+    "n_test": 118,
+    "columns": [
+      "index",
+      "text",
+      "answer",
+      "document_name"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 59,
+      "No": 59
+    },
+    "normalized_value_counts_test": {
+      "yes": 59,
+      "no": 59
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "cuad_revenue-profit_sharing": {
+    "task": "cuad_revenue-profit_sharing",
+    "family": "cuad",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 6,
+    "n_test": 774,
+    "columns": [
+      "index",
+      "text",
+      "answer",
+      "document_name"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 387,
+      "No": 387
+    },
+    "normalized_value_counts_test": {
+      "yes": 387,
+      "no": 387
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "diversity_1": {
+    "task": "diversity_1",
+    "family": "exception",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 6,
+    "n_test": 300,
+    "columns": [
+      "index",
+      "text",
+      "answer",
+      "parties_are_diverse",
+      "aic_is_met"
+    ],
+    "raw_value_counts_test": {
+      "No": 229,
+      "Yes": 71
+    },
+    "normalized_value_counts_test": {
+      "no": 229,
+      "yes": 71
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text",
+      "parties_are_diverse",
+      "aic_is_met"
+    ]
+  },
+  "cuad_third_party_beneficiary": {
+    "task": "cuad_third_party_beneficiary",
+    "family": "cuad",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 6,
+    "n_test": 68,
+    "columns": [
+      "index",
+      "text",
+      "answer",
+      "document_name"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 34,
+      "No": 34
+    },
+    "normalized_value_counts_test": {
+      "yes": 34,
+      "no": 34
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "cuad_uncapped_liability": {
+    "task": "cuad_uncapped_liability",
+    "family": "cuad",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 6,
+    "n_test": 294,
+    "columns": [
+      "index",
+      "text",
+      "answer",
+      "document_name"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 147,
+      "No": 147
+    },
+    "normalized_value_counts_test": {
+      "yes": 147,
+      "no": 147
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "hearsay": {
+    "task": "hearsay",
+    "family": "exception",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 5,
+    "n_test": 94,
+    "columns": [
+      "index",
+      "answer",
+      "text",
+      "slice"
+    ],
+    "raw_value_counts_test": {
+      "No": 53,
+      "Yes": 41
+    },
+    "normalized_value_counts_test": {
+      "no": 53,
+      "yes": 41
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "cuad_unlimited-all-you-can-eat-license": {
+    "task": "cuad_unlimited-all-you-can-eat-license",
+    "family": "cuad",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 6,
+    "n_test": 48,
+    "columns": [
+      "index",
+      "text",
+      "answer",
+      "document_name"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 24,
+      "No": 24
+    },
+    "normalized_value_counts_test": {
+      "yes": 24,
+      "no": 24
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "cuad_volume_restriction": {
+    "task": "cuad_volume_restriction",
+    "family": "cuad",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 6,
+    "n_test": 322,
+    "columns": [
+      "index",
+      "text",
+      "answer",
+      "document_name"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 161,
+      "No": 161
+    },
+    "normalized_value_counts_test": {
+      "yes": 161,
+      "no": 161
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "diversity_2": {
+    "task": "diversity_2",
+    "family": "exception",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 6,
+    "n_test": 300,
+    "columns": [
+      "index",
+      "text",
+      "answer",
+      "parties_are_diverse",
+      "aic_is_met"
+    ],
+    "raw_value_counts_test": {
+      "No": 224,
+      "Yes": 76
+    },
+    "normalized_value_counts_test": {
+      "no": 224,
+      "yes": 76
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text",
+      "parties_are_diverse",
+      "aic_is_met"
+    ]
+  },
+  "cuad_warranty_duration": {
+    "task": "cuad_warranty_duration",
+    "family": "cuad",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 6,
+    "n_test": 320,
+    "columns": [
+      "index",
+      "text",
+      "answer",
+      "document_name"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 160,
+      "No": 160
+    },
+    "normalized_value_counts_test": {
+      "yes": 160,
+      "no": 160
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "diversity_3": {
+    "task": "diversity_3",
+    "family": "exception",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 6,
+    "n_test": 300,
+    "columns": [
+      "index",
+      "text",
+      "answer",
+      "parties_are_diverse",
+      "aic_is_met"
+    ],
+    "raw_value_counts_test": {
+      "No": 124,
+      "Yes": 176
+    },
+    "normalized_value_counts_test": {
+      "no": 124,
+      "yes": 176
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text",
+      "parties_are_diverse",
+      "aic_is_met"
+    ]
+  },
+  "diversity_4": {
+    "task": "diversity_4",
+    "family": "exception",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 6,
+    "n_test": 300,
+    "columns": [
+      "index",
+      "text",
+      "answer",
+      "parties_are_diverse",
+      "aic_is_met"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 160,
+      "No": 140
+    },
+    "normalized_value_counts_test": {
+      "yes": 160,
+      "no": 140
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text",
+      "parties_are_diverse",
+      "aic_is_met"
+    ]
+  },
+  "diversity_5": {
+    "task": "diversity_5",
+    "family": "exception",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 6,
+    "n_test": 300,
+    "columns": [
+      "index",
+      "text",
+      "answer",
+      "parties_are_diverse",
+      "aic_is_met"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 172,
+      "No": 128
+    },
+    "normalized_value_counts_test": {
+      "yes": 172,
+      "no": 128
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text",
+      "parties_are_diverse",
+      "aic_is_met"
+    ]
+  },
+  "learned_hands_benefits": {
+    "task": "learned_hands_benefits",
+    "family": "learned_hands",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 6,
+    "n_test": 66,
+    "columns": [
+      "index",
+      "text",
+      "answer"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 33,
+      "No": 33
+    },
+    "normalized_value_counts_test": {
+      "yes": 33,
+      "no": 33
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "learned_hands_courts": {
+    "task": "learned_hands_courts",
+    "family": "learned_hands",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 6,
+    "n_test": 192,
+    "columns": [
+      "index",
+      "text",
+      "answer"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 96,
+      "No": 96
+    },
+    "normalized_value_counts_test": {
+      "yes": 96,
+      "no": 96
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "diversity_6": {
+    "task": "diversity_6",
+    "family": "exception",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 6,
+    "n_test": 300,
+    "columns": [
+      "index",
+      "text",
+      "answer",
+      "parties_are_diverse",
+      "aic_is_met"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 159,
+      "No": 141
+    },
+    "normalized_value_counts_test": {
+      "yes": 159,
+      "no": 141
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text",
+      "parties_are_diverse",
+      "aic_is_met"
+    ]
+  },
+  "learned_hands_business": {
+    "task": "learned_hands_business",
+    "family": "learned_hands",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 6,
+    "n_test": 174,
+    "columns": [
+      "index",
+      "text",
+      "answer"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 87,
+      "No": 87
+    },
+    "normalized_value_counts_test": {
+      "yes": 87,
+      "no": 87
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "learned_hands_consumer": {
+    "task": "learned_hands_consumer",
+    "family": "learned_hands",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 6,
+    "n_test": 614,
+    "columns": [
+      "index",
+      "text",
+      "answer"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 307,
+      "No": 307
+    },
+    "normalized_value_counts_test": {
+      "yes": 307,
+      "no": 307
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "learned_hands_crime": {
+    "task": "learned_hands_crime",
+    "family": "learned_hands",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 6,
+    "n_test": 688,
+    "columns": [
+      "index",
+      "text",
+      "answer"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 344,
+      "No": 344
+    },
+    "normalized_value_counts_test": {
+      "yes": 344,
+      "no": 344
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "learned_hands_torts": {
+    "task": "learned_hands_torts",
+    "family": "learned_hands",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 6,
+    "n_test": 432,
+    "columns": [
+      "index",
+      "text",
+      "answer"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 216,
+      "No": 216
+    },
+    "normalized_value_counts_test": {
+      "yes": 216,
+      "no": 216
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "learned_hands_domestic_violence": {
+    "task": "learned_hands_domestic_violence",
+    "family": "learned_hands",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 6,
+    "n_test": 174,
+    "columns": [
+      "index",
+      "text",
+      "answer"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 87,
+      "No": 87
+    },
+    "normalized_value_counts_test": {
+      "yes": 87,
+      "no": 87
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "learned_hands_education": {
+    "task": "learned_hands_education",
+    "family": "learned_hands",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 6,
+    "n_test": 56,
+    "columns": [
+      "index",
+      "text",
+      "answer"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 28,
+      "No": 28
+    },
+    "normalized_value_counts_test": {
+      "yes": 28,
+      "no": 28
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "learned_hands_estates": {
+    "task": "learned_hands_estates",
+    "family": "learned_hands",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 6,
+    "n_test": 178,
+    "columns": [
+      "index",
+      "text",
+      "answer"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 89,
+      "No": 89
+    },
+    "normalized_value_counts_test": {
+      "yes": 89,
+      "no": 89
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "learned_hands_employment": {
+    "task": "learned_hands_employment",
+    "family": "learned_hands",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 6,
+    "n_test": 710,
+    "columns": [
+      "index",
+      "text",
+      "answer"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 355,
+      "No": 355
+    },
+    "normalized_value_counts_test": {
+      "yes": 355,
+      "no": 355
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "learned_hands_divorce": {
+    "task": "learned_hands_divorce",
+    "family": "learned_hands",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 6,
+    "n_test": 150,
+    "columns": [
+      "index",
+      "text",
+      "answer"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 75,
+      "No": 75
+    },
+    "normalized_value_counts_test": {
+      "yes": 75,
+      "no": 75
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "learned_hands_health": {
+    "task": "learned_hands_health",
+    "family": "learned_hands",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 6,
+    "n_test": 226,
+    "columns": [
+      "index",
+      "text",
+      "answer"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 113,
+      "No": 113
+    },
+    "normalized_value_counts_test": {
+      "yes": 113,
+      "no": 113
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "learned_hands_family": {
+    "task": "learned_hands_family",
+    "family": "learned_hands",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 6,
+    "n_test": 2265,
+    "columns": [
+      "index",
+      "text",
+      "answer"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 1133,
+      "No": 1132
+    },
+    "normalized_value_counts_test": {
+      "yes": 1133,
+      "no": 1132
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "learned_hands_immigration": {
+    "task": "learned_hands_immigration",
+    "family": "learned_hands",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 6,
+    "n_test": 134,
+    "columns": [
+      "index",
+      "text",
+      "answer"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 67,
+      "No": 67
+    },
+    "normalized_value_counts_test": {
+      "yes": 67,
+      "no": 67
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "maud_ability_to_consummate_concept_is_subject_to_mae_carveouts": {
+    "task": "maud_ability_to_consummate_concept_is_subject_to_mae_carveouts",
+    "family": "maud",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 1,
+    "n_test": 69,
+    "columns": [
+      "index",
+      "answer",
+      "text"
+    ],
+    "raw_value_counts_test": {
+      "A": 55,
+      "B": 14
+    },
+    "normalized_value_counts_test": {
+      "a": 55,
+      "b": 14
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "learned_hands_traffic": {
+    "task": "learned_hands_traffic",
+    "family": "learned_hands",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 6,
+    "n_test": 556,
+    "columns": [
+      "index",
+      "text",
+      "answer"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 278,
+      "No": 278
+    },
+    "normalized_value_counts_test": {
+      "yes": 278,
+      "no": 278
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "learned_hands_housing": {
+    "task": "learned_hands_housing",
+    "family": "learned_hands",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 6,
+    "n_test": 4494,
+    "columns": [
+      "index",
+      "text",
+      "answer"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 2247,
+      "No": 2247
+    },
+    "normalized_value_counts_test": {
+      "yes": 2247,
+      "no": 2247
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "maud_accuracy_of_target_capitalization_rw_(outstanding_shares)_bringdown_standard_answer": {
+    "task": "maud_accuracy_of_target_capitalization_rw_(outstanding_shares)_bringdown_standard_answer",
+    "family": "maud",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 4,
+    "n_test": 148,
+    "columns": [
+      "index",
+      "answer",
+      "text"
+    ],
+    "raw_value_counts_test": {
+      "A": 10,
+      "B": 3,
+      "C": 11,
+      "D": 124
+    },
+    "normalized_value_counts_test": {
+      "a": 10,
+      "b": 3,
+      "c": 11,
+      "d": 124
+    },
+    "n_classes_normalized": 4,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "maud_accuracy_of_fundamental_target_rws_bringdown_standard": {
+    "task": "maud_accuracy_of_fundamental_target_rws_bringdown_standard",
+    "family": "maud",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 1,
+    "n_test": 175,
+    "columns": [
+      "index",
+      "answer",
+      "text"
+    ],
+    "raw_value_counts_test": {
+      "B": 112,
+      "C": 32,
+      "A": 31
+    },
+    "normalized_value_counts_test": {
+      "b": 112,
+      "c": 32,
+      "a": 31
+    },
+    "n_classes_normalized": 3,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "maud_accuracy_of_target_general_rw_bringdown_timing_answer": {
+    "task": "maud_accuracy_of_target_general_rw_bringdown_timing_answer",
+    "family": "maud",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 1,
+    "n_test": 181,
+    "columns": [
+      "index",
+      "answer",
+      "text"
+    ],
+    "raw_value_counts_test": {
+      "B": 130,
+      "A": 51
+    },
+    "normalized_value_counts_test": {
+      "b": 130,
+      "a": 51
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "maud_additional_matching_rights_period_for_modifications_(cor)": {
+    "task": "maud_additional_matching_rights_period_for_modifications_(cor)",
+    "family": "maud",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 1,
+    "n_test": 158,
+    "columns": [
+      "index",
+      "answer",
+      "text"
+    ],
+    "raw_value_counts_test": {
+      "A": 86,
+      "B": 58,
+      "C": 4,
+      "E": 6,
+      "D": 4
+    },
+    "normalized_value_counts_test": {
+      "a": 86,
+      "b": 58,
+      "c": 4,
+      "e": 6,
+      "d": 4
+    },
+    "n_classes_normalized": 5,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "maud_buyer_consent_requirement_(ordinary_course)": {
+    "task": "maud_buyer_consent_requirement_(ordinary_course)",
+    "family": "maud",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 1,
+    "n_test": 181,
+    "columns": [
+      "index",
+      "answer",
+      "text"
+    ],
+    "raw_value_counts_test": {
+      "A": 163,
+      "B": 18
+    },
+    "normalized_value_counts_test": {
+      "a": 163,
+      "b": 18
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "maud_application_of_buyer_consent_requirement_(negative_interim_covenant)": {
+    "task": "maud_application_of_buyer_consent_requirement_(negative_interim_covenant)",
+    "family": "maud",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 1,
+    "n_test": 180,
+    "columns": [
+      "index",
+      "answer",
+      "text"
+    ],
+    "raw_value_counts_test": {
+      "B": 160,
+      "A": 20
+    },
+    "normalized_value_counts_test": {
+      "b": 160,
+      "a": 20
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "maud_change_in_law__subject_to_disproportionate_impact_modifier": {
+    "task": "maud_change_in_law__subject_to_disproportionate_impact_modifier",
+    "family": "maud",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 1,
+    "n_test": 99,
+    "columns": [
+      "index",
+      "answer",
+      "text"
+    ],
+    "raw_value_counts_test": {
+      "B": 87,
+      "A": 12
+    },
+    "normalized_value_counts_test": {
+      "b": 87,
+      "a": 12
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "maud_cor_permitted_in_response_to_intervening_event": {
+    "task": "maud_cor_permitted_in_response_to_intervening_event",
+    "family": "maud",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 1,
+    "n_test": 100,
+    "columns": [
+      "index",
+      "answer",
+      "text"
+    ],
+    "raw_value_counts_test": {
+      "A": 16,
+      "B": 84
+    },
+    "normalized_value_counts_test": {
+      "a": 16,
+      "b": 84
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "maud_changes_in_gaap_or_other_accounting_principles__subject_to_disproportionate_impact_modifier": {
+    "task": "maud_changes_in_gaap_or_other_accounting_principles__subject_to_disproportionate_impact_modifier",
+    "family": "maud",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 1,
+    "n_test": 98,
+    "columns": [
+      "index",
+      "answer",
+      "text"
+    ],
+    "raw_value_counts_test": {
+      "B": 85,
+      "A": 13
+    },
+    "normalized_value_counts_test": {
+      "b": 85,
+      "a": 13
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "maud_cor_standard_(intervening_event)": {
+    "task": "maud_cor_standard_(intervening_event)",
+    "family": "maud",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 1,
+    "n_test": 84,
+    "columns": [
+      "index",
+      "answer",
+      "text"
+    ],
+    "raw_value_counts_test": {
+      "C": 4,
+      "B": 34,
+      "D": 31,
+      "H": 8,
+      "E": 2,
+      "I": 5
+    },
+    "normalized_value_counts_test": {
+      "c": 4,
+      "b": 34,
+      "d": 31,
+      "h": 8,
+      "e": 2,
+      "i": 5
+    },
+    "n_classes_normalized": 6,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "maud_cor_standard_(superior_offer)": {
+    "task": "maud_cor_standard_(superior_offer)",
+    "family": "maud",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 1,
+    "n_test": 100,
+    "columns": [
+      "index",
+      "answer",
+      "text"
+    ],
+    "raw_value_counts_test": {
+      "D": 28,
+      "B": 37,
+      "H": 8,
+      "J": 6,
+      "C": 6,
+      "G": 4,
+      "I": 7,
+      "E": 4
+    },
+    "normalized_value_counts_test": {
+      "d": 28,
+      "b": 37,
+      "h": 8,
+      "j": 6,
+      "c": 6,
+      "g": 4,
+      "i": 7,
+      "e": 4
+    },
+    "n_classes_normalized": 8,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "maud_cor_permitted_with_board_fiduciary_determination_only": {
+    "task": "maud_cor_permitted_with_board_fiduciary_determination_only",
+    "family": "maud",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 1,
+    "n_test": 100,
+    "columns": [
+      "index",
+      "answer",
+      "text"
+    ],
+    "raw_value_counts_test": {
+      "B": 14,
+      "A": 86
+    },
+    "normalized_value_counts_test": {
+      "b": 14,
+      "a": 86
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "maud_definition_contains_knowledge_requirement_-_answer": {
+    "task": "maud_definition_contains_knowledge_requirement_-_answer",
+    "family": "maud",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 4,
+    "n_test": 124,
+    "columns": [
+      "index",
+      "answer",
+      "text"
+    ],
+    "raw_value_counts_test": {
+      "A": 65,
+      "B": 6,
+      "C": 48,
+      "D": 5
+    },
+    "normalized_value_counts_test": {
+      "a": 65,
+      "b": 6,
+      "c": 48,
+      "d": 5
+    },
+    "n_classes_normalized": 4,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "maud_definition_includes_asset_deals": {
+    "task": "maud_definition_includes_asset_deals",
+    "family": "maud",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 4,
+    "n_test": 141,
+    "columns": [
+      "index",
+      "answer",
+      "text"
+    ],
+    "raw_value_counts_test": {
+      "A": 10,
+      "B": 59,
+      "C": 68,
+      "D": 4
+    },
+    "normalized_value_counts_test": {
+      "a": 10,
+      "b": 59,
+      "c": 68,
+      "d": 4
+    },
+    "n_classes_normalized": 4,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "maud_definition_includes_stock_deals": {
+    "task": "maud_definition_includes_stock_deals",
+    "family": "maud",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 4,
+    "n_test": 142,
+    "columns": [
+      "index",
+      "answer",
+      "text"
+    ],
+    "raw_value_counts_test": {
+      "A": 4,
+      "B": 60,
+      "C": 75,
+      "D": 3
+    },
+    "normalized_value_counts_test": {
+      "a": 4,
+      "b": 60,
+      "c": 75,
+      "d": 3
+    },
+    "n_classes_normalized": 4,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "maud_fiduciary_exception_board_determination_trigger_(no_shop)": {
+    "task": "maud_fiduciary_exception_board_determination_trigger_(no_shop)",
+    "family": "maud",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 1,
+    "n_test": 179,
+    "columns": [
+      "index",
+      "answer",
+      "text"
+    ],
+    "raw_value_counts_test": {
+      "B": 165,
+      "A": 14
+    },
+    "normalized_value_counts_test": {
+      "b": 165,
+      "a": 14
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "maud_fiduciary_exception__board_determination_standard": {
+    "task": "maud_fiduciary_exception__board_determination_standard",
+    "family": "maud",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 1,
+    "n_test": 179,
+    "columns": [
+      "index",
+      "answer",
+      "text"
+    ],
+    "raw_value_counts_test": {
+      "D": 38,
+      "E": 8,
+      "H": 65,
+      "B": 46,
+      "I": 14,
+      "C": 4,
+      "F": 2,
+      "G": 2
+    },
+    "normalized_value_counts_test": {
+      "d": 38,
+      "e": 8,
+      "h": 65,
+      "b": 46,
+      "i": 14,
+      "c": 4,
+      "f": 2,
+      "g": 2
+    },
+    "n_classes_normalized": 8,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "maud_fls_(mae)_standard": {
+    "task": "maud_fls_(mae)_standard",
+    "family": "maud",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 1,
+    "n_test": 77,
+    "columns": [
+      "index",
+      "answer",
+      "text"
+    ],
+    "raw_value_counts_test": {
+      "B": 14,
+      "C": 60,
+      "E": 2,
+      "A": 1
+    },
+    "normalized_value_counts_test": {
+      "b": 14,
+      "c": 60,
+      "e": 2,
+      "a": 1
+    },
+    "n_classes_normalized": 4,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "maud_general_economic_and_financial_conditions_subject_to_disproportionate_impact_modifier": {
+    "task": "maud_general_economic_and_financial_conditions_subject_to_disproportionate_impact_modifier",
+    "family": "maud",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 1,
+    "n_test": 98,
+    "columns": [
+      "index",
+      "answer",
+      "text"
+    ],
+    "raw_value_counts_test": {
+      "B": 84,
+      "A": 14
+    },
+    "normalized_value_counts_test": {
+      "b": 84,
+      "a": 14
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "maud_financial_point_of_view_is_the_sole_consideration": {
+    "task": "maud_financial_point_of_view_is_the_sole_consideration",
+    "family": "maud",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 1,
+    "n_test": 112,
+    "columns": [
+      "index",
+      "answer",
+      "text"
+    ],
+    "raw_value_counts_test": {
+      "A": 98,
+      "B": 14
+    },
+    "normalized_value_counts_test": {
+      "a": 98,
+      "b": 14
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "maud_includes_consistent_with_past_practice": {
+    "task": "maud_includes_consistent_with_past_practice",
+    "family": "maud",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 1,
+    "n_test": 181,
+    "columns": [
+      "index",
+      "answer",
+      "text"
+    ],
+    "raw_value_counts_test": {
+      "B": 120,
+      "A": 61
+    },
+    "normalized_value_counts_test": {
+      "b": 120,
+      "a": 61
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "maud_initial_matching_rights_period_(cor)": {
+    "task": "maud_initial_matching_rights_period_(cor)",
+    "family": "maud",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 1,
+    "n_test": 158,
+    "columns": [
+      "index",
+      "answer",
+      "text"
+    ],
+    "raw_value_counts_test": {
+      "D": 87,
+      "B": 32,
+      "F": 29,
+      "E": 6,
+      "C": 4
+    },
+    "normalized_value_counts_test": {
+      "d": 87,
+      "b": 32,
+      "f": 29,
+      "e": 6,
+      "c": 4
+    },
+    "n_classes_normalized": 5,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "maud_intervening_event_-_required_to_occur_after_signing_-_answer": {
+    "task": "maud_intervening_event_-_required_to_occur_after_signing_-_answer",
+    "family": "maud",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 4,
+    "n_test": 124,
+    "columns": [
+      "index",
+      "answer",
+      "text"
+    ],
+    "raw_value_counts_test": {
+      "A": 89,
+      "B": 35
+    },
+    "normalized_value_counts_test": {
+      "a": 89,
+      "b": 35
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "maud_initial_matching_rights_period_(ftr)": {
+    "task": "maud_initial_matching_rights_period_(ftr)",
+    "family": "maud",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 1,
+    "n_test": 132,
+    "columns": [
+      "index",
+      "answer",
+      "text"
+    ],
+    "raw_value_counts_test": {
+      "D": 72,
+      "F": 30,
+      "C": 4,
+      "B": 20,
+      "E": 6
+    },
+    "normalized_value_counts_test": {
+      "d": 72,
+      "f": 30,
+      "c": 4,
+      "b": 20,
+      "e": 6
+    },
+    "n_classes_normalized": 5,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "maud_knowledge_definition": {
+    "task": "maud_knowledge_definition",
+    "family": "maud",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 4,
+    "n_test": 148,
+    "columns": [
+      "index",
+      "answer",
+      "text"
+    ],
+    "raw_value_counts_test": {
+      "A": 66,
+      "B": 82
+    },
+    "normalized_value_counts_test": {
+      "a": 66,
+      "b": 82
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "maud_liability_standard_for_no-shop_breach_by_target_non-do_representatives": {
+    "task": "maud_liability_standard_for_no-shop_breach_by_target_non-do_representatives",
+    "family": "maud",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 4,
+    "n_test": 134,
+    "columns": [
+      "index",
+      "answer",
+      "text"
+    ],
+    "raw_value_counts_test": {
+      "A": 56,
+      "B": 78
+    },
+    "normalized_value_counts_test": {
+      "a": 56,
+      "b": 78
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "maud_type_of_consideration": {
+    "task": "maud_type_of_consideration",
+    "family": "maud",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 1,
+    "n_test": 172,
+    "columns": [
+      "index",
+      "answer",
+      "text"
+    ],
+    "raw_value_counts_test": {
+      "D": 4,
+      "A": 95,
+      "B": 45,
+      "C": 28
+    },
+    "normalized_value_counts_test": {
+      "d": 4,
+      "a": 95,
+      "b": 45,
+      "c": 28
+    },
+    "n_classes_normalized": 4,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "maud_ordinary_course_efforts_standard": {
+    "task": "maud_ordinary_course_efforts_standard",
+    "family": "maud",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 1,
+    "n_test": 181,
+    "columns": [
+      "index",
+      "answer",
+      "text"
+    ],
+    "raw_value_counts_test": {
+      "B": 91,
+      "A": 62,
+      "C": 28
+    },
+    "normalized_value_counts_test": {
+      "b": 91,
+      "a": 62,
+      "c": 28
+    },
+    "n_classes_normalized": 3,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "maud_pandemic_or_other_public_health_event__subject_to_disproportionate_impact_modifier": {
+    "task": "maud_pandemic_or_other_public_health_event__subject_to_disproportionate_impact_modifier",
+    "family": "maud",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 1,
+    "n_test": 98,
+    "columns": [
+      "index",
+      "answer",
+      "text"
+    ],
+    "raw_value_counts_test": {
+      "B": 79,
+      "A": 19
+    },
+    "normalized_value_counts_test": {
+      "b": 79,
+      "a": 19
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "opp115_data_retention": {
+    "task": "opp115_data_retention",
+    "family": "opp115",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 8,
+    "n_test": 304,
+    "columns": [
+      "index",
+      "answer",
+      "text"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 152,
+      "No": 152
+    },
+    "normalized_value_counts_test": {
+      "yes": 152,
+      "no": 152
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "maud_pandemic_or_other_public_health_event_specific_reference_to_pandemic-related_governmental_responses_or_measures": {
+    "task": "maud_pandemic_or_other_public_health_event_specific_reference_to_pandemic-related_governmental_responses_or_measures",
+    "family": "maud",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 1,
+    "n_test": 98,
+    "columns": [
+      "index",
+      "answer",
+      "text"
+    ],
+    "raw_value_counts_test": {
+      "B": 72,
+      "A": 26
+    },
+    "normalized_value_counts_test": {
+      "b": 72,
+      "a": 26
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "maud_relational_language_(mae)_applies_to": {
+    "task": "maud_relational_language_(mae)_applies_to",
+    "family": "maud",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 1,
+    "n_test": 90,
+    "columns": [
+      "index",
+      "answer",
+      "text"
+    ],
+    "raw_value_counts_test": {
+      "A": 69,
+      "C": 21
+    },
+    "normalized_value_counts_test": {
+      "a": 69,
+      "c": 21
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "maud_specific_performance": {
+    "task": "maud_specific_performance",
+    "family": "maud",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 1,
+    "n_test": 178,
+    "columns": [
+      "index",
+      "answer",
+      "text"
+    ],
+    "raw_value_counts_test": {
+      "B": 165,
+      "A": 13
+    },
+    "normalized_value_counts_test": {
+      "b": 165,
+      "a": 13
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "maud_tail_period_length": {
+    "task": "maud_tail_period_length",
+    "family": "maud",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 1,
+    "n_test": 179,
+    "columns": [
+      "index",
+      "answer",
+      "text"
+    ],
+    "raw_value_counts_test": {
+      "C": 163,
+      "E": 12,
+      "D": 2,
+      "A": 2
+    },
+    "normalized_value_counts_test": {
+      "c": 163,
+      "e": 12,
+      "d": 2,
+      "a": 2
+    },
+    "n_classes_normalized": 4,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "proa": {
+    "task": "proa",
+    "family": "single",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 5,
+    "n_test": 95,
+    "columns": [
+      "index",
+      "answer",
+      "text"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 47,
+      "No": 48
+    },
+    "normalized_value_counts_test": {
+      "yes": 47,
+      "no": 48
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "personal_jurisdiction": {
+    "task": "personal_jurisdiction",
+    "family": "exception",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 4,
+    "n_test": 50,
+    "columns": [
+      "index",
+      "answer",
+      "text",
+      "slice"
+    ],
+    "raw_value_counts_test": {
+      "No": 29,
+      "Yes": 21
+    },
+    "normalized_value_counts_test": {
+      "no": 29,
+      "yes": 21
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "opp115_do_not_track": {
+    "task": "opp115_do_not_track",
+    "family": "opp115",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 8,
+    "n_test": 56,
+    "columns": [
+      "index",
+      "answer",
+      "text"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 28,
+      "No": 28
+    },
+    "normalized_value_counts_test": {
+      "yes": 28,
+      "no": 28
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "opp115_data_security": {
+    "task": "opp115_data_security",
+    "family": "opp115",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 8,
+    "n_test": 738,
+    "columns": [
+      "index",
+      "answer",
+      "text"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 369,
+      "No": 369
+    },
+    "normalized_value_counts_test": {
+      "yes": 369,
+      "no": 369
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "overruling": {
+    "task": "overruling",
+    "family": "single",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 6,
+    "n_test": 2394,
+    "columns": [
+      "index",
+      "answer",
+      "text"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 1216,
+      "No": 1178
+    },
+    "normalized_value_counts_test": {
+      "yes": 1216,
+      "no": 1178
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "opp115_policy_change": {
+    "task": "opp115_policy_change",
+    "family": "opp115",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 8,
+    "n_test": 362,
+    "columns": [
+      "index",
+      "answer",
+      "text"
+    ],
+    "raw_value_counts_test": {
+      "No": 181,
+      "Yes": 181
+    },
+    "normalized_value_counts_test": {
+      "no": 181,
+      "yes": 181
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "opp115_first_party_collection_use": {
+    "task": "opp115_first_party_collection_use",
+    "family": "opp115",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 8,
+    "n_test": 3034,
+    "columns": [
+      "index",
+      "answer",
+      "text"
+    ],
+    "raw_value_counts_test": {
+      "No": 1517,
+      "Yes": 1517
+    },
+    "normalized_value_counts_test": {
+      "no": 1517,
+      "yes": 1517
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "opp115_international_and_specific_audiences": {
+    "task": "opp115_international_and_specific_audiences",
+    "family": "opp115",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 8,
+    "n_test": 694,
+    "columns": [
+      "index",
+      "answer",
+      "text"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 347,
+      "No": 347
+    },
+    "normalized_value_counts_test": {
+      "yes": 347,
+      "no": 347
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "opp115_user_access,_edit_and_deletion": {
+    "task": "opp115_user_access,_edit_and_deletion",
+    "family": "opp115",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 8,
+    "n_test": 452,
+    "columns": [
+      "index",
+      "answer",
+      "text"
+    ],
+    "raw_value_counts_test": {
+      "No": 226,
+      "Yes": 226
+    },
+    "normalized_value_counts_test": {
+      "no": 226,
+      "yes": 226
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "opp115_third_party_sharing_collection": {
+    "task": "opp115_third_party_sharing_collection",
+    "family": "opp115",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 8,
+    "n_test": 2364,
+    "columns": [
+      "index",
+      "answer",
+      "text"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 1182,
+      "No": 1182
+    },
+    "normalized_value_counts_test": {
+      "yes": 1182,
+      "no": 1182
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "opp115_user_choice_control": {
+    "task": "opp115_user_choice_control",
+    "family": "opp115",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 8,
+    "n_test": 1254,
+    "columns": [
+      "index",
+      "answer",
+      "text"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 627,
+      "No": 627
+    },
+    "normalized_value_counts_test": {
+      "yes": 627,
+      "no": 627
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "supply_chain_disclosure_best_practice_certification": {
+    "task": "supply_chain_disclosure_best_practice_certification",
+    "family": "supply_chain_disclosure",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 8,
+    "n_test": 378,
+    "columns": [
+      "index",
+      "text",
+      "answer"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 284,
+      "No": 94
+    },
+    "normalized_value_counts_test": {
+      "yes": 284,
+      "no": 94
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "supply_chain_disclosure_best_practice_audits": {
+    "task": "supply_chain_disclosure_best_practice_audits",
+    "family": "supply_chain_disclosure",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 8,
+    "n_test": 379,
+    "columns": [
+      "index",
+      "text",
+      "answer"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 260,
+      "No": 119
+    },
+    "normalized_value_counts_test": {
+      "yes": 260,
+      "no": 119
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "supply_chain_disclosure_best_practice_accountability": {
+    "task": "supply_chain_disclosure_best_practice_accountability",
+    "family": "supply_chain_disclosure",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 8,
+    "n_test": 379,
+    "columns": [
+      "index",
+      "text",
+      "answer"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 328,
+      "No": 51
+    },
+    "normalized_value_counts_test": {
+      "yes": 328,
+      "no": 51
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "telemarketing_sales_rule": {
+    "task": "telemarketing_sales_rule",
+    "family": "single",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 4,
+    "n_test": 47,
+    "columns": [
+      "index",
+      "text",
+      "answer"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 28,
+      "No": 19
+    },
+    "normalized_value_counts_test": {
+      "yes": 28,
+      "no": 19
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "unfair_tos": {
+    "task": "unfair_tos",
+    "family": "single",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 9,
+    "n_test": 3813,
+    "columns": [
+      "text",
+      "answer",
+      "index"
+    ],
+    "raw_value_counts_test": {
+      "Other": 3454,
+      "Contract by using": 38,
+      "Unilateral termination": 70,
+      "Limitation of liability": 98,
+      "Arbitration": 15,
+      "Content removal": 25,
+      "Unilateral change": 53,
+      "Choice of law": 28,
+      "Jurisdiction": 32
+    },
+    "normalized_value_counts_test": {
+      "other": 3454,
+      "contract by using": 38,
+      "unilateral termination": 70,
+      "limitation of liability": 98,
+      "arbitration": 15,
+      "content removal": 25,
+      "unilateral change": 53,
+      "choice of law": 28,
+      "jurisdiction": 32
+    },
+    "n_classes_normalized": 9,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "supply_chain_disclosure_best_practice_verification": {
+    "task": "supply_chain_disclosure_best_practice_verification",
+    "family": "supply_chain_disclosure",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 8,
+    "n_test": 379,
+    "columns": [
+      "index",
+      "text",
+      "answer"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 213,
+      "No": 166
+    },
+    "normalized_value_counts_test": {
+      "yes": 213,
+      "no": 166
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "supply_chain_disclosure_best_practice_training": {
+    "task": "supply_chain_disclosure_best_practice_training",
+    "family": "supply_chain_disclosure",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 8,
+    "n_test": 379,
+    "columns": [
+      "index",
+      "text",
+      "answer"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 272,
+      "No": 107
+    },
+    "normalized_value_counts_test": {
+      "yes": 272,
+      "no": 107
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "supply_chain_disclosure_disclosed_audits": {
+    "task": "supply_chain_disclosure_disclosed_audits",
+    "family": "supply_chain_disclosure",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 8,
+    "n_test": 379,
+    "columns": [
+      "index",
+      "text",
+      "answer"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 344,
+      "No": 35
+    },
+    "normalized_value_counts_test": {
+      "yes": 344,
+      "no": 35
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "supply_chain_disclosure_disclosed_certification": {
+    "task": "supply_chain_disclosure_disclosed_certification",
+    "family": "supply_chain_disclosure",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 8,
+    "n_test": 378,
+    "columns": [
+      "index",
+      "text",
+      "answer"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 343,
+      "No": 35
+    },
+    "normalized_value_counts_test": {
+      "yes": 343,
+      "no": 35
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "supply_chain_disclosure_disclosed_accountability": {
+    "task": "supply_chain_disclosure_disclosed_accountability",
+    "family": "supply_chain_disclosure",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 8,
+    "n_test": 378,
+    "columns": [
+      "index",
+      "text",
+      "answer"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 357,
+      "No": 21
+    },
+    "normalized_value_counts_test": {
+      "yes": 357,
+      "no": 21
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "supply_chain_disclosure_disclosed_training": {
+    "task": "supply_chain_disclosure_disclosed_training",
+    "family": "supply_chain_disclosure",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 8,
+    "n_test": 379,
+    "columns": [
+      "index",
+      "text",
+      "answer"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 328,
+      "No": 51
+    },
+    "normalized_value_counts_test": {
+      "yes": 328,
+      "no": 51
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  },
+  "supply_chain_disclosure_disclosed_verification": {
+    "task": "supply_chain_disclosure_disclosed_verification",
+    "family": "supply_chain_disclosure",
+    "splits_present": [
+      "train",
+      "test"
+    ],
+    "n_train": 8,
+    "n_test": 379,
+    "columns": [
+      "index",
+      "text",
+      "answer"
+    ],
+    "raw_value_counts_test": {
+      "Yes": 281,
+      "No": 98
+    },
+    "normalized_value_counts_test": {
+      "yes": 281,
+      "no": 98
+    },
+    "n_classes_normalized": 2,
+    "top20_coverage_frac": 1.0,
+    "input_columns": [
+      "text"
+    ]
+  }
+}

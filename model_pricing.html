@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>downshift — model pricing &amp; results</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --surface:    #fcfcfb;
+    --surface-2:  #f3f2ef;
+    --border:     #e4e4e0;
+    --grid:       #e8e8e4;
+    --text:       #0b0b0b;
+    --text-2:     #52514e;
+    --text-muted: #8a8a87;
+    --llm:        #2a78d6;
+    --classical:  #1baf7a;
+    --encoder:    #eb6834;
+    --azure:      #2a78d6;
+    --fireworks:  #eb6834;
+    --good:       #1baf7a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --surface:    #1a1a19;
+      --surface-2:  #232322;
+      --border:     #33322f;
+      --grid:       #2c2c2a;
+      --text:       #ffffff;
+      --text-2:     #c3c2b7;
+      --text-muted: #8f8e86;
+      --llm:        #3987e5;
+      --classical:  #199e70;
+      --encoder:    #d95926;
+      --azure:      #3987e5;
+      --fireworks:  #d95926;
+      --good:       #199e70;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 32px 24px 60px;
+    background: var(--surface); color: var(--text);
+    font: 15px/1.5 -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+  .wrap { max-width: 1240px; margin: 0 auto; }
+  h1 { font-size: 25px; font-weight: 650; margin: 0 0 4px; letter-spacing: -0.01em; }
+  .sub { color: var(--text-2); font-size: 14px; margin: 0 0 22px; max-width: 90ch; }
+
+  /* ── tabs ── */
+  .tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--border); margin-bottom: 22px; }
+  .tab {
+    padding: 9px 18px; font-size: 14px; font-weight: 550; cursor: pointer;
+    color: var(--text-muted); border-bottom: 2px solid transparent; margin-bottom: -1px;
+    user-select: none; transition: color .12s, border-color .12s;
+  }
+  .tab:hover { color: var(--text-2); }
+  .tab.active { color: var(--text); border-bottom-color: var(--text); }
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* ── shared controls ── */
+  .controls { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+  .chip {
+    border: 1px solid var(--border); background: var(--surface-2); color: var(--text-2);
+    border-radius: 999px; padding: 6px 14px; font-size: 13px; cursor: pointer;
+    user-select: none; transition: background .12s, color .12s;
+  }
+  .chip.active { background: var(--text); color: var(--surface); border-color: var(--text); }
+  .ctl-group { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-2); }
+  .ctl-group label { user-select: none; }
+  .hint { font-size: 12.5px; color: var(--text-muted); }
+  input[type=range] { accent-color: var(--llm); width: 130px; vertical-align: middle; }
+
+  /* ── table ── */
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  thead th {
+    text-align: left; padding: 10px 10px; color: var(--text-2); font-weight: 600;
+    border-bottom: 1px solid var(--border); cursor: pointer; white-space: nowrap;
+    position: sticky; top: 0; background: var(--surface);
+  }
+  thead th.num, tbody td.num { text-align: right; }
+  thead th:hover { color: var(--text); }
+  thead th .arrow { font-size: 10px; opacity: .5; margin-left: 3px; }
+  tbody td { padding: 10px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tbody tr:hover { background: var(--surface-2); }
+  .model { font-weight: 600; }
+  .params { color: var(--text-2); font-variant-numeric: tabular-nums; }
+  .params.unknown { color: var(--text-muted); font-style: italic; font-weight: 400; }
+  .ctx { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .cache { display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; white-space: nowrap; }
+  .cache .dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+  .cache.yes .dot { background: var(--good); } .cache.yes { color: var(--good); }
+  .cache.no .dot { background: var(--text-muted); } .cache.no { color: var(--text-muted); }
+  .inferred { font-size: 10.5px; color: var(--text-muted); font-style: italic; }
+  .provider {
+    display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px;
+    padding: 3px 9px; border-radius: 6px; font-weight: 600; white-space: nowrap;
+  }
+  .provider.azure { background: color-mix(in srgb, var(--azure) 14%, transparent); color: var(--azure); }
+  .provider.fireworks { background: color-mix(in srgb, var(--fireworks) 14%, transparent); color: var(--fireworks); }
+  .price { font-variant-numeric: tabular-nums; font-weight: 600; }
+  .ratio { font-variant-numeric: tabular-nums; color: var(--text-2); font-size: 12.5px; }
+  .badge {
+    display: inline-block; font-size: 11px; padding: 1px 7px; border-radius: 5px;
+    background: var(--surface-2); color: var(--text-muted); border: 1px solid var(--border);
+    margin-left: 6px; white-space: nowrap;
+  }
+  .badge.dup { color: var(--good); border-color: color-mix(in srgb, var(--good) 40%, var(--border)); }
+  tfoot td { padding: 16px 10px 4px; color: var(--text-muted); font-size: 12px; border: none; }
+  a { color: var(--llm); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* ── chart ── */
+  #chartHost { position: relative; }
+  svg.chart { width: 100%; height: auto; display: block; touch-action: none; }
+  .gridline { stroke: var(--grid); stroke-width: 1; }
+  .axisline { stroke: var(--border); stroke-width: 1; }
+  .axistext { fill: var(--text-2); font-size: 11px; }
+  .axistitle { fill: var(--text-2); font-size: 12.5px; }
+  .reftext { font-size: 11.5px; }
+  .pt { cursor: pointer; }
+  .pt:hover .halo { opacity: .18; }
+  .lbl { cursor: grab; user-select: none; }
+  .lbl.dragging { cursor: grabbing; }
+  .lbl text { font-size: 12px; fill: var(--text); paint-order: stroke; stroke: var(--surface); stroke-width: 3.5px; stroke-linejoin: round; }
+  .leader { stroke: var(--text-muted); stroke-width: 1; opacity: .45; }
+  #tip {
+    position: absolute; pointer-events: none; opacity: 0; transition: opacity .1s;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px 12px; font-size: 12.5px; box-shadow: 0 6px 20px rgba(0,0,0,.13);
+    max-width: 300px; z-index: 10;
+  }
+  #tip .t-name { font-weight: 650; margin-bottom: 5px; }
+  #tip .t-row { display: flex; justify-content: space-between; gap: 14px; color: var(--text-2); }
+  #tip .t-row b { color: var(--text); font-variant-numeric: tabular-nums; font-weight: 600; }
+  #tip .t-verdict { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--border); font-size: 12px; }
+  .legend { display: flex; gap: 18px; flex-wrap: wrap; margin: 6px 0 0 4px; font-size: 13px; color: var(--text-2); }
+  .legend span { display: inline-flex; align-items: center; gap: 7px; }
+  .legend i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+  .legend i.hollow { background: transparent !important; border: 2px solid var(--text-muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>downshift — model pricing &amp; results</h1>
+  <p class="sub" id="subline">Official rate-card pricing for every candidate, and the measured cost-vs-accuracy result. <!-- replaced per task by drawChart(); kept dataset-neutral so it cannot name the wrong one before the script runs --></p>
+
+  <div class="tabs">
+    <div class="tab active" data-panel="pricing">Model pricing</div>
+    <div class="tab" data-panel="chart">Cost vs accuracy</div>
+  </div>
+
+  <!-- ══════════ PRICING PANEL ══════════ -->
+  <div class="panel active" id="panel-pricing">
+    <div class="controls">
+      <span class="chip active" data-filter="all">All (25)</span>
+      <span class="chip" data-filter="azure">MS Azure (9)</span>
+      <span class="chip" data-filter="fireworks">Fireworks (16)</span>
+    </div>
+    <table id="t">
+      <thead>
+        <tr>
+          <th data-key="model">Model<span class="arrow"></span></th>
+          <th data-key="params">Params<span class="arrow"></span></th>
+          <th data-key="provider">Provider<span class="arrow"></span></th>
+          <th class="num" data-key="ctx">Context<span class="arrow"></span></th>
+          <th data-key="cache">Caching<span class="arrow"></span></th>
+          <th class="num" data-key="in">$/1M in<span class="arrow"></span></th>
+          <th class="num" data-key="out">$/1M out<span class="arrow"></span></th>
+          <th class="num" data-key="blend">$/1M blend*<span class="arrow"></span></th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+      <tfoot>
+        <tr><td colspan="8">
+          *Blend = 0.9×in + 0.1×out — a rough proxy weighted toward input, closer to a classification workload than a 50/50 chat blend. Not a substitute for pricing off your own measured token mix.
+          Kimi K2.6 and DeepSeek V4 Flash appear on both providers so you can compare them directly — same model, different host.
+          "Caching" means the provider bills a discounted rate for repeated/cached input tokens (typically 80–90% off); every model here that lists a cached-input rate on its pricing page is marked yes.
+          Sources: <a href="https://docs.fireworks.ai/serverless/pricing" target="_blank">Fireworks serverless pricing</a>,
+          <a href="https://prices.azure.com/api/retail/prices" target="_blank">Azure Retail Prices API</a>,
+          <a href="https://platform.claude.com/docs/en/about-claude/pricing" target="_blank">Anthropic pricing</a>,
+          <a href="https://developers.openai.com/api/docs/models" target="_blank">OpenAI model docs</a>.
+        </td></tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <!-- ══════════ CHART PANEL ══════════ -->
+  <div class="panel" id="panel-chart">
+    <div class="controls">
+      <div class="ctl-group" id="dsPicker" style="margin-right:6px"><span>Dataset:</span></div>
+      <div class="ctl-group">
+        <span>Labels:</span>
+        <span class="chip" data-labels="all">All</span>
+        <span class="chip active" data-labels="story">Story only</span>
+        <span class="chip" data-labels="none">None</span>
+      </div>
+      <div class="ctl-group" style="margin-left:14px">
+        <label for="barRange">Accuracy bar</label>
+        <input type="range" id="barRange" min="0.50" max="1.00" step="0.005">
+        <b id="barVal" style="font-variant-numeric:tabular-nums"></b>
+      </div>
+      <div class="ctl-group" style="margin-left:14px">
+        <input type="checkbox" id="mlChk" checked>
+        <label for="mlChk">Show ML algorithms</label>
+      </div>
+      <div class="ctl-group">
+        <input type="checkbox" id="paretoChk">
+        <label for="paretoChk">Pareto frontier</label>
+      </div>
+      <span class="chip" id="resetBtn" style="margin-left:14px">Reset label positions</span>
+      <span class="hint">Drag any label to move it · click a dot to toggle its label</span>
+    </div>
+    <div id="chartHost">
+      <svg class="chart" id="svg" viewBox="0 0 1240 720" role="img" aria-label="Cost versus accuracy scatter plot"></svg>
+      <div id="tip"></div>
+    </div>
+    <div class="legend">
+      <span><i style="background:var(--llm)"></i>Prompted LLM</span>
+      <span><i style="background:var(--classical)"></i>Classical baseline</span>
+      <span><i style="background:var(--encoder)"></i>Trained encoder</span>
+      <span><i class="hollow"></i>below the bar (disqualified)</span>
+      <span style="color:var(--text-muted)">→ arrow = before/after GEPA optimization</span>
+      <span style="color:var(--text-muted)">◌ dashed ring = GEPA ran but kept the baseline prompt</span>
+    </div>
+    <p class="hint" id="resolutionNote" style="margin-top:16px; max-width:95ch"></p>
+  </div>
+</div>
+
+<script>
+// ══════════════════════ PRICING TABLE DATA ══════════════════════
+const ROWS = [
+  // ---- Azure AI Foundry (9 deployments on this resource) ----
+  { model:"GPT-5.4-nano",      params:null, provider:"azure", ctx:400000,  cache:true,  in:0.20, out:1.25, note:"reasoning: 0 tokens measured" },
+  { model:"GPT-5-nano",        params:null, provider:"azure", ctx:400000,  cache:true,  in:0.05, out:0.40, note:"272K max input / 128K max output; reasoning: 64 tokens measured on 1-word answer" },
+  { model:"GPT-5.4-mini",      params:null, provider:"azure", ctx:400000,  cache:true,  in:0.75, out:4.50 },
+  { model:"GPT-4.1-mini",      params:null, provider:"azure", ctx:1000000, cache:true,  in:0.40, out:1.60, note:"32,768 max output" },
+  { model:"GPT-5.2",           params:null, provider:"azure", ctx:400000,  cache:true,  in:1.75, out:14.00, note:"128K max output" },
+  { model:"DeepSeek-V4-Flash", params:null, provider:"azure", ctx:1000000, cache:true,  in:0.15, out:0.31, note:"Data Zone rate (via Fireworks-on-Azure); no Global meter found", dup:"deepseek" },
+  { model:"Kimi K2.6",         params:"1T total / 32B active (MoE, K2-family arch)", provider:"azure", ctx:262144, cache:true, in:0.95, out:4.00, note:"meter literally named 'K2.6 Thinking'; 126 tokens measured on 1-word answer", dup:"kimi26" },
+  { model:"Claude Sonnet 4.6", params:null, provider:"azure", ctx:1000000, cache:true,  in:3.00, out:15.00, note:"1M ctx confirmed for Foundry specifically (200K on other platforms); CCU billing = same per-token rate, repackaged" },
+  { model:"Claude Opus 4.8",   params:null, provider:"azure", ctx:1000000, cache:true,  in:5.00, out:25.00, note:"1M ctx confirmed for Foundry specifically; CCU billing = same per-token rate, repackaged" },
+
+  // ---- Fireworks serverless (priced catalogue) ----
+  { model:"DeepSeek V4 Flash (0731)", params:null, provider:"fireworks", ctx:1000000, cache:true, in:0.22, out:0.66, dup:"deepseek" },
+  { model:"DeepSeek V4 Pro (0813)",   params:null, provider:"fireworks", ctx:1000000, cache:true, in:1.32, out:3.96, note:"131K max output" },
+  { model:"GLM 5.3 Flash",     params:null, provider:"fireworks", ctx:1310720, cache:true, in:0.15, out:0.50 },
+  { model:"GLM 5.3",           params:null, provider:"fireworks", ctx:1000000, cache:true, in:1.40, out:4.40, note:"128K max output" },
+  { model:"GLM 5.2",           params:null, provider:"fireworks", ctx:1000000, cache:true, in:1.40, out:4.40 },
+  { model:"GLM 5.2 Fast",      params:null, provider:"fireworks", ctx:1000000, cache:true, in:2.10, out:6.60, inferred:"ctx inferred = same as GLM 5.2 (Fast is a serving tier, not a distinct model)" },
+  { model:"Kimi K3",           params:"2.8T total / 104B active (MoE, Kimi Delta Attention)", provider:"fireworks", ctx:1000000, cache:true, in:3.00, out:15.00 },
+  { model:"Kimi K3 Fast",      params:"2.8T total / 104B active (MoE)", provider:"fireworks", ctx:1000000, cache:true, in:4.50, out:22.50, inferred:"ctx inferred = same as Kimi K3 (Fast is a serving tier, not a distinct model)" },
+  { model:"Kimi K2.6",         params:"1T total / 32B active (MoE, K2-family arch)", provider:"fireworks", ctx:262144, cache:true, in:0.95, out:4.00, dup:"kimi26" },
+  { model:"Qwen 3.7 Plus",     params:null, provider:"fireworks", ctx:1000000, cache:true, in:0.40, out:1.60, note:"131,072 max output" },
+  { model:"Qwen 3.8 Max",      params:"2.4T total / 95B active (MoE, multimodal)", provider:"fireworks", ctx:1000000, cache:true, in:2.00, out:6.00, note:"128K max output" },
+  { model:"MiniMax M3",        params:null, provider:"fireworks", ctx:1000000, cache:true, in:0.30, out:1.20 },
+  { model:"GPT-OSS-120B",      params:"117B total / 5.1B active (MoE, OpenAI open-weight)", provider:"fireworks", ctx:128000, cache:true, in:0.15, out:0.60 },
+  { model:"Nemotron 3.5 Lightning 30B-A3B", params:"30B total / ~3B active (MoE, name-implied)", provider:"fireworks", ctx:1000000, cache:true, in:0.05, out:0.20, note:"has a working thinking-off switch: extra_body chat_template_kwargs enable_thinking=false (verified: 328 tok → 2 tok)" },
+  { model:"Nemotron 3 Ultra (Preview)",     params:null, provider:"fireworks", ctx:1000000, cache:true, in:0.60, out:2.40 },
+  { model:"Muse Glimmer 30B",  params:"~30B (Meta, dense/MoE not confirmed)", provider:"fireworks", ctx:131072, cache:true, in:0.35, out:1.50 },
+];
+
+let sortKey = "in", sortDir = 1;
+const fmtParams = p => p ? `<span class="params">${p}</span>` : '<span class="params unknown">undisclosed</span>';
+const fmtProvider = p => p === "azure"
+  ? '<span class="provider azure">● MS Azure</span>'
+  : '<span class="provider fireworks">● Fireworks</span>';
+const fmtPrice = v => `<span class="price">$${v.toFixed(2)}</span>`;
+function fmtCtx(n) {
+  if (!n) return '<span class="params unknown">unknown</span>';
+  const s = n >= 1000000 ? `${(n/1000000).toFixed(2).replace(/\.?0+$/,'')}M` : `${Math.round(n/1000)}K`;
+  return `<span class="ctx">${s} tok</span>`;
+}
+const fmtCache = y => y
+  ? '<span class="cache yes"><span class="dot"></span>yes</span>'
+  : '<span class="cache no"><span class="dot"></span>no</span>';
+
+function renderTable() {
+  const active = document.querySelector("#panel-pricing .chip.active").dataset.filter;
+  let rows = ROWS.filter(r => active === "all" || r.provider === active);
+  rows = rows.slice().sort((a, b) => {
+    let av = sortKey === "blend" ? a.in*0.9 + a.out*0.1 : sortKey === "cache" ? (a.cache?1:0) : a[sortKey];
+    let bv = sortKey === "blend" ? b.in*0.9 + b.out*0.1 : sortKey === "cache" ? (b.cache?1:0) : b[sortKey];
+    if (typeof av === "string" || av === null) { av = String(av ?? ""); bv = String(bv ?? ""); }
+    return av < bv ? -1*sortDir : av > bv ? 1*sortDir : 0;
+  });
+  document.getElementById("tbody").innerHTML = rows.map(r => `
+    <tr>
+      <td><span class="model">${r.model}</span>${r.dup ? '<span class="badge dup">on both providers</span>' : ''}${r.note ? `<br><span class="ratio">${r.note}</span>` : ''}${r.inferred ? `<br><span class="inferred">${r.inferred}</span>` : ''}</td>
+      <td>${fmtParams(r.params)}</td>
+      <td>${fmtProvider(r.provider)}</td>
+      <td class="num">${fmtCtx(r.ctx)}</td>
+      <td>${fmtCache(r.cache)}</td>
+      <td class="num">${fmtPrice(r.in)}</td>
+      <td class="num">${fmtPrice(r.out)}</td>
+      <td class="num"><span class="ratio">$${(r.in*0.9+r.out*0.1).toFixed(3)}</span></td>
+    </tr>`).join("");
+}
+document.querySelectorAll("#panel-pricing .chip").forEach(c => c.addEventListener("click", () => {
+  document.querySelectorAll("#panel-pricing .chip").forEach(x => x.classList.remove("active"));
+  c.classList.add("active"); renderTable();
+}));
+document.querySelectorAll("thead th").forEach(th => th.addEventListener("click", () => {
+  const key = th.dataset.key;
+  sortDir = (sortKey === key) ? -sortDir : 1; sortKey = key;
+  document.querySelectorAll("thead .arrow").forEach(a => a.textContent = "");
+  th.querySelector(".arrow").textContent = sortDir === 1 ? "▲" : "▼";
+  renderTable();
+}));
+document.querySelector('thead th[data-key="in"] .arrow').textContent = "▲";
+renderTable();
+
+// ══════════════════════ TABS ══════════════════════
+document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => {
+  document.querySelectorAll(".tab").forEach(x => x.classList.remove("active"));
+  document.querySelectorAll(".panel").forEach(x => x.classList.remove("active"));
+  t.classList.add("active");
+  document.getElementById("panel-" + t.dataset.panel).classList.add("active");
+  if (t.dataset.panel === "chart") drawChart();
+}));
+
+// ══════════════════════ CHART ══════════════════════
+const CHART = {"tasks":{"banking77":{"key":"banking77","label":"Banking77","rows":[{"key":"finetuned-encoder","label":"Fine-tuned encoder (ettin-encoder-68m)","family":"encoder","cost":0.0,"cost_call":0.0,"calls":0,"changed":null,"acc":0.9402390438247012,"lo":0.9037527034962298,"hi":0.9634531311536774,"tin":0.0,"tout":0.0,"tcached":0.0,"secs":1347,"n":251,"basis":"fit","passes_holm":true,"perclass":{"Refund_not_showing_up":0.75,"activate_my_card":1.0,"age_limit":1.0,"apple_pay_or_google_pay":0.667,"atm_support":1.0,"automatic_top_up":1.0},"nclasses":77,"linked":null,"verdict":"non-inferior (and not worse on the point estimate)","passes":true,"diff":0.11155378486055778,"p":2.4299079086631494e-06,"isref":false,"note":"jhu-clsp/ettin-encoder-68m fine-tuned on 12701 examples, 3 epochs, 1347s on mps. Runs locally at ~201 items/s, so $0 marginal; served on a small CPU instance it would be about $0.00009/1k."},{"key":"tfidf-logreg","label":"TF-IDF + logistic regression","family":"classical","cost":0.0,"cost_call":0.0,"calls":0,"changed":null,"acc":0.9203187250996016,"lo":0.8801369607177347,"hi":0.9478287909163394,"tin":0.0,"tout":0.0,"tcached":0.0,"secs":5,"n":251,"basis":"fit","passes_holm":true,"perclass":{"Refund_not_showing_up":1.0,"activate_my_card":1.0,"age_limit":1.0,"apple_pay_or_google_pay":0.667,"atm_support":1.0,"automatic_top_up":1.0},"nclasses":77,"linked":null,"verdict":"non-inferior (and not worse on the point estimate)","passes":true,"diff":0.09163346613545809,"p":3.855815157294275e-05,"isref":false,"note":"Trained on 12701 examples in 5.4s. No GPU, no API. Runs locally at ~28,400 items/s, so $0 marginal; served on a small CPU instance it would be about $0.00000/1k."},{"key":"frozen-embed","label":"Frozen embeddings + logreg","family":"classical","cost":0.0,"cost_call":0.0,"calls":0,"changed":null,"acc":0.9043824701195219,"lo":0.8616716703261101,"hi":0.9349020148952977,"tin":0.0,"tout":0.0,"tcached":0.0,"secs":4,"n":251,"basis":"fit","passes_holm":true,"perclass":{"Refund_not_showing_up":1.0,"activate_my_card":1.0,"age_limit":1.0,"apple_pay_or_google_pay":0.667,"atm_support":1.0,"automatic_top_up":1.0},"nclasses":77,"linked":null,"verdict":"non-inferior (and not worse on the point estimate)","passes":true,"diff":0.07569721115537842,"p":0.0008213953115046016,"isref":false,"note":"intfloat/multilingual-e5-small, weights frozen. Trained head on 12701 examples in 4.4s. Runs locally at ~2,181 items/s, so $0 marginal; served on a small CPU instance it would be about $0.00001/1k."},{"key":"majority","label":"Always predict majority class","family":"classical","cost":0.0,"cost_call":0.0,"calls":0,"changed":null,"acc":0.01593625498007968,"lo":0.006214298691276626,"hi":0.0402516840239838,"tin":0.0,"tout":0.0,"tcached":0.0,"secs":0,"n":251,"basis":"batch","passes_holm":false,"perclass":{"Refund_not_showing_up":0.0,"activate_my_card":0.0,"age_limit":0.0,"apple_pay_or_google_pay":0.0,"atm_support":0.0,"automatic_top_up":0.0},"nclasses":77,"linked":null,"verdict":"clearly worse by more than the 3% margin","passes":false,"diff":-0.8127490039840638,"p":5.334777081560073e-59,"isref":false,"note":"Constant prediction: 'card_payment_fee_charged'. Free, instant, and the bar every model must clear."},{"key":"qwen3-1.7b-direct","label":"Qwen3 1.7B (direct)","family":"llm","cost":0.0611939,"cost_call":0.06071016,"calls":253,"changed":null,"acc":0.545816733067729,"lo":0.48399252615151733,"hi":0.6062596647848982,"tin":1881.5,"tout":35.5,"tcached":0.0,"secs":146,"n":251,"basis":"batch","passes_holm":false,"perclass":{"Refund_not_showing_up":1.0,"activate_my_card":1.0,"age_limit":1.0,"apple_pay_or_google_pay":0.0,"atm_support":1.0,"automatic_top_up":0.667},"nclasses":77,"linked":null,"verdict":"clearly worse by more than the 3% margin","passes":false,"diff":-0.2828685258964144,"p":2.7577887293885157e-18,"isref":false,"note":""},{"key":"nemotron-lightning-30b","label":"Nemotron 3.5 Lightning 30B-A3B","family":"llm","cost":0.10738869,"cost_call":0.10653976,"calls":253,"changed":null,"acc":0.6733067729083665,"lo":0.6130527518920174,"hi":0.7283359703457287,"tin":2183.5,"tout":18.9,"tcached":160.2,"secs":8,"n":251,"basis":"batch","passes_holm":false,"perclass":{"Refund_not_showing_up":1.0,"activate_my_card":1.0,"age_limit":1.0,"apple_pay_or_google_pay":0.667,"atm_support":1.0,"automatic_top_up":1.0},"nclasses":77,"linked":null,"verdict":"clearly worse by more than the 3% margin","passes":false,"diff":-0.15537848605577698,"p":1.1266365618212174e-10,"isref":false,"note":""},{"key":"gpt-4.1-nano","label":"GPT-4.1-nano","family":"llm","cost":0.12312351,"cost_call":0.11706061,"calls":264,"changed":null,"acc":0.6135458167330677,"lo":0.5520256601403194,"hi":0.6716428130499282,"tin":1946.0,"tout":19.7,"tcached":1138.9,"secs":39,"n":251,"basis":"batch","passes_holm":false,"perclass":{"Refund_not_showing_up":0.5,"activate_my_card":0.75,"age_limit":1.0,"apple_pay_or_google_pay":0.333,"atm_support":0.5,"automatic_top_up":1.0},"nclasses":77,"linked":null,"verdict":"clearly worse by more than the 3% margin","passes":false,"diff":-0.21513944223107573,"p":8.049116928532349e-16,"isref":false,"note":""},{"key":"phi-4-mini-instruct","label":"Phi-4-mini-instruct","family":"llm","cost":0.15926624,"cost_call":0.15615557,"calls":256,"changed":null,"acc":0.5816733067729084,"lo":0.5198662362109402,"hi":0.6410181041539748,"tin":1916.3,"tout":41.4,"tcached":0.0,"secs":67,"n":251,"basis":"batch","passes_holm":false,"perclass":{"Refund_not_showing_up":1.0,"activate_my_card":1.0,"age_limit":1.0,"apple_pay_or_google_pay":0.667,"atm_support":1.0,"automatic_top_up":1.0},"nclasses":77,"linked":null,"verdict":"clearly worse by more than the 3% margin","passes":false,"diff":-0.24701195219123506,"p":1.8570350335603266e-16,"isref":false,"note":""},{"key":"deepseek-v4-flash+gepa","label":"DeepSeek-V4-Flash + GEPA","family":"llm","cost":0.16791028,"cost_call":0.16335457,"calls":258,"changed":false,"acc":0.7888446215139442,"lo":0.7341934706828899,"hi":0.8347877330466871,"tin":2213.4,"tout":17.9,"tcached":1451.7,"secs":85,"n":251,"basis":"batch","passes_holm":false,"perclass":{"Refund_not_showing_up":1.0,"activate_my_card":1.0,"age_limit":1.0,"apple_pay_or_google_pay":0.667,"atm_support":1.0,"automatic_top_up":1.0},"nclasses":77,"linked":{"cost":0.17769936,"acc":0.7808764940239044},"verdict":"inconclusive -- test set too small to rule out a 3% loss","passes":false,"diff":-0.03984063745019928,"p":0.007385253906249991,"isref":false,"note":""},{"key":"deepseek-v4-flash","label":"DeepSeek-V4-Flash","family":"llm","cost":0.17769936,"cost_call":0.17221058,"calls":259,"changed":null,"acc":0.7808764940239044,"lo":0.7256798576080821,"hi":0.8276053129151619,"tin":2213.4,"tout":17.9,"tcached":1377.9,"secs":79,"n":251,"basis":"batch","passes_holm":false,"perclass":{"Refund_not_showing_up":1.0,"activate_my_card":1.0,"age_limit":1.0,"apple_pay_or_google_pay":0.667,"atm_support":1.0,"automatic_top_up":1.0},"nclasses":77,"linked":null,"verdict":"inconclusive -- test set too small to rule out a 3% loss","passes":false,"diff":-0.04780876494023911,"p":0.0009765625000000007,"isref":false,"note":""},{"key":"gpt-5.4-nano","label":"GPT-5.4-nano","family":"llm","cost":0.19090219,"cost_call":0.19090219,"calls":251,"changed":null,"acc":0.7529880478087649,"lo":0.6960873642120633,"hi":0.8022616900890145,"tin":1923.3,"tout":19.0,"tcached":1208.6,"secs":43,"n":251,"basis":"batch","passes_holm":false,"perclass":{"Refund_not_showing_up":1.0,"activate_my_card":1.0,"age_limit":1.0,"apple_pay_or_google_pay":0.667,"atm_support":1.0,"automatic_top_up":1.0},"nclasses":77,"linked":null,"verdict":"clearly worse by more than the 3% margin","passes":false,"diff":-0.07569721115537853,"p":8.797645568847648e-05,"isref":false,"note":""},{"key":"gpt-5-nano","label":"GPT-5-nano","family":"llm","cost":0.20411992,"cost_call":0.20330992,"calls":252,"changed":null,"acc":0.7808764940239044,"lo":0.7256798576080821,"hi":0.8276053129151619,"tin":1925.1,"tout":391.1,"tcached":1097.1,"secs":95,"n":251,"basis":"batch","passes_holm":false,"perclass":{"Refund_not_showing_up":1.0,"activate_my_card":1.0,"age_limit":1.0,"apple_pay_or_google_pay":0.667,"atm_support":1.0,"automatic_top_up":1.0},"nclasses":77,"linked":null,"verdict":"inconclusive -- test set too small to rule out a 3% loss","passes":false,"diff":-0.04780876494023911,"p":0.004425048828125004,"isref":false,"note":""},{"key":"glm-5.3-flash","label":"GLM 5.3 Flash","family":"llm","cost":0.37230578,"cost_call":0.36790846,"calls":254,"changed":null,"acc":0.8087649402390438,"lo":0.7556023156219088,"hi":0.8526189711235012,"tin":1873.4,"tout":173.8,"tcached":0.0,"secs":74,"n":251,"basis":"batch","passes_holm":false,"perclass":{"Refund_not_showing_up":1.0,"activate_my_card":1.0,"age_limit":1.0,"apple_pay_or_google_pay":0.667,"atm_support":1.0,"automatic_top_up":1.0},"nclasses":77,"linked":null,"verdict":"inconclusive -- test set too small to rule out a 3% loss","passes":false,"diff":-0.019920318725099695,"p":0.14599609374999997,"isref":false,"note":""},{"key":"grok-4-1-fast-non-reasoning","label":"Grok 4.1 Fast (non-reasoning)","family":"llm","cost":0.37783028,"cost_call":0.37783028,"calls":251,"changed":null,"acc":0.7768924302788844,"lo":0.7214331819816145,"hi":0.8240039719384628,"tin":1852.3,"tout":14.7,"tcached":1490.8,"secs":14,"n":251,"basis":"batch","passes_holm":false,"perclass":{"Refund_not_showing_up":1.0,"activate_my_card":1.0,"age_limit":1.0,"apple_pay_or_google_pay":0.667,"atm_support":1.0,"automatic_top_up":1.0},"nclasses":77,"linked":null,"verdict":"inconclusive -- test set too small to rule out a 3% loss","passes":false,"diff":-0.05179282868525903,"p":0.0005187988281249996,"isref":false,"note":""},{"key":"gpt-5.4-nano+gepa","label":"GPT-5.4-nano + GEPA","family":"llm","cost":0.40388717,"cost_call":0.20194359,"calls":502,"changed":true,"acc":0.7729083665338645,"lo":0.7171930904802108,"hi":0.8203960468367,"tin":2478.3,"tout":15.0,"tcached":1735.9,"secs":69,"n":251,"basis":"batch","passes_holm":false,"perclass":{"Refund_not_showing_up":1.0,"activate_my_card":1.0,"age_limit":1.0,"apple_pay_or_google_pay":0.667,"atm_support":1.0,"automatic_top_up":1.0},"nclasses":77,"linked":{"cost":0.19090219,"acc":0.7529880478087649},"verdict":"inconclusive -- test set too small to rule out a 3% loss","passes":false,"diff":-0.055776892430278946,"p":0.002599477767944334,"isref":false,"note":""},{"key":"gpt-4.1-mini","label":"GPT-4.1-mini","family":"llm","cost":0.43123028,"cost_call":0.43123028,"calls":251,"changed":null,"acc":0.7649402390438247,"lo":0.7087321840518167,"hi":0.813160920058761,"tin":1924.3,"tout":16.0,"tcached":1213.7,"secs":28,"n":251,"basis":"batch","passes_holm":false,"perclass":{"Refund_not_showing_up":1.0,"activate_my_card":1.0,"age_limit":1.0,"apple_pay_or_google_pay":0.667,"atm_support":1.0,"automatic_top_up":1.0},"nclasses":77,"linked":null,"verdict":"clearly worse by more than the 3% margin","passes":false,"diff":-0.06374501992031878,"p":0.00022125244140625,"isref":false,"note":""},{"key":"gpt-5-mini","label":"GPT-5-mini","family":"llm","cost":0.59822908,"cost_call":0.59822908,"calls":251,"changed":null,"acc":0.8047808764940239,"lo":0.751305665336437,"hi":0.8490676048058063,"tin":1923.3,"tout":194.1,"tcached":1203.5,"secs":77,"n":251,"basis":"batch","passes_holm":false,"perclass":{"Refund_not_showing_up":1.0,"activate_my_card":1.0,"age_limit":1.0,"apple_pay_or_google_pay":0.667,"atm_support":1.0,"automatic_top_up":1.0},"nclasses":77,"linked":null,"verdict":"inconclusive -- test set too small to rule out a 3% loss","passes":false,"diff":-0.02390438247011961,"p":0.09228515624999997,"isref":false,"note":""},{"key":"mistral-large-3","label":"Mistral Large 3","family":"llm","cost":1.11438446,"cost_call":1.11438446,"calls":251,"changed":null,"acc":0.7768924302788844,"lo":0.7214331819816145,"hi":0.8240039719384628,"tin":2172.6,"tout":18.7,"tcached":0.0,"secs":20,"n":251,"basis":"batch","passes_holm":false,"perclass":{"Refund_not_showing_up":1.0,"activate_my_card":1.0,"age_limit":1.0,"apple_pay_or_google_pay":0.667,"atm_support":1.0,"automatic_top_up":1.0},"nclasses":77,"linked":null,"verdict":"inconclusive -- test set too small to rule out a 3% loss","passes":false,"diff":-0.05179282868525903,"p":0.00257682800292969,"isref":false,"note":""},{"key":"deepseek-v3.2","label":"DeepSeek-V3.2","family":"llm","cost":1.3139851,"cost_call":1.3139851,"calls":251,"changed":null,"acc":0.7848605577689243,"lo":0.7299332432339252,"hi":0.8311999438924853,"tin":2213.5,"tout":17.9,"tcached":0.0,"secs":162,"n":251,"basis":"batch","passes_holm":false,"perclass":{"Refund_not_showing_up":1.0,"activate_my_card":1.0,"age_limit":1.0,"apple_pay_or_google_pay":0.667,"atm_support":1.0,"automatic_top_up":1.0},"nclasses":77,"linked":null,"verdict":"inconclusive -- test set too small to rule out a 3% loss","passes":false,"diff":-0.043824701195219196,"p":0.0018310546874999985,"isref":false,"note":""},{"key":"deepseek-v3.2-speciale","label":"DeepSeek-V3.2-Speciale","family":"llm","cost":2.14182438,"cost_call":1.94078671,"calls":277,"changed":null,"acc":0.8127490039840638,"lo":0.759906747044677,"hi":0.8561625563038997,"tin":2216.2,"tout":390.1,"tcached":0.0,"secs":171,"n":251,"basis":"batch","passes_holm":false,"perclass":{"Refund_not_showing_up":1.0,"activate_my_card":1.0,"age_limit":1.0,"apple_pay_or_google_pay":0.667,"atm_support":1.0,"automatic_top_up":1.0},"nclasses":77,"linked":null,"verdict":"inconclusive -- test set too small to rule out a 3% loss","passes":false,"diff":-0.015936254980079667,"p":0.26684570312499994,"isref":false,"note":""},{"key":"claude-haiku-4-5","label":"Claude Haiku 4.5","family":"llm","cost":2.76272908,"cost_call":2.76272908,"calls":251,"changed":null,"acc":0.8007968127490039,"lo":0.7470166195495571,"hi":0.8455086339895197,"tin":2639.8,"tout":24.6,"tcached":0.0,"secs":18,"n":251,"basis":"batch","passes_holm":false,"perclass":{"Refund_not_showing_up":1.0,"activate_my_card":1.0,"age_limit":1.0,"apple_pay_or_google_pay":0.667,"atm_support":1.0,"automatic_top_up":1.0},"nclasses":77,"linked":null,"verdict":"inconclusive -- test set too small to rule out a 3% loss","passes":false,"diff":-0.02788844621513953,"p":0.09625244140624999,"isref":false,"note":""},{"key":"claude-sonnet-4-6","label":"Claude Sonnet 4.6","family":"llm","cost":3.44781992,"cost_call":3.44781992,"calls":251,"changed":null,"acc":0.8286852589641435,"lo":0.7772061600114927,"hi":0.8702552097497503,"tin":2640.8,"tout":24.6,"tcached":1793.9,"secs":54,"n":251,"basis":"batch","passes_holm":null,"perclass":{"Refund_not_showing_up":1.0,"activate_my_card":1.0,"age_limit":1.0,"apple_pay_or_google_pay":0.667,"atm_support":1.0,"automatic_top_up":1.0},"nclasses":77,"linked":null,"verdict":"","passes":null,"diff":null,"p":null,"isref":true,"note":"COST ~2% LOW: measured before cache-CREATION tokens were captured, so the Anthropic 1.25x cache-write premium was billed as ordinary input. With num_threads=12 the first 12 of 251 calls all miss and all write the ~1,884-token prefix. Corrected figure is about $3.51537 per 1k items (+1.96%). Not rewr"},{"key":"cohere-command-a-plus","label":"Cohere Command A Plus","family":"llm","cost":4.56152351,"cost_call":2.39527699,"calls":478,"changed":null,"acc":0.749003984063745,"lo":0.6918844267656868,"hi":0.7986166109322245,"tin":1961.8,"tout":258.1,"tcached":0.0,"secs":141,"n":251,"basis":"batch","passes_holm":false,"perclass":{"Refund_not_showing_up":1.0,"activate_my_card":1.0,"age_limit":1.0,"apple_pay_or_google_pay":0.667,"atm_support":1.0,"automatic_top_up":1.0},"nclasses":77,"linked":null,"verdict":"clearly worse by more than the 3% margin","passes":false,"diff":-0.07968127490039845,"p":0.00019219517707824685,"isref":false,"note":""},{"key":"claude-opus-4-8","label":"Claude Opus 4.8","family":"llm","cost":7.67547012,"cost_call":7.67547012,"calls":251,"changed":null,"acc":0.8167330677290837,"lo":0.7642191456216381,"hi":0.8596981743301053,"tin":3547.2,"tout":35.3,"tcached":2431.9,"secs":36,"n":251,"basis":"batch","passes_holm":false,"perclass":{"Refund_not_showing_up":1.0,"activate_my_card":1.0,"age_limit":1.0,"apple_pay_or_google_pay":0.0,"atm_support":0.5,"automatic_top_up":1.0},"nclasses":77,"linked":null,"verdict":"inconclusive -- test set too small to rule out a 3% loss","passes":false,"diff":-0.01195219123505975,"p":0.3876953125,"isref":false,"note":"COST ~2% LOW: measured before cache-CREATION tokens were captured, so the Anthropic 1.25x cache-write premium was billed as ordinary input. With num_threads=12 the first 12 of 251 calls all miss and all write the ~1,884-token prefix. Corrected figure is about $7.78806 per 1k items (+1.47%). Not rewr"}],"majority":0.01593625498007968,"bar":0.85,"ntest":251,"ref":"claude-sonnet-4-6","nclasses":77,"resolution":"At n=250 and ~85% accuracy, the 95% Wilson interval is +/-4.4%. Two models closer than roughly 8.9% apart cannot be separated by unpaired comparison on this set. Paired tests (McNemar) do better because they use only the items where the models disagree."},"financial_phrasebank":{"key":"financial_phrasebank","label":"Financial PhraseBank","rows":[{"key":"finetuned-encoder","label":"Fine-tuned encoder (ettin-encoder-68m)","family":"encoder","cost":0.0,"cost_call":0.0,"calls":0,"changed":null,"acc":0.976,"lo":0.9486378761864735,"hi":0.9889552226938632,"tin":0.0,"tout":0.0,"tcached":0,"secs":97,"n":250,"basis":"fit","passes_holm":true,"perclass":{"negative":0.941,"neutral":0.987,"positive":0.968},"nclasses":3,"linked":null,"verdict":"non-inferior (and not worse on the point estimate)","passes":true,"diff":0.020000000000000018,"p":0.2101135253906249,"isref":false,"note":"jhu-clsp/ettin-encoder-68m fine-tuned on 1889 examples, 3 epochs, 97s on mps."},{"key":"frozen-embed","label":"Frozen embeddings + logreg","family":"classical","cost":0.0,"cost_call":0.0,"calls":0,"changed":null,"acc":0.908,"lo":0.8657382427250239,"hi":0.9379129848866933,"tin":0.0,"tout":0.0,"tcached":0,"secs":1,"n":250,"basis":"fit","passes_holm":false,"perclass":{"negative":0.912,"neutral":0.948,"positive":0.81},"nclasses":3,"linked":null,"verdict":"inconclusive -- test set too small to rule out a 3% loss","passes":false,"diff":-0.04799999999999993,"p":0.03508203336969018,"isref":false,"note":"intfloat/multilingual-e5-small, weights frozen. Trained head on 1889 examples in 1.3s."},{"key":"tfidf-logreg","label":"TF-IDF + logistic regression","family":"classical","cost":0.0,"cost_call":0.0,"calls":0,"changed":null,"acc":0.888,"lo":0.8428908673839414,"hi":0.9213656922075936,"tin":0.0,"tout":0.0,"tcached":0,"secs":0,"n":250,"basis":"fit","passes_holm":false,"perclass":{"negative":0.794,"neutral":0.967,"positive":0.746},"nclasses":3,"linked":null,"verdict":"clearly worse by more than the 3% margin","passes":false,"diff":-0.06799999999999995,"p":0.003933173022232948,"isref":false,"note":"Trained on 1889 examples in 0.3s. No GPU, no API."},{"key":"majority","label":"Always predict majority class","family":"classical","cost":0.0,"cost_call":0.0,"calls":0,"changed":null,"acc":0.612,"lo":0.5503353651783642,"hi":0.6702747757346561,"tin":0.0,"tout":0.0,"tcached":0,"secs":0,"n":250,"basis":"batch","passes_holm":false,"perclass":{"negative":0.0,"neutral":1.0,"positive":0.0},"nclasses":3,"linked":null,"verdict":"clearly worse by more than the 3% margin","passes":false,"diff":-0.344,"p":1.6311366856314604e-19,"isref":false,"note":"Constant prediction: 'neutral'. Free, instant, and the bar every model must clear."},{"key":"qwen3-0.6b-direct","label":"Qwen3 0.6B (direct)","family":"llm","cost":0.00328912,"cost_call":0.00328912,"calls":250,"changed":null,"acc":0.288,"lo":0.23540981157275126,"hi":0.34700670741331713,"tin":258.9,"tout":14.0,"tcached":0,"secs":20,"n":250,"basis":"batch","passes_holm":false,"perclass":{"negative":0.676,"neutral":0.007,"positive":0.762},"nclasses":3,"linked":null,"verdict":"clearly worse by more than the 3% margin","passes":false,"diff":-0.6679999999999999,"p":4.971008265182698e-48,"isref":false,"note":""},{"key":"qwen3-0.6b-direct+gepa","label":"Qwen3 0.6B (direct) + GEPA","family":"llm","cost":0.01071388,"cost_call":0.00771893,"calls":347,"changed":true,"acc":0.524,"lo":0.46219788800433054,"hi":0.5850757136198882,"tin":694.0,"tout":15.6,"tcached":0,"secs":30,"n":250,"basis":"batch","passes_holm":false,"perclass":{"negative":0.765,"neutral":0.392,"positive":0.714},"nclasses":3,"linked":{"cost":0.00328912,"acc":0.288},"verdict":"clearly worse by more than the 3% margin","passes":false,"diff":-0.43199999999999994,"p":1.220924028944838e-29,"isref":false,"note":""},{"key":"qwen3-1.7b-direct","label":"Qwen3 1.7B (direct)","family":"llm","cost":0.0137808,"cost_call":0.0137808,"calls":250,"changed":null,"acc":0.804,"lo":0.7503491896964016,"hi":0.8484497642103681,"tin":258.9,"tout":50.1,"tcached":0,"secs":102,"n":250,"basis":"batch","passes_holm":false,"perclass":{"negative":0.353,"neutral":0.98,"positive":0.619},"nclasses":3,"linked":null,"verdict":"clearly worse by more than the 3% margin","passes":false,"diff":-0.1519999999999999,"p":4.0031961745512463e-08,"isref":false,"note":""},{"key":"nemotron-lightning-30b","label":"Nemotron 3.5 Lightning 30B-A3B","family":"llm","cost":0.0182206,"cost_call":0.01814801,"calls":251,"changed":null,"acc":0.86,"lo":0.8115202816735541,"hi":0.8975837426897257,"tin":267.1,"tout":24.0,"tcached":0,"secs":7,"n":250,"basis":"batch","passes_holm":false,"perclass":{"negative":0.971,"neutral":0.922,"positive":0.651},"nclasses":3,"linked":null,"verdict":"clearly worse by more than the 3% margin","passes":false,"diff":-0.09599999999999997,"p":2.236152067780499e-05,"isref":false,"note":""},{"key":"phi-4-mini-instruct","label":"Phi-4-mini-instruct","family":"llm","cost":0.0227715,"cost_call":0.0227715,"calls":250,"changed":null,"acc":0.848,"lo":0.7982548908329247,"hi":0.8872123327182458,"tin":237.7,"tout":16.5,"tcached":0.0,"secs":34,"n":250,"basis":"batch","passes_holm":false,"perclass":{"negative":0.676,"neutral":0.882,"positive":0.857},"nclasses":3,"linked":null,"verdict":"clearly worse by more than the 3% margin","passes":false,"diff":-0.10799999999999998,"p":1.9415747374296154e-06,"isref":false,"note":""},{"key":"qwen3-1.7b-direct+gepa","label":"Qwen3 1.7B (direct) + GEPA","family":"llm","cost":0.0296652,"cost_call":0.0296652,"calls":250,"changed":true,"acc":0.904,"lo":0.8611341747864028,"hi":0.934638119221278,"tin":789.9,"tout":49.7,"tcached":0,"secs":105,"n":250,"basis":"batch","passes_holm":false,"perclass":{"negative":0.941,"neutral":0.993,"positive":0.667},"nclasses":3,"linked":{"cost":0.0137808,"acc":0.804},"verdict":"inconclusive -- test set too small to rule out a 3% loss","passes":false,"diff":-0.051999999999999935,"p":0.016124801710247997,"isref":false,"note":""},{"key":"gpt-4.1-nano","label":"GPT-4.1-nano","family":"llm","cost":0.0298948,"cost_call":0.0298948,"calls":250,"changed":null,"acc":0.924,"lo":0.8843586026895993,"hi":0.9508083593382637,"tin":245.7,"tout":13.3,"tcached":0.0,"secs":32,"n":250,"basis":"batch","passes_holm":false,"perclass":{"negative":0.853,"neutral":0.928,"positive":0.952},"nclasses":3,"linked":null,"verdict":"inconclusive -- test set too small to rule out a 3% loss","passes":false,"diff":-0.03199999999999992,"p":0.0783538818359375,"isref":false,"note":""},{"key":"nemotron-lightning-30b+gepa","label":"Nemotron 3.5 Lightning 30B-A3B + GEPA","family":"llm","cost":0.0318516,"cost_call":0.03147391,"calls":253,"changed":true,"acc":0.912,"lo":0.8703615171695354,"hi":0.9411686440462184,"tin":570.0,"tout":14.9,"tcached":0,"secs":8,"n":250,"basis":"batch","passes_holm":false,"perclass":{"negative":0.971,"neutral":0.993,"positive":0.683},"nclasses":3,"linked":{"cost":0.0182206,"acc":0.86},"verdict":"inconclusive -- test set too small to rule out a 3% loss","passes":false,"diff":-0.04399999999999993,"p":0.04277394525706767,"isref":false,"note":""},{"key":"deepseek-v4-flash","label":"DeepSeek-V4-Flash","family":"llm","cost":0.041279,"cost_call":0.041279,"calls":250,"changed":null,"acc":0.956,"lo":0.9229422290276481,"hi":0.9752562018325064,"tin":246.3,"tout":14.0,"tcached":0,"secs":69,"n":250,"basis":"batch","passes_holm":false,"perclass":{"negative":0.971,"neutral":0.961,"positive":0.937},"nclasses":3,"linked":null,"verdict":"inconclusive -- passed on its own, but not once corrected for testing 27 models against the same reference","passes":false,"diff":0.0,"p":0.7744140624999998,"isref":false,"note":""},{"key":"qwen3-1.7b-reasoning","label":"Qwen3 1.7B (reasoning on)","family":"llm","cost":0.04181712,"cost_call":0.04181712,"calls":250,"changed":null,"acc":0.78,"lo":0.7246272763980252,"hi":0.8268980758845258,"tin":252.9,"tout":285.2,"tcached":0.0,"secs":1360,"n":250,"basis":"batch","passes_holm":false,"perclass":{"negative":0.971,"neutral":0.654,"positive":0.984},"nclasses":3,"linked":null,"verdict":"clearly worse by more than the 3% margin","passes":false,"diff":-0.17599999999999993,"p":1.9674928353197116e-11,"isref":false,"note":""},{"key":"grok-4-1-fast-non-reasoning","label":"Grok 4.1 Fast (non-reasoning)","family":"llm","cost":0.0529036,"cost_call":0.0529036,"calls":250,"changed":null,"acc":0.9,"lo":0.8565482893919354,"hi":0.9313450710117088,"tin":234.5,"tout":12.0,"tcached":314.5,"secs":13,"n":250,"basis":"batch","passes_holm":false,"perclass":{"negative":0.971,"neutral":0.85,"positive":0.984},"nclasses":3,"linked":null,"verdict":"clearly worse by more than the 3% margin","passes":false,"diff":-0.05599999999999994,"p":6.103515624999997e-05,"isref":false,"note":""},{"key":"gpt-5.4-nano","label":"GPT-5.4-nano","family":"llm","cost":0.0689336,"cost_call":0.0689336,"calls":250,"changed":null,"acc":0.928,"lo":0.8890714648901645,"hi":0.953974430741735,"tin":244.7,"tout":16.0,"tcached":0,"secs":29,"n":250,"basis":"batch","passes_holm":false,"perclass":{"negative":0.941,"neutral":0.895,"positive":1.0},"nclasses":3,"linked":null,"verdict":"inconclusive -- test set too small to rule out a 3% loss","passes":false,"diff":-0.027999999999999914,"p":0.07681274414062488,"isref":false,"note":""},{"key":"glm-5.3-flash","label":"GLM 5.3 Flash","family":"llm","cost":0.0874344,"cost_call":0.0874344,"calls":250,"changed":null,"acc":0.964,"lo":0.9330095775982306,"hi":0.9809467204699966,"tin":248.4,"tout":100.3,"tcached":0.0,"secs":39,"n":250,"basis":"batch","passes_holm":true,"perclass":{"negative":0.971,"neutral":0.967,"positive":0.952},"nclasses":3,"linked":null,"verdict":"non-inferior (and not worse on the point estimate)","passes":true,"diff":0.008000000000000007,"p":0.5078125000000001,"isref":false,"note":""},{"key":"gpt-4.1-mini","label":"GPT-4.1-mini","family":"llm","cost":0.1190672,"cost_call":0.1190672,"calls":250,"changed":null,"acc":0.96,"lo":0.9279472764187334,"hi":0.9781300880454574,"tin":245.7,"tout":13.0,"tcached":0,"secs":21,"n":250,"basis":"batch","passes_holm":true,"perclass":{"negative":0.971,"neutral":0.954,"positive":0.968},"nclasses":3,"linked":null,"verdict":"non-inferior (and not worse on the point estimate)","passes":true,"diff":0.0040000000000000036,"p":0.7265625000000002,"isref":false,"note":""},{"key":"deepseek-v4-flash+gepa","label":"DeepSeek-V4-Flash + GEPA","family":"llm","cost":0.122879,"cost_call":0.122879,"calls":250,"changed":true,"acc":0.976,"lo":0.9486378761864735,"hi":0.9889552226938632,"tin":790.3,"tout":14.0,"tcached":0,"secs":103,"n":250,"basis":"batch","passes_holm":true,"perclass":{"negative":0.971,"neutral":0.993,"positive":0.937},"nclasses":3,"linked":{"cost":0.041279,"acc":0.956},"verdict":"non-inferior (and not worse on the point estimate)","passes":true,"diff":0.020000000000000018,"p":0.14599609375,"isref":false,"note":""},{"key":"mistral-large-3","label":"Mistral Large 3","family":"llm","cost":0.150524,"cost_call":0.150524,"calls":250,"changed":null,"acc":0.928,"lo":0.8890714648901645,"hi":0.953974430741735,"tin":256.0,"tout":15.0,"tcached":0.0,"secs":17,"n":250,"basis":"batch","passes_holm":false,"perclass":{"negative":0.971,"neutral":0.915,"positive":0.937},"nclasses":3,"linked":null,"verdict":"inconclusive -- test set too small to rule out a 3% loss","passes":false,"diff":-0.027999999999999914,"p":0.038574218749999986,"isref":false,"note":""},{"key":"deepseek-v3.2","label":"DeepSeek-V3.2","family":"llm","cost":0.1663508,"cost_call":0.1663508,"calls":250,"changed":null,"acc":0.948,"lo":0.9130782188162728,"hi":0.9693623448358087,"tin":246.3,"tout":14.0,"tcached":0.0,"secs":152,"n":250,"basis":"batch","passes_holm":false,"perclass":{"negative":0.941,"neutral":0.987,"positive":0.857},"nclasses":3,"linked":null,"verdict":"inconclusive -- test set too small to rule out a 3% loss","passes":false,"diff":-0.008000000000000007,"p":0.629058837890625,"isref":false,"note":""},{"key":"gpt-5-nano","label":"GPT-5-nano","family":"llm","cost":0.205667,"cost_call":0.205667,"calls":250,"changed":null,"acc":0.948,"lo":0.9130782188162728,"hi":0.9693623448358087,"tin":244.7,"tout":483.6,"tcached":0,"secs":88,"n":250,"basis":"batch","passes_holm":false,"perclass":{"negative":0.971,"neutral":0.928,"positive":0.984},"nclasses":3,"linked":null,"verdict":"inconclusive -- passed on its own, but not once corrected for testing 27 models against the same reference","passes":false,"diff":-0.008000000000000007,"p":0.548828125,"isref":false,"note":""},{"key":"gpt-5-nano+gepa","label":"GPT-5-nano + GEPA","family":"llm","cost":0.2227934,"cost_call":0.2210252,"calls":252,"changed":true,"acc":0.988,"lo":0.9653192195729803,"hi":0.9959106801194657,"tin":660.9,"tout":469.9,"tcached":0,"secs":91,"n":250,"basis":"batch","passes_holm":true,"perclass":{"negative":0.971,"neutral":0.993,"positive":0.984},"nclasses":3,"linked":{"cost":0.205667,"acc":0.948},"verdict":"non-inferior (and not worse on the point estimate)","passes":true,"diff":0.03200000000000003,"p":0.02246093749999997,"isref":false,"note":""},{"key":"gpt-5.4-nano+gepa","label":"GPT-5.4-nano + GEPA","family":"llm","cost":0.2496652,"cost_call":0.1448174,"calls":431,"changed":true,"acc":0.944,"lo":0.908209279267056,"hi":0.966352350780989,"tin":653.8,"tout":11.3,"tcached":0,"secs":52,"n":250,"basis":"batch","passes_holm":false,"perclass":{"negative":0.912,"neutral":0.993,"positive":0.841},"nclasses":3,"linked":{"cost":0.0689336,"acc":0.928},"verdict":"inconclusive -- test set too small to rule out a 3% loss","passes":false,"diff":-0.01200000000000001,"p":0.5034446716308594,"isref":false,"note":""},{"key":"gpt-4.1-mini+gepa","label":"GPT-4.1-mini + GEPA","family":"llm","cost":0.2718672,"cost_call":0.2718672,"calls":250,"changed":true,"acc":0.976,"lo":0.9486378761864735,"hi":0.9889552226938632,"tin":627.7,"tout":13.0,"tcached":0,"secs":29,"n":250,"basis":"batch","passes_holm":true,"perclass":{"negative":0.971,"neutral":0.98,"positive":0.968},"nclasses":3,"linked":{"cost":0.1190672,"acc":0.96},"verdict":"non-inferior (and not worse on the point estimate)","passes":true,"diff":0.020000000000000018,"p":0.07031250000000001,"isref":false,"note":""},{"key":"gpt-5-mini","label":"GPT-5-mini","family":"llm","cost":0.337391,"cost_call":0.337391,"calls":250,"changed":null,"acc":0.928,"lo":0.8890714648901645,"hi":0.953974430741735,"tin":244.7,"tout":138.1,"tcached":0.0,"secs":62,"n":250,"basis":"batch","passes_holm":false,"perclass":{"negative":0.971,"neutral":0.889,"positive":1.0},"nclasses":3,"linked":null,"verdict":"inconclusive -- test set too small to rule out a 3% loss","passes":false,"diff":-0.027999999999999914,"p":0.02148437499999999,"isref":false,"note":""},{"key":"claude-haiku-4-5","label":"Claude Haiku 4.5","family":"llm","cost":0.380244,"cost_call":0.380244,"calls":250,"changed":null,"acc":0.94,"lo":0.9033771072831172,"hi":0.9633055891608915,"tin":280.2,"tout":20.0,"tcached":0.0,"secs":18,"n":250,"basis":"batch","passes_holm":false,"perclass":{"negative":0.971,"neutral":0.948,"positive":0.905},"nclasses":3,"linked":null,"verdict":"inconclusive -- test set too small to rule out a 3% loss","passes":false,"diff":-0.016000000000000014,"p":0.17968749999999994,"isref":false,"note":""},{"key":"deepseek-v3.2-speciale","label":"DeepSeek-V3.2-Speciale","family":"llm","cost":0.4887756,"cost_call":0.44113321,"calls":277,"changed":null,"acc":0.936,"lo":0.8985785081170682,"hi":0.9602252547229041,"tin":248.8,"tout":176.7,"tcached":0.0,"secs":66,"n":250,"basis":"batch","passes_holm":false,"perclass":{"negative":0.941,"neutral":0.908,"positive":1.0},"nclasses":3,"linked":null,"verdict":"inconclusive -- test set too small to rule out a 3% loss","passes":false,"diff":-0.019999999999999907,"p":0.10937499999999997,"isref":false,"note":""},{"key":"claude-sonnet-4-6","label":"Claude Sonnet 4.6","family":"llm","cost":1.143732,"cost_call":1.143732,"calls":250,"changed":null,"acc":0.956,"lo":0.9229422290276481,"hi":0.9752562018325064,"tin":281.2,"tout":20.0,"tcached":0,"secs":39,"n":250,"basis":"batch","passes_holm":null,"perclass":{"negative":0.971,"neutral":0.941,"positive":0.984},"nclasses":3,"linked":null,"verdict":"","passes":null,"diff":null,"p":null,"isref":true,"note":""},{"key":"claude-sonnet-4-6+gepa","label":"Claude Sonnet 4.6 + GEPA","family":"llm","cost":1.143732,"cost_call":1.143732,"calls":250,"changed":false,"acc":0.956,"lo":0.9229422290276481,"hi":0.9752562018325064,"tin":281.2,"tout":20.0,"tcached":0,"secs":34,"n":250,"basis":"batch","passes_holm":true,"perclass":{"negative":0.971,"neutral":0.941,"positive":0.984},"nclasses":3,"linked":{"cost":1.143732,"acc":0.956},"verdict":"non-inferior (and not worse on the point estimate)","passes":true,"diff":0.0,"p":1.0,"isref":false,"note":""},{"key":"cohere-command-a-plus","label":"Cohere Command A Plus","family":"llm","cost":2.080672,"cost_call":1.040336,"calls":500,"changed":null,"acc":0.956,"lo":0.9229422290276481,"hi":0.9752562018325064,"tin":351.7,"tout":237.2,"tcached":0.0,"secs":151,"n":250,"basis":"batch","passes_holm":false,"perclass":{"negative":0.971,"neutral":0.941,"positive":0.984},"nclasses":3,"linked":null,"verdict":"inconclusive -- passed on its own, but not once corrected for testing 27 models against the same reference","passes":false,"diff":0.0,"p":0.7744140624999998,"isref":false,"note":""},{"key":"claude-opus-4-8","label":"Claude Opus 4.8","family":"llm","cost":2.71284,"cost_call":2.71284,"calls":250,"changed":null,"acc":0.976,"lo":0.9486378761864735,"hi":0.9889552226938632,"tin":394.6,"tout":29.6,"tcached":0,"secs":31,"n":250,"basis":"batch","passes_holm":true,"perclass":{"negative":0.971,"neutral":0.974,"positive":0.984},"nclasses":3,"linked":null,"verdict":"non-inferior (and not worse on the point estimate)","passes":true,"diff":0.020000000000000018,"p":0.03125,"isref":false,"note":""}],"majority":0.612,"bar":0.9,"ntest":250,"ref":"claude-sonnet-4-6","nclasses":3,"resolution":"At n=250 and ~85% accuracy, the 95% Wilson interval is +/-4.4%. Two models closer than roughly 8.9% apart cannot be separated by unpaired comparison on this set. Paired tests (McNemar) do better because they use only the items where the models disagree."}},"default":"financial_phrasebank"};
+
+// CHART holds every task; T is the one currently displayed. Datasets are added,
+// never swapped, so results stay attached to the task they were measured on --
+// a 77-class intent score and a 3-class sentiment score are not comparable
+// numbers and must never share an axis.
+let taskKey = CHART.default in CHART.tasks ? CHART.default : Object.keys(CHART.tasks)[0];
+let T = CHART.tasks[taskKey];
+
+const NS = "http://www.w3.org/2000/svg";
+const W = 1240, H = 720;
+const M = { l: 74, r: 128, t: 34, b: 74 };
+const PW = W - M.l - M.r, PH = H - M.t - M.b;
+const YMIN = 0.20, YMAX = 1.02;
+const FAM_COLOR = { llm: "var(--llm)", classical: "var(--classical)", encoder: "var(--encoder)" };
+
+// "Always predict majority class" is a reference LINE, not a candidate you
+// could deploy -- it is the floor every real model has to clear. Plotting it
+// as a dot invited reading it as an option on the menu, so it is drawn only
+// as the horizontal rule now.
+let POINTS, PRICED, CMIN, CMAX, LOGMIN, LOGMAX;
+function rescale() {
+  T = CHART.tasks[taskKey];
+  POINTS = T.rows.filter(r => r.key !== "majority");
+  PRICED = POINTS.map(r => r.cost).filter(c => !isFree(c));
+  CMIN = Math.min(...PRICED); CMAX = Math.max(...PRICED);
+  LOGMIN = Math.log10(CMIN / 1.7); LOGMAX = Math.log10(CMAX * 1.9);
+}
+
+// A "story" row is one that carries a claim rather than just a measurement:
+// the honesty-floor baselines, the trained encoder, the frontier reference,
+// and the after-end of every GEPA arrow.
+const STORY = new Set(["tfidf-logreg","frozen-embed","finetuned-encoder","modernbert"]);
+const isStory = r => STORY.has(r.key) || r.isref || r.linked;
+
+// ── x scale: a discrete "free" slot, then a log axis for everything priced ──
+// The three local rows genuinely cost $0 per classification, and zero has no place on a
+// log axis. Previously they carried a tiny hosted-equivalent price instead,
+// which forced the axis to span ~7 decades just to show three points bunched
+// at the far left, leaving the actually-interesting $0.003-$2.71 range
+// squeezed into the right third. Giving free its own slot, separated by a
+// break mark, lets the log axis cover only the priced range -- about 3
+// decades -- so the paid models spread out instead of piling up.
+const isFree = c => c <= 1e-9;
+
+const FREE_X = M.l + 26;      // the discrete zero slot
+const BREAK_X = M.l + 58;     // axis-break mark sits between the two regimes
+const LOG_X0 = M.l + 84;      // log axis proper begins here
+const LOG_W = M.l + PW - LOG_X0;
+
+const xOf = c => isFree(c)
+  ? FREE_X
+  : LOG_X0 + (Math.log10(c) - LOGMIN) / (LOGMAX - LOGMIN) * LOG_W;
+const yOf = a => M.t + (YMAX - a) / (YMAX - YMIN) * PH;
+
+// ── Pareto frontier ────────────────────────────────────────────────────────
+// A point is Pareto-optimal when nothing else is simultaneously cheaper (or
+// equal) and more accurate -- i.e. nothing dominates it. Everything not on
+// this line is strictly beaten by something on it: you could switch and pay
+// less for the same or better accuracy. Sorted cheapest-first, a candidate
+// joins the frontier only if it beats the best accuracy seen so far.
+// The non-LLM rows -- TF-IDF, frozen embeddings, the fine-tuned encoder.
+// Hiding them answers a different question: "given that I have decided to use
+// an LLM, which one?" The axis scale is deliberately NOT recomputed when they
+// are hidden, so toggling does not slide every remaining point sideways.
+const isML = r => r.family === "classical" || r.family === "encoder";
+const visibleRows = () => POINTS.filter(r => showML || !isML(r));
+
+function paretoFront(rows) {
+  const sorted = rows.slice().sort((a, b) => a.cost - b.cost || b.acc - a.acc);
+  const front = [];
+  let best = -Infinity;
+  for (const r of sorted) {
+    if (r.acc > best) { front.push(r); best = r.acc; }
+  }
+  return front;
+}
+
+let labelMode = "story";
+let showPareto = false;   // off by default, per request
+let showML = true;        // classical + encoder rows; on by default
+let bar = T.bar;
+let pos = {};       // key -> {dx, dy}
+let hidden = {};    // key -> true if user explicitly hid it
+const LSKEY = "downshift-chart-layout";
+
+
+function persist() {
+  // Keyed by task: a label nudged into place on a 3-class chart means nothing
+  // on a 77-class one, and an 85% accuracy bar is a different decision on each.
+  try {
+    const all = JSON.parse(localStorage.getItem(LSKEY) || "{}");
+    all[taskKey] = { pos, hidden, bar };
+    all._global = { labelMode, showPareto, showML };
+    localStorage.setItem(LSKEY, JSON.stringify(all));
+  } catch (e) {}
+}
+
+function restore() {
+  pos = {}; hidden = {}; bar = T.bar;
+  try {
+    const all = JSON.parse(localStorage.getItem(LSKEY) || "{}");
+    const g = all._global || {};
+    if (g.labelMode) labelMode = g.labelMode;
+    if (typeof g.showPareto === "boolean") showPareto = g.showPareto;
+    if (typeof g.showML === "boolean") showML = g.showML;
+    const t = all[taskKey];
+    if (t) {
+      pos = t.pos || {}; hidden = t.hidden || {};
+      if (typeof t.bar === "number") bar = t.bar;
+    }
+  } catch (e) {}
+}
+
+const el = (tag, attrs = {}) => {
+  const n = document.createElementNS(NS, tag);
+  for (const k in attrs) n.setAttribute(k, attrs[k]);
+  return n;
+};
+// Only ever called for priced ticks now -- zero-cost rows live in their own
+// "free" slot left of the axis break, so there is no floor to compare against.
+const money = v => {
+  if (isFree(v)) return "free";
+  if (v >= 1) return "$" + v.toFixed(0);
+  const d = Math.max(2, Math.ceil(-Math.log10(v)) + 1);
+  return ("$" + v.toFixed(d)).replace(/0+$/, "").replace(/\.$/, "");
+};
+// Did GEPA actually rewrite this row's prompt? Only the optimization record
+// can answer that, and r.changed IS that record: the optimized instruction
+// compared to the baseline as text. The question the chart used to ask instead
+// -- did accuracy or cost move by more than 1e-9 -- is a different question
+// with a wrong answer, because a same-prompt replicate moves both on its own:
+// cache warmth reprices it and a few items flip even at temperature 0.
+// banking77 deepseek-v4-flash drew a 1.6pp improvement arrow that way, off a
+// byte-identical 111-char instruction.
+// r.changed === null means there is no optimization record, i.e. unknown --
+// fall back to the numeric test rather than asserting a rewrite nobody
+// verified, and never put the word in front of the reader either way.
+const promptChanged = r => typeof r.changed === "boolean"
+  ? r.changed
+  : !!r.linked && (Math.abs(r.acc - r.linked.acc) > 1e-9 || Math.abs(r.cost - r.linked.cost) > 1e-9);
+
+const labelFor = r => {
+  if (!r.linked) return r.label;
+  const base = r.label.replace(" + GEPA", "");
+  return promptChanged(r)
+    ? `${base}: ${(r.linked.acc*100).toFixed(1)}% → ${(r.acc*100).toFixed(1)}%`
+    : `${base}: GEPA found no improvement (${(r.acc*100).toFixed(1)}%)`;
+};
+const shouldLabel = r => {
+  if (hidden[r.key] === true) return false;
+  if (hidden[r.key] === false) return true;      // explicitly turned on
+  return labelMode === "all" || (labelMode === "story" && isStory(r));
+};
+
+function drawChart() {
+  const svg = document.getElementById("svg");
+  svg.innerHTML = "";
+  document.getElementById("barVal").textContent = (bar*100).toFixed(1) + "%";
+  document.getElementById("barRange").value = bar;
+  document.getElementById("resolutionNote").textContent = T.resolution;
+  document.getElementById("subline").textContent =
+    `Official rate-card pricing for every candidate, and the measured cost-vs-accuracy result — ` +
+    `${T.ntest} held-out ${T.label} test items no optimizer ever saw. ` +
+    `Reference model: ${T.ref}.`;
+
+  // ── grid + axes ──
+  for (let a = 0.2; a <= 1.001; a += 0.1) {
+    const y = yOf(a);
+    svg.appendChild(el("line", { class: "gridline", x1: M.l, x2: M.l + PW, y1: y, y2: y }));
+    const t = el("text", { class: "axistext", x: M.l - 10, y: y + 4, "text-anchor": "end" });
+    t.textContent = Math.round(a * 100) + "%";
+    svg.appendChild(t);
+  }
+  // Decade gridlines + minor (2×,5×) ticks across the priced range only.
+  for (let d = Math.ceil(LOGMIN); d <= LOGMAX; d++) {
+    const x = xOf(Math.pow(10, d));
+    if (x < LOG_X0 - 1 || x > M.l + PW + 1) continue;
+    svg.appendChild(el("line", { class: "gridline", x1: x, x2: x, y1: M.t, y2: M.t + PH }));
+    const t = el("text", { class: "axistext", x, y: M.t + PH + 20, "text-anchor": "middle" });
+    t.textContent = money(Math.pow(10, d));
+    svg.appendChild(t);
+    for (const mul of [2, 5]) {
+      const mx = xOf(Math.pow(10, d) * mul);
+      if (mx < LOG_X0 || mx > M.l + PW) continue;
+      svg.appendChild(el("line", { class: "gridline", x1: mx, x2: mx, y1: M.t, y2: M.t + PH, opacity: .45 }));
+    }
+  }
+
+  // "free" slot, then an axis-break mark separating it from the log region.
+  const ft = el("text", { class: "axistext", x: FREE_X, y: M.t + PH + 20, "text-anchor": "middle" });
+  ft.textContent = "free"; svg.appendChild(ft);
+  svg.appendChild(el("line", { class: "gridline", x1: FREE_X, x2: FREE_X, y1: M.t, y2: M.t + PH, opacity: .5 }));
+  for (const off of [-4, 2]) {
+    svg.appendChild(el("path", {
+      d: `M ${BREAK_X + off - 4} ${M.t + PH + 6} l 6 -12`,
+      stroke: "var(--text-muted)", "stroke-width": 1.4, fill: "none" }));
+  }
+
+  svg.appendChild(el("line", { class: "axisline", x1: M.l, x2: M.l + PW, y1: M.t + PH, y2: M.t + PH }));
+  svg.appendChild(el("line", { class: "axisline", x1: M.l, x2: M.l, y1: M.t, y2: M.t + PH }));
+
+  let xt = el("text", { class: "axistitle", x: M.l + PW/2, y: H - 18, "text-anchor": "middle" });
+  xt.textContent = "Cost per 1,000 classifications  (USD · log₁₀ scale right of the break; "
+    + "\u201cfree\u201d is off-scale — log(0) is undefined · measured tokens × published rate, "
+    + "billed adapter retries included)";
+  svg.appendChild(xt);
+  let yt = el("text", { class: "axistitle", x: 18, y: M.t + PH/2, "text-anchor": "middle",
+                        transform: `rotate(-90 18 ${M.t + PH/2})` });
+  yt.textContent = "Accuracy on held-out test set  (95% Wilson interval)";
+  svg.appendChild(yt);
+
+  // ── reference lines ──
+  const my = yOf(T.majority);
+  svg.appendChild(el("line", { x1: M.l, x2: M.l + PW, y1: my, y2: my, stroke: "var(--text-muted)", "stroke-width": 1, opacity: .7 }));
+  let mt = el("text", { class: "reftext", x: M.l + PW - 4, y: my - 6, "text-anchor": "end", fill: "var(--text-2)" });
+  mt.textContent = `always guess the majority class — ${(T.majority*100).toFixed(1)}%`;
+  svg.appendChild(mt);
+
+  const by = yOf(bar);
+  svg.appendChild(el("line", { x1: M.l, x2: M.l + PW, y1: by, y2: by, stroke: "var(--text)", "stroke-width": 1.6 }));
+  let bt = el("text", { class: "reftext", x: M.l + PW + 8, y: by + 4, fill: "var(--text)", "font-weight": 600 });
+  bt.textContent = `${(bar*100).toFixed(0)}% bar`;
+  svg.appendChild(bt);
+
+  // ── GEPA arrows (under the marks) ──
+  const defs = el("defs");
+  const mk = el("marker", { id: "arrow", viewBox: "0 0 10 10", refX: 8, refY: 5,
+                            markerWidth: 6, markerHeight: 6, orient: "auto-start-reverse" });
+  mk.appendChild(el("path", { d: "M 0 0 L 10 5 L 0 10 z", fill: "#9aa7b4" }));
+  defs.appendChild(mk); svg.appendChild(defs);
+
+  visibleRows().filter(r => r.linked).forEach(r => {
+    const x1 = xOf(r.linked.cost), y1 = yOf(r.linked.acc), x2 = xOf(r.cost), y2 = yOf(r.acc);
+    if (!promptChanged(r)) {
+      // GEPA kept the baseline prompt, so there is no before and after here --
+      // one prompt was scored twice. An arrow would claim a change that did not
+      // happen, and pixel distance cannot spot that: this pair lands ~30px
+      // apart on noise alone. A dashed ring says "evaluated, unmoved".
+      svg.appendChild(el("circle", { class: "gepa-nochange", cx: x2, cy: y2, r: 13,
+        fill: "none", stroke: "#9aa7b4", "stroke-width": 1.4,
+        "stroke-dasharray": "3 3", opacity: .85 }));
+      return;
+    }
+    // A rewritten prompt that landed on the same pixel has nothing drawable:
+    // a zero-length line with an arrowhead renders as a blob over the dot.
+    if (Math.hypot(x2 - x1, y2 - y1) < 2) return;
+    const ang = Math.atan2(y2 - y1, x2 - x1), pad = 11;
+    svg.appendChild(el("line", {
+      class: "gepa-arrow",
+      x1: x1 + Math.cos(ang)*pad, y1: y1 + Math.sin(ang)*pad,
+      x2: x2 - Math.cos(ang)*pad, y2: y2 - Math.sin(ang)*pad,
+      stroke: "#9aa7b4", "stroke-width": 1.6, "marker-end": "url(#arrow)", opacity: .9 }));
+  });
+
+  // ── Pareto frontier (optional) ──
+  // Drawn as a staircase, not a straight join: between two frontier points the
+  // achievable accuracy really is flat until you pay for the next one, so a
+  // diagonal would imply intermediate options that do not exist.
+  if (showPareto) {
+    const front = paretoFront(visibleRows());
+    let dPath = "";
+    front.forEach((r, i) => {
+      const x = xOf(r.cost), y = yOf(r.acc);
+      if (i === 0) { dPath += `M ${x} ${y}`; }
+      else { dPath += ` H ${x} V ${y}`; }
+    });
+    dPath += ` H ${M.l + PW}`;   // extend flat to the right edge
+    svg.appendChild(el("path", { d: dPath, fill: "none", stroke: "var(--text)",
+      "stroke-width": 1.6, "stroke-dasharray": "5 4", opacity: .55 }));
+    front.forEach(r => svg.appendChild(el("circle", {
+      cx: xOf(r.cost), cy: yOf(r.acc), r: 11, fill: "none",
+      stroke: "var(--text)", "stroke-width": 1.4, opacity: .5 })));
+    const pl = el("text", { class: "reftext", x: xOf(front[0].cost) + 16,
+      y: yOf(front[0].acc) - 14, fill: "var(--text-2)" });
+    pl.textContent = `Pareto frontier — ${front.length} of ${visibleRows().length} `
+      + `${showML ? "candidates" : "LLMs"} are not dominated`;
+    svg.appendChild(pl);
+  }
+
+  // ── points ──
+  const ptLayer = el("g"), lblLayer = el("g");
+  visibleRows().forEach(r => {
+    const x = xOf(r.cost), y = yOf(r.acc), c = FAM_COLOR[r.family];
+    const clears = r.acc >= bar;
+    const g = el("g", { class: "pt" });
+    g.appendChild(el("circle", { class: "halo", cx: x, cy: y, r: 16, fill: c, opacity: 0 }));
+    // Wilson interval
+    g.appendChild(el("line", { x1: x, x2: x, y1: yOf(r.lo), y2: yOf(r.hi), stroke: c, "stroke-width": 1.5, opacity: .75 }));
+    g.appendChild(el("line", { x1: x-4, x2: x+4, y1: yOf(r.hi), y2: yOf(r.hi), stroke: c, "stroke-width": 1.5, opacity: .75 }));
+    g.appendChild(el("line", { x1: x-4, x2: x+4, y1: yOf(r.lo), y2: yOf(r.lo), stroke: c, "stroke-width": 1.5, opacity: .75 }));
+    // 2px surface ring keeps overlapping marks separable
+    g.appendChild(el("circle", { cx: x, cy: y, r: 6.5, fill: "none", stroke: "var(--surface)", "stroke-width": 2.5 }));
+    g.appendChild(el("circle", { cx: x, cy: y, r: 5.5,
+      fill: clears ? c : "var(--surface)", stroke: c, "stroke-width": 2 }));
+    g.addEventListener("mouseenter", e => showTip(e, r));
+    g.addEventListener("mousemove", e => moveTip(e));
+    g.addEventListener("mouseleave", hideTip);
+    g.addEventListener("click", () => { hidden[r.key] = !shouldLabel(r) ? false : true; persist(); drawChart(); });
+    ptLayer.appendChild(g);
+  });
+  svg.appendChild(ptLayer);
+
+  // ── labels (draggable) ──
+  visibleRows().filter(shouldLabel).forEach(r => {
+    const px = xOf(r.cost), py = yOf(r.acc);
+    const d = pos[r.key] || defaultOffset(r);
+    const lx = px + d.dx, ly = py + d.dy;
+    const g = el("g", { class: "lbl", "data-key": r.key });
+    const leader = el("line", { class: "leader", x1: px, y1: py, x2: lx, y2: ly });
+    // Only show a leader once the label has been pulled clear of its dot.
+    leader.style.display = Math.hypot(d.dx, d.dy) > 34 ? "" : "none";
+    g.appendChild(leader);
+    const t = el("text", { x: lx, y: ly, "text-anchor": "middle" });
+    t.textContent = labelFor(r);
+    g.appendChild(t);
+    makeDraggable(g, r, px, py);
+    lblLayer.appendChild(g);
+  });
+  svg.appendChild(lblLayer);
+}
+
+// Default: above the dot, nudged below for the few points that sit near the
+// top edge where an above-label would clip out of the plot area.
+function defaultOffset(r) {
+  return { dx: 0, dy: r.acc > 0.965 ? 22 : -16 };
+}
+
+function makeDraggable(g, r, px, py) {
+  let start = null;
+  g.addEventListener("pointerdown", e => {
+    e.preventDefault();
+    const p = svgPoint(e);
+    const cur = pos[r.key] || defaultOffset(r);
+    start = { mx: p.x, my: p.y, dx: cur.dx, dy: cur.dy };
+    g.classList.add("dragging");
+    g.setPointerCapture(e.pointerId);
+  });
+  g.addEventListener("pointermove", e => {
+    if (!start) return;
+    const p = svgPoint(e);
+    const dx = start.dx + (p.x - start.mx), dy = start.dy + (p.y - start.my);
+    pos[r.key] = { dx, dy };
+    const t = g.querySelector("text"), l = g.querySelector("line");
+    t.setAttribute("x", px + dx); t.setAttribute("y", py + dy);
+    l.setAttribute("x2", px + dx); l.setAttribute("y2", py + dy);
+    l.style.display = Math.hypot(dx, dy) > 34 ? "" : "none";
+  });
+  const end = e => { if (!start) return; start = null; g.classList.remove("dragging"); persist(); };
+  g.addEventListener("pointerup", end);
+  g.addEventListener("pointercancel", end);
+}
+
+function svgPoint(e) {
+  const svg = document.getElementById("svg");
+  const pt = svg.createSVGPoint();
+  pt.x = e.clientX; pt.y = e.clientY;
+  return pt.matrixTransform(svg.getScreenCTM().inverse());
+}
+
+// ── tooltip ──
+const tip = document.getElementById("tip");
+const money5 = c => c > 1e-9 ? "$" + c.toFixed(5) : "free";
+const pp = v => (v >= 0 ? "+" : "") + v.toFixed(1) + "pp";
+
+function showTip(e, r) {
+  const pc = Object.entries(r.perclass).map(([k,v]) => `${k} ${(v*100).toFixed(0)}%`).join(" · ");
+  const tok = (r.tin || r.tout) ? `${r.tin.toFixed(0)} in / ${r.tout.toFixed(0)} out` : "no LLM call";
+
+  // The headline cost is per classification, which is what the axis says and
+  // where the dot actually sits. When the adapter retried items the row was
+  // billed for more calls than it classified -- 500 calls for 251 items on the
+  // worst row here -- and the two prices differ by exactly that ratio. Naming
+  // only the headline would hide where a 1.99x multiplier came from.
+  const retries = r.calls - r.n;
+  const billed = retries > 0
+    ? `<div class="t-row"><span>Billed calls</span><b>${r.calls} for ${r.n} items (${retries} retried)</b></div>`
+      + `<div class="t-row"><span>Cost / 1k calls</span><b>${money5(r.cost_call)}</b></div>`
+    : "";
+
+  // A GEPA pair that never got a new prompt is a replicate, not an outcome:
+  // say so, and quote the run-to-run drift as drift.
+  let replicate = "";
+  if (r.linked && !promptChanged(r)) {
+    const dAcc = (r.acc - r.linked.acc) * 100;
+    const same = Math.abs(dAcc) < 0.05 && Math.abs(r.cost - r.linked.cost) < 1e-9;
+    replicate = `<div class="t-verdict" style="color:var(--text-2)">`
+      + (same
+        ? `GEPA kept the baseline prompt — same prompt, and it scored identically.`
+        : `GEPA kept the baseline prompt: one prompt scored twice. The two runs differ by `
+          + `${pp(dAcc)} (${(r.linked.acc*100).toFixed(1)}% → ${(r.acc*100).toFixed(1)}%) and `
+          + `${money5(r.linked.cost)} → ${money5(r.cost)} per 1k items — measurement noise, not a gain.`)
+      + `</div>`;
+  }
+
+  tip.innerHTML = `
+    <div class="t-name">${r.label}${r.isref ? " (reference)" : ""}</div>
+    <div class="t-row"><span>Accuracy</span><b>${(r.acc*100).toFixed(1)}%  [${(r.lo*100).toFixed(1)}–${(r.hi*100).toFixed(1)}]</b></div>
+    <div class="t-row"><span>Cost / 1k items</span><b>${money5(r.cost)}</b></div>
+    ${billed}
+    <div class="t-row"><span>Mean tokens / call</span><b>${tok}</b></div>
+    <div class="t-row"><span>${r.basis==='fit'?'Training time':'Batch duration'}</span><b>${r.secs}s</b></div>
+    <div class="t-row"><span></span><i style="font-size:11px;color:#8a8a87">${r.basis==='fit'?'time to TRAIN, not to classify \u2014 not comparable with the LLM rows':'whole concurrent run, not per-request latency'}</i></div>
+    <div class="t-row"><span>Per class</span><b>${pc}</b></div>
+    ${replicate}
+    ${r.verdict ? `<div class="t-verdict" style="color:${r.passes ? "var(--good)" : "var(--text-2)"}">
+       vs reference: ${r.diff >= 0 ? "+" : ""}${(r.diff*100).toFixed(1)}pp — ${r.verdict}</div>` : ""}`;
+  tip.style.opacity = 1;
+  moveTip(e);
+}
+function moveTip(e) {
+  const host = document.getElementById("chartHost").getBoundingClientRect();
+  let x = e.clientX - host.left + 16, y = e.clientY - host.top + 14;
+  if (x + tip.offsetWidth > host.width) x = e.clientX - host.left - tip.offsetWidth - 16;
+  tip.style.left = x + "px"; tip.style.top = y + "px";
+}
+function hideTip() { tip.style.opacity = 0; }
+
+// ── chart controls ──
+document.querySelectorAll("[data-labels]").forEach(c => c.addEventListener("click", () => {
+  document.querySelectorAll("[data-labels]").forEach(x => x.classList.remove("active"));
+  c.classList.add("active");
+  labelMode = c.dataset.labels;
+  hidden = {};              // a global mode change clears per-point overrides
+  persist(); drawChart();
+}));
+document.getElementById("barRange").addEventListener("input", e => {
+  bar = parseFloat(e.target.value); persist(); drawChart();
+});
+document.getElementById("mlChk").addEventListener("change", e => {
+  showML = e.target.checked; persist(); drawChart();
+});
+document.getElementById("paretoChk").addEventListener("change", e => {
+  showPareto = e.target.checked; persist(); drawChart();
+});
+document.getElementById("resetBtn").addEventListener("click", () => {
+  pos = {}; hidden = {}; persist(); drawChart();
+});
+document.getElementById("paretoChk").checked = showPareto;
+document.getElementById("mlChk").checked = showML;
+
+// ── dataset picker ──
+const dsPicker = document.getElementById("dsPicker");
+Object.values(CHART.tasks).forEach(t => {
+  const c = document.createElement("span");
+  c.className = "chip" + (t.key === taskKey ? " active" : "");
+  c.textContent = `${t.label} (${t.nclasses}-class)`;
+  c.addEventListener("click", () => {
+    if (t.key === taskKey) return;
+    taskKey = t.key;
+    dsPicker.querySelectorAll(".chip").forEach(x => x.classList.remove("active"));
+    c.classList.add("active");
+    rescale(); restore(); drawChart();
+  });
+  dsPicker.appendChild(c);
+});
+
+rescale();
+restore();
+document.querySelectorAll("[data-labels]").forEach(c => {
+  if (c.dataset.labels === labelMode) c.classList.add("active"); else c.classList.remove("active");
+});
+</script>
+</body>
+</html>

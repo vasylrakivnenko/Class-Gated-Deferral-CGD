@@ -1,0 +1,9 @@
+{
+  "task": "cuad_cap_on_liability",
+  "readme_description": "This is a binary classification task in which the model must determine if a contractual clause falls under the category of \"Cap On Liability\".",
+  "base_prompt_preamble": "Does the clause specify a cap on liability upon the breach of a party\u2019s obligation? This includes time limitation for the counterparty to bring claims or maximum amount for recovery.",
+  "labels": [
+    "no",
+    "yes"
+  ]
+}

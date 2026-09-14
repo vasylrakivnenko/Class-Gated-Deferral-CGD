@@ -1,0 +1,9 @@
+{
+  "task": "learned_hands_housing",
+  "readme_description": "This is a binary classification task in which the model must determine if a user's post discusses issues with paying your rent or mortgage, landlord-tenant issues, housing subsidies and public housing, eviction, and other problems with your apartment, mobile home, or house.",
+  "base_prompt_preamble": "Does the post discuss issues with paying your rent or mortgage, landlord-tenant issues, housing subsidies and public housing, eviction, and other problems with your apartment, mobile home, or house?",
+  "labels": [
+    "no",
+    "yes"
+  ]
+}

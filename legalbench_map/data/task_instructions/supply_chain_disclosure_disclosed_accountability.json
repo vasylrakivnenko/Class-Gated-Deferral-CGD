@@ -1,0 +1,9 @@
+{
+  "task": "supply_chain_disclosure_disclosed_accountability",
+  "readme_description": "This is a binary classification task in which the LLM must determine if a supply chain disclosure meets the following coding criteria.\n\n```text\nDoes the above statement disclose to what extent, if any, that the retail seller or manufacturer maintains internal accountability standards and procedures for employees or contractors failing to meet company standards regarding slavery and trafficking?\n```",
+  "base_prompt_preamble": "{{text}}\n\nQuestion: Does the above disclosure meet the following criteria: Does the above statement disclose to what extent, if any, that the retail seller or manufacturer maintains internal accountability standards and procedures for employees or contractors failing to meet company standards regarding slavery and trafficking? Answer yes or no.\nAnswer:",
+  "labels": [
+    "no",
+    "yes"
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "task": "cuad_exclusivity",
+  "readme_description": "This is a binary classification task in which the model must determine if a contractual clause falls under the category of \"Exclusivity\".",
+  "base_prompt_preamble": "Does the clause specify exclusive dealing commitment with the counterparty? This includes a commitment to procure all \u201crequirements\u201d from one party of certain technology, goods, or services or a prohibition on licensing or selling technology, goods or services to third parties, or a prohibition on collaborating or working with other parties), whether during the contract or after the contract ends (or both).",
+  "labels": [
+    "no",
+    "yes"
+  ]
+}

@@ -1,0 +1,11 @@
+task,model_key,item_idx,text_sha256,gold,raw_output,pred,parse_ok,in_tokens,out_tokens,cached_tokens,cost_usd,latency_s,ts
+opp115_data_retention,gpt-oss-120b-fireworks,1,ca069ace0fea7074fac7e44b33121935734dd94f589cc9069a738b5884a0f116,no,Label: No,label no,0,563,189,0,0.0001978500,1.904,2026-09-11T20:54:06+00:00
+opp115_data_retention,gpt-oss-120b-fireworks,2,94284e1d7b10fa6117e24745885f4a5c871d995ca98a16179c63cacb7e9c8618,no,Label: No,label no,0,591,310,0,0.0002746500,1.948,2026-09-11T20:54:06+00:00
+opp115_data_retention,gpt-oss-120b-fireworks,5,bae4eb887d877f453aee88d3761b630e4bc7ff917be76cb60950cca3ae6c909d,yes,Yes,yes,1,552,421,0,0.0003354000,2.944,2026-09-11T20:54:07+00:00
+opp115_data_retention,gpt-oss-120b-fireworks,8,11dbaf4848acf49d21fffc81b9b0ac39e736808cb102bd24ec485e1c9793ead1,no,Label: No,label no,0,468,150,422,0.0001032300,1.051,2026-09-11T20:54:07+00:00
+opp115_data_retention,gpt-oss-120b-fireworks,6,ffcbe512035ce904259b64a9212131a8ddb5ef6916eb7f217c64a5658bd672fd,yes,Yes,yes,1,461,486,0,0.0003607500,3.298,2026-09-11T20:54:07+00:00
+opp115_data_retention,gpt-oss-120b-fireworks,4,be54e70c44eb94e44c82413eb316abd303bc0920653e459cc81b65dc610c2c47,yes,Label: No,label no,0,500,513,0,0.0003828000,3.819,2026-09-11T20:54:07+00:00
+opp115_data_retention,gpt-oss-120b-fireworks,0,e783d6e5426c4d132ca1198992b63a2b77013808d63e267b499744a4c5d1b11b,yes,Label: No,label no,0,564,879,0,0.0006120000,5.056,2026-09-11T20:54:09+00:00
+opp115_data_retention,gpt-oss-120b-fireworks,3,ee7f763b4da0bbf780148ff43363b2a907297b4f98c76d7c1e1d2869878a70f8,yes,No,no,1,533,568,0,0.0004207500,5.411,2026-09-11T20:54:09+00:00
+opp115_data_retention,gpt-oss-120b-fireworks,7,9e061b3940805235e0301ddc59cdad769cb39c4672fdac340725b065cca9eb76,no,Label: No,label no,0,540,750,0,0.0005310000,6.134,2026-09-11T20:54:10+00:00
+opp115_data_retention,gpt-oss-120b-fireworks,9,b35466aaf2aa88600ce3febc4691f6c33a5a185d118a53da03fd134b474427c7,yes,Yes,yes,1,513,909,0,0.0006223500,6.247,2026-09-11T20:54:12+00:00

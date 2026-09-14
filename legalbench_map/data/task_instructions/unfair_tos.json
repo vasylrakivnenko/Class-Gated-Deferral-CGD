@@ -1,0 +1,16 @@
+{
+  "task": "unfair_tos",
+  "readme_description": "The purpose of this task is classifying clauses in Terms of Service agreements. Clauses have been annotated by into nine categories: `['Arbitration', 'Unilateral change', 'Content removal', 'Jurisdiction', 'Choice of law', 'Limitation of liability', 'Unilateral termination', 'Contract by using', 'Other']`. The first eight categories correspond to clauses that would potentially be deemed *potentially unfair*. The last category (`Other`) corresponds to clauses in agreements which don't fit into these categories. A description of the precise annotation guidelines can be found in the original paper.",
+  "base_prompt_preamble": "Classify each clause by type.\nOptions: Arbitration, Unilateral change, Content removal, Jurisdiction, Choice of law, Limitation of liability, Unilateral termination, Contract by using, Other",
+  "labels": [
+    "arbitration",
+    "choice of law",
+    "content removal",
+    "contract by using",
+    "jurisdiction",
+    "limitation of liability",
+    "other",
+    "unilateral change",
+    "unilateral termination"
+  ]
+}

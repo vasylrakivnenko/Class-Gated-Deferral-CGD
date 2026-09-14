@@ -1,0 +1,27 @@
+{
+  "task": "learned_hands_employment",
+  "best_candidate": "embed_small_logreg",
+  "hyperparameters": null,
+  "hyperparameters_note": "The fixed candidate interface (fit_predict_proba -> np.ndarray) returns only probabilities, not hyperparameters; this field is populated only if the candidate module optionally exposes get_last_hyperparams(task_key), else it is null.",
+  "conformal_alpha": 0.05,
+  "conformal_quantiles_all_folds": [
+    0.6049672961235046,
+    0.2949424000101566,
+    0.46614253520965576,
+    0.5601532459259033,
+    0.5749152727450348,
+    0.5139014720916748,
+    0.6661276817321777,
+    0.3897750973701477,
+    0.30864451255334946,
+    0.582837700843811,
+    0.5127362012863159,
+    0.6504173874855042,
+    0.5442001657426307,
+    0.4139974291921428,
+    0.5031982064247131
+  ],
+  "conformal_quantile_mean_finite": 0.5057971069824482,
+  "folds": 5,
+  "repeats": 3
+}

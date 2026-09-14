@@ -1,0 +1,9 @@
+{
+  "task": "opp115_data_security",
+  "readme_description": "This is a binary classification task in which the LLM must answer the following annotation intent for clauses in privacy policies.\n\n```text\nDoes the clause describe how user information is protected?\n```",
+  "base_prompt_preamble": "Does the clause describe how user information is protected?",
+  "labels": [
+    "no",
+    "yes"
+  ]
+}

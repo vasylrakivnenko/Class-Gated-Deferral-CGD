@@ -1,0 +1,27 @@
+{
+  "task": "supply_chain_disclosure_best_practice_audits",
+  "best_candidate": "embed_large_logreg",
+  "hyperparameters": null,
+  "hyperparameters_note": "The fixed candidate interface (fit_predict_proba -> np.ndarray) returns only probabilities, not hyperparameters; this field is populated only if the candidate module optionally exposes get_last_hyperparams(task_key), else it is null.",
+  "conformal_alpha": 0.05,
+  "conformal_quantiles_all_folds": [
+    0.6335070729255676,
+    0.5717845559120178,
+    0.7533235437672803,
+    0.8404130339622498,
+    0.7473564743995667,
+    0.6525859236717224,
+    0.5184812391256917,
+    0.6616740226745605,
+    0.7607659101486206,
+    0.730961799621582,
+    0.6673000057727101,
+    0.7786539909043013,
+    0.6866000686109046,
+    0.7615759486194842,
+    0.5590938925743103
+  ],
+  "conformal_quantile_mean_finite": 0.6882718321793713,
+  "folds": 5,
+  "repeats": 3
+}

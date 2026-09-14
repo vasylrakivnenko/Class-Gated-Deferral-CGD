@@ -1,0 +1,9 @@
+{
+  "task": "cuad_audit_rights",
+  "readme_description": "This is a binary classification task in which the model must determine if a contractual clause falls under the category of \"Audit Rights\".",
+  "base_prompt_preamble": "Does the clause give a party the right to audit the books, records, or physical locations of the counterparty to ensure compliance with the contract?",
+  "labels": [
+    "no",
+    "yes"
+  ]
+}

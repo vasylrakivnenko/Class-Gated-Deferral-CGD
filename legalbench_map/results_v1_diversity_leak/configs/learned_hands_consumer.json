@@ -1,0 +1,27 @@
+{
+  "task": "learned_hands_consumer",
+  "best_candidate": "embed_small_logreg",
+  "hyperparameters": null,
+  "hyperparameters_note": "The fixed candidate interface (fit_predict_proba -> np.ndarray) returns only probabilities, not hyperparameters; this field is populated only if the candidate module optionally exposes get_last_hyperparams(task_key), else it is null.",
+  "conformal_alpha": 0.05,
+  "conformal_quantiles_all_folds": [
+    0.5976806700920859,
+    0.7198987221687652,
+    0.689333340207736,
+    0.8176835057484582,
+    0.8343218564987183,
+    0.5748703308442136,
+    0.760161291959305,
+    0.8432322144508362,
+    0.8505921959877014,
+    0.6214405298233032,
+    0.5764171056871743,
+    0.6028437614440918,
+    0.5274449586868286,
+    0.6037789583206177,
+    0.7879001498222351
+  ],
+  "conformal_quantile_mean_finite": 0.6938399727828046,
+  "folds": 5,
+  "repeats": 3
+}

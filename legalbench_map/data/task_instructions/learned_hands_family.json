@@ -1,0 +1,9 @@
+{
+  "task": "learned_hands_family",
+  "readme_description": "This is a binary classification task in which the model must determine if a user's post discusses issues that arise within a family, like divorce, adoption, name change, guardianship, domestic violence, child custody, and other issues.",
+  "base_prompt_preamble": "Does the post discuss issues that arise within a family, like divorce, adoption, name change, guardianship, domestic violence, child custody, and other issues?",
+  "labels": [
+    "no",
+    "yes"
+  ]
+}

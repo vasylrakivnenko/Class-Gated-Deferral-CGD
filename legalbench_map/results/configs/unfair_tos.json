@@ -1,0 +1,27 @@
+{
+  "task": "unfair_tos",
+  "best_candidate": "embed_base_logreg",
+  "hyperparameters": null,
+  "hyperparameters_note": "The fixed candidate interface (fit_predict_proba -> np.ndarray) returns only probabilities, not hyperparameters; this field is populated only if the candidate module optionally exposes get_last_hyperparams(task_key), else it is null.",
+  "conformal_alpha": 0.05,
+  "conformal_quantiles_all_folds": [
+    0.8198193741945492,
+    0.8673237465799342,
+    0.8217627894891615,
+    0.8682677767902427,
+    0.8731769559953377,
+    0.8747236239631199,
+    0.8388248201995245,
+    0.8718836884481265,
+    0.8480440717253107,
+    0.8720336246160323,
+    0.8610730340916957,
+    0.8656838652750296,
+    0.8117917877793109,
+    0.8614317220022761,
+    0.8688021860086064
+  ],
+  "conformal_quantile_mean_finite": 0.8549762044772172,
+  "folds": 5,
+  "repeats": 3
+}

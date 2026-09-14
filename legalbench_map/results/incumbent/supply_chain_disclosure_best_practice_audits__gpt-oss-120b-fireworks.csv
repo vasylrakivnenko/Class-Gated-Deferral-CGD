@@ -1,0 +1,11 @@
+task,model_key,item_idx,text_sha256,gold,raw_output,pred,parse_ok,in_tokens,out_tokens,cached_tokens,cost_usd,latency_s,ts
+supply_chain_disclosure_best_practice_audits,gpt-oss-120b-fireworks,4,dd521a35f676e54ddd4c10353a5b613a177a8c4ab4053780ebfac40ccda839f6,yes,Yes.,yes,1,722,110,0,0.0001743000,0.564,2026-09-11T20:54:19+00:00
+supply_chain_disclosure_best_practice_audits,gpt-oss-120b-fireworks,3,2f6b42c2613958a15c6634faad8dce008342e61c935053e805fb0f1fff7e4aa5,yes,Yes.,yes,1,1062,144,0,0.0002457000,0.771,2026-09-11T20:54:20+00:00
+supply_chain_disclosure_best_practice_audits,gpt-oss-120b-fireworks,7,a3a6ab356fbf9711c2b5414d31490eead3dd8e73d43141d8c1c133c314b5f163,yes,Yes.,yes,1,395,117,0,0.0001294500,0.763,2026-09-11T20:54:20+00:00
+supply_chain_disclosure_best_practice_audits,gpt-oss-120b-fireworks,2,cfd25f9be7d33e9e2626fa8f008705300a927fdffb8d298eb046111abadd5313,yes,Yes.,yes,1,895,109,69,0.0001903350,0.777,2026-09-11T20:54:20+00:00
+supply_chain_disclosure_best_practice_audits,gpt-oss-120b-fireworks,1,6bd8ec1448ec24fd291dc77052268939f67f9cfea5b76bd69388e542e0b53419,yes,Yes.,yes,1,728,128,69,0.0001766850,0.786,2026-09-11T20:54:20+00:00
+supply_chain_disclosure_best_practice_audits,gpt-oss-120b-fireworks,0,9d54e6c772949bfb6b364e2d7006fb131ac4294d6529566b2d88c78014eb6a1d,yes,Yes.,yes,1,794,115,0,0.0001881000,0.935,2026-09-11T20:54:20+00:00
+supply_chain_disclosure_best_practice_audits,gpt-oss-120b-fireworks,5,33e4c0559a94c7dce28fd5c76870036003e5e62eed6cf35cdc1c63a6b0a6569f,yes,Yes.,yes,1,628,149,69,0.0001742850,1.119,2026-09-11T20:54:20+00:00
+supply_chain_disclosure_best_practice_audits,gpt-oss-120b-fireworks,8,7a0cea15013a413c9095a12a26a110ad23082840e0980ef5ea664df3aa587c79,yes,Yes.,yes,1,804,132,69,0.0001904850,0.620,2026-09-11T20:54:20+00:00
+supply_chain_disclosure_best_practice_audits,gpt-oss-120b-fireworks,9,ded19f85f9c4d9d7f469200e17647cd8ecc12c2da48288385855657ec1b5adf5,yes,Yes.,yes,1,1084,90,0,0.0002166000,1.040,2026-09-11T20:54:21+00:00
+supply_chain_disclosure_best_practice_audits,gpt-oss-120b-fireworks,6,fb9db00dc94a7d11b1f1dc759bdaa0ab4132a345c4f4c79fa1b99a4f3feabec7,yes,Yes.,yes,1,549,105,0,0.0001453500,2.004,2026-09-11T20:54:21+00:00

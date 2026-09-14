@@ -1,0 +1,1 @@
+{"started": "2026-09-11T20:34:54+00:00", "finished": "2026-09-11T20:34:58+00:00", "tasks": ["opp115_data_retention"], "models": ["glm-5.3-flash", "gpt-oss-120b-fireworks", "qwen3.7-plus"], "limit": 3, "max_tokens": 64, "seed": 0, "concurrency": 3, "max_cost_usd": 5.0, "spent_this_run_usd": 0.0007002, "total_on_disk_usd": 0.0007002, "budget_exceeded": false}

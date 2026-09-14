@@ -1,0 +1,27 @@
+{
+  "task": "opp115_international_and_specific_audiences",
+  "best_candidate": "embed_base_logreg",
+  "hyperparameters": null,
+  "hyperparameters_note": "The fixed candidate interface (fit_predict_proba -> np.ndarray) returns only probabilities, not hyperparameters; this field is populated only if the candidate module optionally exposes get_last_hyperparams(task_key), else it is null.",
+  "conformal_alpha": 0.05,
+  "conformal_quantiles_all_folds": [
+    0.5737743548683629,
+    0.529999478757397,
+    0.568552238686316,
+    0.7735791091087594,
+    0.6296483090624717,
+    0.6657801668113421,
+    0.6481858298723152,
+    0.5613513588905334,
+    0.6788855588768257,
+    0.7288789966368376,
+    0.6342841386795044,
+    0.5955865979194641,
+    0.543537974357605,
+    0.7543558849586283,
+    0.7212035059928894
+  ],
+  "conformal_quantile_mean_finite": 0.6405069002319501,
+  "folds": 5,
+  "repeats": 3
+}

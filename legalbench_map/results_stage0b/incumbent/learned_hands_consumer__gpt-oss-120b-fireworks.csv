@@ -1,0 +1,11 @@
+task,model_key,item_idx,text_sha256,gold,raw_output,pred,parse_ok,in_tokens,out_tokens,cached_tokens,cost_usd,latency_s,ts
+learned_hands_consumer,gpt-oss-120b-fireworks,2,23e415128308be018936edfbe782216c59135a5373afcc67391ab30b99e4fab4,yes,Yes,yes,1,1535,124,0,0.0003046500,0.763,2026-09-11T21:21:37+00:00
+learned_hands_consumer,gpt-oss-120b-fireworks,1,191f0937cb2c89fc2ee6de2cf962022796a21348bccce723e58dff5138f4aa85,yes,Yes,yes,1,2035,104,0,0.0003676500,0.965,2026-09-11T21:21:38+00:00
+learned_hands_consumer,gpt-oss-120b-fireworks,3,d020ae25740133b72d326d57b58504372281f70e6def4d5a95655465a0e91468,yes,Yes,yes,1,1552,124,0,0.0003072000,1.026,2026-09-11T21:21:38+00:00
+learned_hands_consumer,gpt-oss-120b-fireworks,0,a379a87ff3cdf868abd2168b8f7f1448c858c1c0293a0324128a1f9795c2495c,yes,Yes,yes,1,1544,159,0,0.0003270000,1.060,2026-09-11T21:21:38+00:00
+learned_hands_consumer,gpt-oss-120b-fireworks,5,ebbf5dce638a03352aa5ce9e76ea526855fc19fe426785e9d74da0b972447b56,yes,Yes,yes,1,1731,170,79,0.0003509850,1.041,2026-09-11T21:21:39+00:00
+learned_hands_consumer,gpt-oss-120b-fireworks,4,7505269b5e689b850bf04d86c3aee556710bf7ed7473e80bb32cbf4ef909b78b,yes,Yes,yes,1,1646,264,79,0.0003946350,1.279,2026-09-11T21:21:39+00:00
+learned_hands_consumer,gpt-oss-120b-fireworks,7,a1352482ea4516a24b594ccbf2ed311516cde0785a8edf4e41b8b20657074dd8,yes,Yes,yes,1,1757,277,79,0.0004190850,1.467,2026-09-11T21:21:39+00:00
+learned_hands_consumer,gpt-oss-120b-fireworks,6,3682fd0cb52ef152a5e499e4441ac3d86a735973de9e3062a809fc58d80f083a,yes,Yes,yes,1,1638,179,81,0.0003421650,1.597,2026-09-11T21:21:39+00:00
+learned_hands_consumer,gpt-oss-120b-fireworks,8,5655b74e200dc643bf62729b26c6760f786b1d110abd671cd8122c5d567f2846,yes,Yes,yes,1,1569,165,81,0.0003234150,1.075,2026-09-11T21:21:40+00:00
+learned_hands_consumer,gpt-oss-120b-fireworks,9,30f3878dfeeec4bffed1d8ed0fd2feaa3165fc8790712d0e6c993ba632a91571,yes,Yes,yes,1,1532,200,1449,0.0001541850,1.530,2026-09-11T21:21:40+00:00

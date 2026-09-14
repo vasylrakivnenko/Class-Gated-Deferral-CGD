@@ -1,0 +1,81 @@
+task,model_key,item_idx,text_sha256,gold,raw_output,pred,parse_ok,in_tokens,out_tokens,cached_tokens,cost_usd,latency_s,ts
+learned_hands_consumer,glm-5.3-flash,2,23e415128308be018936edfbe782216c59135a5373afcc67391ab30b99e4fab4,yes,"**Label: Yes**
+
+This post discusses a money-related issue. The poster's mother has a dental bill that was sent to collections, and she's dealing with questions about paying both the original bill and the collection fee. This falls squarely into the category of money/debt issues, similar to the first labeled example about the payday loan collection agency. It involves consumer debt, collection agencies, and billing disputes — all financial matters affecting an ordinary consumer.","label yes
+
+this post discusses a moneyrelated issue the posters mother has a dental bill that was sent to collections and shes dealing with questions about paying both the original bill and the collection fee this falls squarely into the category of moneydebt issues similar to the first labeled example about the payday loan collection agency it involves consumer debt collection agencies and billing disputes — all financial matters affecting an ordinary consumer",0,1478,456,0,0.0004497000,4.542,2026-09-11T20:54:27+00:00
+learned_hands_consumer,glm-5.3-flash,4,7505269b5e689b850bf04d86c3aee556710bf7ed7473e80bb32cbf4ef909b78b,yes,"**Label: Yes**
+
+This post discusses a consumer goods and services issue. The poster's father entered into a purchase transaction with Hotwire for plane tickets and a rental car package, and the price unexpectedly jumped from $1,600 to $2,800 at the moment of purchase. This is a dispute over a consumer purchase/contract — the company effectively added $1,200 to the agreed price after the buyer committed, and the father is now refusing to pay the difference. Questions about what recourse he has and the consequences of non-payment fall squarely within consumer transaction and contract disputes, similar to the labeled ""Yes"" examples involving payday loans, altered service contracts, and account restrictions.","label yes
+
+this post discusses a consumer goods and services issue the posters father entered into a purchase transaction with hotwire for plane tickets and a rental car package and the price unexpectedly jumped from 1600 to 2800 at the moment of purchase this is a dispute over a consumer purchasecontract — the company effectively added 1200 to the agreed price after the buyer committed and the father is now refusing to pay the difference questions about what recourse he has and the consequences of nonpayment fall squarely within consumer transaction and contract disputes similar to the labeled yes examples involving payday loans altered service contracts and account restrictions",0,1592,421,0,0.0004493000,5.575,2026-09-11T20:54:28+00:00
+learned_hands_consumer,glm-5.3-flash,3,d020ae25740133b72d326d57b58504372281f70e6def4d5a95655465a0e91468,yes,"**Yes**
+
+This post discusses issues related to **consumer goods and money**. The poster sold an item (a consumer good) for $350 on an online marketplace and is now facing a payment dispute — the buyer filed an ""unauthorized transaction"" claim through PayPal, potentially costing the seller both the item and the money. The question centers on the legal grounds of this financial dispute over a goods transaction, which fits the categories of money, consumer goods, and transaction-related claims.","yes
+
+this post discusses issues related to consumer goods and money the poster sold an item a consumer good for 350 on an online marketplace and is now facing a payment dispute — the buyer filed an unauthorized transaction claim through paypal potentially costing the seller both the item and the money the question centers on the legal grounds of this financial dispute over a goods transaction which fits the categories of money consumer goods and transactionrelated claims",0,1495,557,0,0.0005027500,5.598,2026-09-11T20:54:28+00:00
+learned_hands_consumer,glm-5.3-flash,1,191f0937cb2c89fc2ee6de2cf962022796a21348bccce723e58dff5138f4aa85,yes,"**Label: Yes**
+
+This post discusses a consumer issue related to money and service contracts. The poster describes problems with Sprint, their telecom provider, including:
+
+- **Money/billing issues**: Being double-billed after changing their payment due date, incurring $50 in NSF fees because Sprint attempted to collect payment before the due date, and having their bank account overdrawn as a result.
+- **Consumer service/contract concerns**: Being told one thing by customer service (""Sure, no problem"") without disclosure of consequences (double billing), receiving contradictory information from representatives, and being unable to get the erroneous charges refunded despite multiple calls.
+- **Quality of service complaints**: Being transferred to 10 different people, given false assurances that the issue would be resolved, and being dismissed with ""calm down"" responses.
+
+The core questions—whether Sprint was allowed to charge before the bill was due and what recourse the poster has—fall squarely within consumer financial and service contract disputes, consistent with the other ""Yes"" labeled posts (payday loan collections, altered data contracts, and account restrictions).","label yes
+
+this post discusses a consumer issue related to money and service contracts the poster describes problems with sprint their telecom provider including
+
+ moneybilling issues being doublebilled after changing their payment due date incurring 50 in nsf fees because sprint attempted to collect payment before the due date and having their bank account overdrawn as a result
+ consumer servicecontract concerns being told one thing by customer service sure no problem without disclosure of consequences double billing receiving contradictory information from representatives and being unable to get the erroneous charges refunded despite multiple calls
+ quality of service complaints being transferred to 10 different people given false assurances that the issue would be resolved and being dismissed with calm down responses
+
+the core questions—whether sprint was allowed to charge before the bill was due and what recourse the poster has—fall squarely within consumer financial and service contract disputes consistent with the other yes labeled posts payday loan collections altered data contracts and account restrictions",0,1985,411,0,0.0005032500,5.603,2026-09-11T20:54:28+00:00
+learned_hands_consumer,glm-5.3-flash,6,3682fd0cb52ef152a5e499e4441ac3d86a735973de9e3062a809fc58d80f083a,yes,"**Label: Yes**
+
+This post discusses issues related to **money** — specifically, private student loans and debt collection practices. The poster missed payments on a student loan due to a medical expense, and the loan servicer (Navient) is now demanding payment from a cosigner on a *different* loan that he never co-signed. Like the payday loan collection post labeled ""Yes,"" this centers on loan obligations, debt servicing, and questionable financial practices by a loan company, which falls squarely within money-related consumer issues.","label yes
+
+this post discusses issues related to money — specifically private student loans and debt collection practices the poster missed payments on a student loan due to a medical expense and the loan servicer navient is now demanding payment from a cosigner on a different loan that he never cosigned like the payday loan collection post labeled yes this centers on loan obligations debt servicing and questionable financial practices by a loan company which falls squarely within moneyrelated consumer issues",0,1579,453,0,0.0004633500,5.624,2026-09-11T20:54:28+00:00
+learned_hands_consumer,glm-5.3-flash,0,a379a87ff3cdf868abd2168b8f7f1448c858c1c0293a0324128a1f9795c2495c,yes,"**Label: Yes**
+
+This post discusses issues related to **consumer goods and money**. The poster ordered a dress (a consumer good) from a store that went bankrupt and closed before delivering it, and they're asking whether they can legally recover their money through their bank (debit card refund). This fits the categories of consumer goods/contracts and money-related disputes, similar to the labeled ""Yes"" examples involving payday loans, service contracts, and account disputes.","label yes
+
+this post discusses issues related to consumer goods and money the poster ordered a dress a consumer good from a store that went bankrupt and closed before delivering it and theyre asking whether they can legally recover their money through their bank debit card refund this fits the categories of consumer goodscontracts and moneyrelated disputes similar to the labeled yes examples involving payday loans service contracts and account disputes",0,1488,476,0,0.0004612000,5.639,2026-09-11T20:54:28+00:00
+learned_hands_consumer,glm-5.3-flash,7,a1352482ea4516a24b594ccbf2ed311516cde0785a8edf4e41b8b20657074dd8,yes,"**Label: Yes**
+
+This post discusses a money-related issue. The poster discovered an unknown student loan taken out in their name (possibly before they turned 18), which is affecting their credit score. The post centers on financial concerns including:
+
+- **Loans and credit**: An unexplained student loan appearing on their credit report alongside their known Sallie Mae loan
+- **Banking issues**: Questions about how a bank (Cornerstone) could have issued a loan to a minor
+- **Potential identity theft/fraud**: The possibility that someone took out thousands of dollars in their name without their knowledge
+- **Financial next steps**: Who to contact (the bank, a lawyer, police) to resolve this financial problem
+
+The poster explicitly frames it as ""my first financial issue as an adult,"" and the core problem involves loans, credit reporting, and banking — all squarely within the category of money issues. Like the other ""Yes"" examples (the payday loan collection, the data contract dispute, and the restricted account), this deals with financial products and disputes rather than housing, employment, or other matters outside the specified categories.","label yes
+
+this post discusses a moneyrelated issue the poster discovered an unknown student loan taken out in their name possibly before they turned 18 which is affecting their credit score the post centers on financial concerns including
+
+ loans and credit an unexplained student loan appearing on their credit report alongside their known sallie mae loan
+ banking issues questions about how a bank cornerstone could have issued a loan to a minor
+ potential identity theftfraud the possibility that someone took out thousands of dollars in their name without their knowledge
+ financial next steps who to contact the bank a lawyer police to resolve this financial problem
+
+the poster explicitly frames it as my first financial issue as an adult and the core problem involves loans credit reporting and banking — all squarely within the category of money issues like the other yes examples the payday loan collection the data contract dispute and the restricted account this deals with financial products and disputes rather than housing employment or other matters outside the specified categories",0,1705,828,0,0.0006697500,9.996,2026-09-11T20:54:33+00:00
+learned_hands_consumer,glm-5.3-flash,5,ebbf5dce638a03352aa5ce9e76ea526855fc19fe426785e9d74da0b972447b56,yes,"**Yes**
+
+This post fits the pattern of the ""Yes"" labeled examples. The poster is disputing a $50 bill from a doctor's office for a ""no-show"" appointment that they explicitly cancelled — making this a **money/billing dispute**. Additionally, the post describes ongoing **poor quality of service**: the office failed to return calls, required written submissions for billing disputes, ignored repeated contact attempts, and (per Google reviews) appears to pull this same billing tactic on other patients. Like the payday loan collection and contract dispute posts labeled ""Yes,"" this is a consumer seeking advice on fighting an improper charge and dealing with an unresponsive service provider.
+
+The ""No"" examples, by contrast, involve landlord-tenant disputes, real estate transactions, and employment concerns — which fall outside the specified categories.","yes
+
+this post fits the pattern of the yes labeled examples the poster is disputing a 50 bill from a doctors office for a noshow appointment that they explicitly cancelled — making this a moneybilling dispute additionally the post describes ongoing poor quality of service the office failed to return calls required written submissions for billing disputes ignored repeated contact attempts and per google reviews appears to pull this same billing tactic on other patients like the payday loan collection and contract dispute posts labeled yes this is a consumer seeking advice on fighting an improper charge and dealing with an unresponsive service provider
+
+the no examples by contrast involve landlordtenant disputes real estate transactions and employment concerns — which fall outside the specified categories",0,1679,761,0,0.0006323500,11.308,2026-09-11T20:54:34+00:00
+learned_hands_consumer,glm-5.3-flash,9,30f3878dfeeec4bffed1d8ed0fd2feaa3165fc8790712d0e6c993ba632a91571,yes,"**Yes**
+
+This post discusses a money-related consumer issue. The poster's mother has a dental bill that was sent to collections, and there's confusion about paying both the original bill and the collection fee. This closely parallels the first labeled example (the payday loan collection agency situation), which was marked ""Yes"" — both involve debt collection, fees, and uncertainty about payment obligations to a collection agency.","yes
+
+this post discusses a moneyrelated consumer issue the posters mother has a dental bill that was sent to collections and theres confusion about paying both the original bill and the collection fee this closely parallels the first labeled example the payday loan collection agency situation which was marked yes — both involve debt collection fees and uncertainty about payment obligations to a collection agency",0,1475,444,0,0.0004432500,6.026,2026-09-11T20:54:34+00:00
+learned_hands_consumer,glm-5.3-flash,8,5655b74e200dc643bf62729b26c6760f786b1d110abd671cd8122c5d567f2846,yes,"**Label: No**
+
+This post deals with a real estate transaction dispute (buying a duplex, seller's failure to remove a tenant, closing costs). Based on the pattern in the labeled examples, posts about real estate and landlord/tenant matters (like the house contract dispute and the apartment lease issue) are labeled ""No,"" even though they involve contracts and money. The ""Yes"" labels apply to consumer-focused issues like debt collection, service/subscription contracts, and account disputes.","label no
+
+this post deals with a real estate transaction dispute buying a duplex sellers failure to remove a tenant closing costs based on the pattern in the labeled examples posts about real estate and landlordtenant matters like the house contract dispute and the apartment lease issue are labeled no even though they involve contracts and money the yes labels apply to consumerfocused issues like debt collection servicesubscription contracts and account disputes",0,1513,569,0,0.0005114500,7.190,2026-09-11T20:54:35+00:00

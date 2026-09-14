@@ -1,0 +1,9 @@
+{
+  "task": "learned_hands_torts",
+  "readme_description": "This is a binary classification task in which the model must determine if a user's legal question discusses problems that one person has with another person (or animal), like when there is a car accident, a dog bite, bullying or possible harassment, or neighbors treating each other badly.",
+  "base_prompt_preamble": "Does the post discuss problems that one person has with another person (or animal), like when there is a car accident, a dog bite, bullying or possible harassment, or neighbors treating each other badly?",
+  "labels": [
+    "no",
+    "yes"
+  ]
+}

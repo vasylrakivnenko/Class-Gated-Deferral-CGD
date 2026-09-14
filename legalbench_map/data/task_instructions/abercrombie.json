@@ -1,0 +1,12 @@
+{
+  "task": "abercrombie",
+  "readme_description": "A particular mark (e.g. a name for a product or service) is only eligible for trademark protection if it is considered to be *distinctive*. In assessing whether a mark is distinctive, lawyers and judges follow the framework set out in the case *Abercrombie & Fitch Co. v. Hunting World, Inc.*, which enumerates 5 categories of distinctiveness. These categories characterize the relationship between the dictionary definition of the term used in the mark, and the service or product it is being attached to.\n\n- **Generic**: Generic terms are those which connote the basic nature of articles or services, rather than the more individualized characteristics of a product.\n- **Descriptive**: Descriptive terms identify a characteristic or quality of an article or service, such as color, odor, function, dimensions, or ingredients.\n- **Suggestive**: A suggestive term suggests, rather than describes, some particular characteristic of the goods or services to which it applies. It requires to consumer to exercise the imagination in order to draw a conclusion as to the nature of the goods and services.\n- **Arbitrary**: Arbitrary terms are those that are real words, but arbitrary with respect to the product.\n- **Fanciful**: Fanciful terms are those that are entirely made up, and not found in the English dictionary.",
+  "base_prompt_preamble": "A mark is generic if it is the common name for the product. A mark is descriptive if it describes a purpose, nature, or attribute of the product. A mark is suggestive if it suggests or implies a quality or characteristic of the product. A mark is arbitrary if it is a real English word that has no relation to the product. A mark is fanciful if it is an invented word.",
+  "labels": [
+    "arbitrary",
+    "descriptive",
+    "fanciful",
+    "generic",
+    "suggestive"
+  ]
+}

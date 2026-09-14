@@ -1,0 +1,27 @@
+{
+  "task": "supply_chain_disclosure_best_practice_verification",
+  "best_candidate": "tfidf_logreg",
+  "hyperparameters": null,
+  "hyperparameters_note": "The fixed candidate interface (fit_predict_proba -> np.ndarray) returns only probabilities, not hyperparameters; this field is populated only if the candidate module optionally exposes get_last_hyperparams(task_key), else it is null.",
+  "conformal_alpha": 0.05,
+  "conformal_quantiles_all_folds": [
+    0.5241585956797682,
+    0.6772499852380163,
+    0.5380419999855588,
+    0.5568293317588191,
+    0.5173985113818654,
+    0.604034569723162,
+    0.807408341745666,
+    0.6285224543494065,
+    0.6679785502531886,
+    0.5601414092318537,
+    0.6838370274012807,
+    0.7245841187456463,
+    0.593278564833289,
+    0.5468286405509267,
+    0.5552106757432846
+  ],
+  "conformal_quantile_mean_finite": 0.6123668517747821,
+  "folds": 5,
+  "repeats": 3
+}

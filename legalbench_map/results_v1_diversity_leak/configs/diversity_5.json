@@ -1,0 +1,27 @@
+{
+  "task": "diversity_5",
+  "best_candidate": "embed_small_logreg",
+  "hyperparameters": null,
+  "hyperparameters_note": "The fixed candidate interface (fit_predict_proba -> np.ndarray) returns only probabilities, not hyperparameters; this field is populated only if the candidate module optionally exposes get_last_hyperparams(task_key), else it is null.",
+  "conformal_alpha": 0.05,
+  "conformal_quantiles_all_folds": [
+    0.37145304679870605,
+    0.383625328540802,
+    0.4080374240875244,
+    0.45631803702360285,
+    0.4052332639694214,
+    0.43926793336868286,
+    0.3470466136932373,
+    0.37030065059661865,
+    0.4267534613609314,
+    0.47535258531570435,
+    0.424471378326416,
+    0.3705453872680664,
+    0.4137253936014952,
+    0.44135087728500366,
+    0.36589894789156163
+  ],
+  "conformal_quantile_mean_finite": 0.40662535527518495,
+  "folds": 5,
+  "repeats": 3
+}

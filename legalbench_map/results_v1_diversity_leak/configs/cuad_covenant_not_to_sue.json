@@ -1,0 +1,27 @@
+{
+  "task": "cuad_covenant_not_to_sue",
+  "best_candidate": "tfidf_logreg",
+  "hyperparameters": null,
+  "hyperparameters_note": "The fixed candidate interface (fit_predict_proba -> np.ndarray) returns only probabilities, not hyperparameters; this field is populated only if the candidate module optionally exposes get_last_hyperparams(task_key), else it is null.",
+  "conformal_alpha": 0.05,
+  "conformal_quantiles_all_folds": [
+    0.5945179004926187,
+    0.6273336477481934,
+    0.39814679188854396,
+    0.5739323587483751,
+    0.371043123456796,
+    0.5152507876630287,
+    0.530912358764562,
+    0.523022540057146,
+    0.3883489727349403,
+    0.7612517849147792,
+    0.5317146534385215,
+    0.505046549969725,
+    0.4635130914736494,
+    0.6529102463175479,
+    0.6316175962781283
+  ],
+  "conformal_quantile_mean_finite": 0.5379041602631037,
+  "folds": 5,
+  "repeats": 3
+}

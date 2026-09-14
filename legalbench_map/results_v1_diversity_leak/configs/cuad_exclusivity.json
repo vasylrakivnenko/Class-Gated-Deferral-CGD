@@ -1,0 +1,27 @@
+{
+  "task": "cuad_exclusivity",
+  "best_candidate": "embed_base_logreg",
+  "hyperparameters": null,
+  "hyperparameters_note": "The fixed candidate interface (fit_predict_proba -> np.ndarray) returns only probabilities, not hyperparameters; this field is populated only if the candidate module optionally exposes get_last_hyperparams(task_key), else it is null.",
+  "conformal_alpha": 0.05,
+  "conformal_quantiles_all_folds": [
+    0.6659248868845438,
+    0.7406672835350037,
+    0.7242089725795082,
+    0.8064946532249451,
+    0.7129207849502563,
+    0.6862072944641113,
+    0.6825255155563354,
+    0.6606931090354919,
+    0.7843152284622192,
+    0.6903340816497803,
+    0.5950779914855957,
+    0.7530158162117004,
+    0.6553258895874023,
+    0.72945223064863,
+    0.7297475934028625
+  ],
+  "conformal_quantile_mean_finite": 0.7077940887785591,
+  "folds": 5,
+  "repeats": 3
+}
