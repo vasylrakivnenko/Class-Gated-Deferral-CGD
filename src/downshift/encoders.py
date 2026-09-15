@@ -26,7 +26,7 @@ per-token, because that is how they would really be served.
 from __future__ import annotations
 
 import time
-from dataclasses import dataclass
+from collections import Counter
 
 import numpy as np
 
@@ -103,7 +103,13 @@ def run_majority(train, test) -> EvalResult:
     """
     _, y_train = _texts_labels(train)
     _, y_test = _texts_labels(test)
-    winner = max(set(y_train), key=y_train.count)
+    # `max(set(y_train), ...)` iterated a set of strings, so on a TIE the winner
+    # followed set iteration order, which depends on PYTHONHASHSEED -- verified:
+    # a three-way tie returned a different label under each of three seeds. The
+    # honesty floor has to be reproducible, so ties break lexicographically.
+    # Counter also drops the O(classes x rows) rescan `list.count` did per label.
+    counts = Counter(y_train)
+    winner = max(sorted(counts), key=counts.__getitem__)
     return _result("majority", "Always predict majority class",
                    [winner] * len(y_test), y_test, 0.0, float("inf"),
                    note=f"Constant prediction: '{winner}'. Free, instant, and the bar every model must clear.")
@@ -169,14 +175,15 @@ def run_frozen_embeddings(train, test, model_name: str = "intfloat/multilingual-
     preds = list(clf.predict(emb_test))
     infer = time.time() - t1
 
-    return _result("frozen-embed", f"Frozen embeddings + logreg", preds, y_test,
+    return _result("frozen-embed", "Frozen embeddings + logreg", preds, y_test,
                    train_seconds, len(X_test) / max(infer, 1e-6),
                    note=f"{model_name}, weights frozen. Trained head on {len(X_train)} examples in {train_seconds:.1f}s.")
 
 
 def run_finetuned_encoder(train, test, model_name: str = "jhu-clsp/ettin-encoder-68m",
                           epochs: int = 3, batch_size: int = 16, lr: float = 5e-5,
-                          max_length: int = 128, seed: int = 0) -> EvalResult:
+                          max_length: int = 128, seed: int = 0,
+                          labels: tuple[str, ...] | None = None) -> EvalResult:
     """Fine-tune a small encoder end to end.
 
     A plain torch loop rather than `Trainer`: transformers v5 renamed or removed
@@ -184,6 +191,14 @@ def run_finetuned_encoder(train, test, model_name: str = "jhu-clsp/ettin-encoder
     raises, `evaluation_strategy` is now `eval_strategy`, `use_mps_device` is
     gone), so the hand-rolled loop is both faster here and far less likely to
     break on the next minor release.
+
+    `labels` is the task's declared label set. It used to be derived as
+    `sorted(set(y_train) | set(y_test))`, i.e. the classification head's output
+    space was sized and ordered by reading the HELD-OUT SPLIT -- in the one
+    module whose premise is that the test set is never touched, and for the one
+    row the product sells as the upsell. Pass `task.labels`; falling back to the
+    train split alone is the honest default, since a class with no training
+    examples is one this model genuinely cannot predict.
     """
     import torch
     from torch.utils.data import DataLoader, TensorDataset
@@ -191,7 +206,7 @@ def run_finetuned_encoder(train, test, model_name: str = "jhu-clsp/ettin-encoder
 
     X_train, y_train = _texts_labels(train)
     X_test, y_test = _texts_labels(test)
-    labels = sorted(set(y_train) | set(y_test))
+    labels = sorted(labels) if labels is not None else sorted(set(y_train))
     to_id = {l: i for i, l in enumerate(labels)}
 
     torch.manual_seed(seed)

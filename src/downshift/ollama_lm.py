@@ -70,7 +70,11 @@ class OllamaLM(dspy.BaseLM):
                 return json.loads(resp.read())
         except urllib.error.HTTPError as e:
             detail = e.read().decode("utf-8", "replace")[:500]
-            raise dspy.LMError(f"ollama HTTP {e.code} for {self.model}: {detail}") from e
+            err = dspy.LMError(f"ollama HTTP {e.code} for {self.model}: {detail}")
+            # Carried so the `think` probe in `forward` can tell "the server
+            # rejected this field" from "the server had a bad minute".
+            err.status_code = e.code
+            raise err from e
         except urllib.error.URLError as e:
             raise dspy.LMError(
                 f"cannot reach ollama at {self.api_base} ({e.reason}). Is `ollama serve` running?"
@@ -99,7 +103,25 @@ class OllamaLM(dspy.BaseLM):
         try:
             data = self._post(body)
         except dspy.LMError as e:
-            if "think" in str(e).lower() and "think" in body:
+            # Narrowed to a 4xx that names the field. The old test was
+            # `"think" in str(e).lower()`, which any 5xx whose body happened to
+            # mention thinking would satisfy -- and it then latched
+            # `_think_unsupported` for the rest of the process.
+            status = getattr(e, "status_code", None)
+            rejected_field = ("think" in body and "think" in str(e).lower()
+                              and status is not None and 400 <= status < 500)
+            if rejected_field and self.think:
+                # think=False falling back to no-`think` is a no-op: the model
+                # has no reasoning mode to switch off. think=True falling back
+                # silently is a corrupted measurement -- the reasoning rows
+                # exist for no other purpose than to price reasoning tokens,
+                # and they would have reported the non-reasoning cost as
+                # though reasoning had been on.
+                raise dspy.LMError(
+                    f"{self.model}: ollama rejected `think=True` ({e}). This row cannot "
+                    f"measure reasoning cost; drop it or use a reasoning-capable tag."
+                ) from e
+            if rejected_field:
                 self._think_unsupported = True
                 body.pop("think")
                 data = self._post(body)

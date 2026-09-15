@@ -28,6 +28,9 @@ from collections import Counter
 # ── normalisation ──────────────────────────────────────────────────────────
 
 _ARTICLES = re.compile(r"\b(a|an|the)\b", re.UNICODE)
+# Built once, like _ARTICLES. Inline, `ch not in set(string.punctuation)`
+# reconstructed a 32-element set for EVERY CHARACTER of every answer scored.
+_PUNCTUATION = frozenset(string.punctuation)
 
 
 def normalize_answer(s: str) -> str:
@@ -40,7 +43,7 @@ def normalize_answer(s: str) -> str:
     if s is None:
         return ""
     s = str(s).lower()
-    s = "".join(ch for ch in s if ch not in set(string.punctuation))
+    s = "".join(ch for ch in s if ch not in _PUNCTUATION)
     s = _ARTICLES.sub(" ", s)
     return " ".join(s.split())
 
@@ -165,11 +168,13 @@ def json_field_f1(pred, gold, required_keys: tuple[str, ...] = (), **_):
     keys = set(obj) | set(gold_obj)
     if not keys:
         return 1.0, "both empty"
-    hits = sum(1 for k in keys
-               if field_values_equal(obj.get(k, ""), gold_obj.get(k, "")))
-    score = hits / len(keys)
+    # Compared once per key. `hits` and `wrong` were two separate passes, so
+    # every field went through field_values_equal (which normalises, digit-
+    # strips and float-parses both sides) twice.
     wrong = [k for k in keys
              if not field_values_equal(obj.get(k, ""), gold_obj.get(k, ""))]
+    hits = len(keys) - len(wrong)
+    score = hits / len(keys)
     return score, f"{hits}/{len(keys)} fields correct" + (f"; wrong: {wrong[:4]}" if wrong else "")
 
 

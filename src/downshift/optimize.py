@@ -246,7 +246,12 @@ def run_gepa(spec: ModelSpec, task, profile: str, reflection_spec: ModelSpec,
 
     # GEPA spawns its own worker threads, and dspy.context is thread-local, so
     # the student LM has to be set globally here rather than scoped -- the same
-    # trap that silently zeroed the evaluator.
+    # trap that silently zeroed the evaluator. Global means it has to be put
+    # back: without the restore, whichever student was optimized last stayed
+    # the process-wide default LM after run_gepa returned, on the exception
+    # path too, so any later call that did not open its own dspy.context ran
+    # against the wrong model and was billed to the wrong row.
+    previous_lm = getattr(dspy.settings, "lm", None)
     dspy.configure(lm=student_lm)
 
     baseline_instruction = next(iter(program.named_predictors()))[1].signature.instructions
@@ -265,6 +270,10 @@ def run_gepa(spec: ModelSpec, task, profile: str, reflection_spec: ModelSpec,
         optimized = gepa.compile(program, trainset=task.train, valset=task.val)
     except Exception as exc:
         error = f"{type(exc).__name__}: {exc}"
+    finally:
+        # Nothing below this point calls the LM -- the val bookkeeping reads
+        # GEPA's own records -- so restoring here is safe and unconditional.
+        dspy.configure(lm=previous_lm)
 
     wall = time.time() - t0
 
@@ -352,9 +361,16 @@ def run_gepa(spec: ModelSpec, task, profile: str, reflection_spec: ModelSpec,
         selected_instruction_tokens=count_tokens(selected_instruction),
         # The pin always APPENDS the contract; it "altered" the candidate only
         # if it also dropped lines, which is what makes the scored text differ
-        # from the shipped text.
+        # from the shipped text. Asked of the optimizable BODY on both sides:
+        # the old test was `optimizable_body(selected) != selected.strip()`,
+        # which fires whenever the candidate merely CONTAINS the contract even
+        # though `with_format_contract` is idempotent and changed nothing -- a
+        # false positive on the exact assertion this field exists to make, and
+        # experiment.py prints a "the format pin rewrote this candidate after
+        # GEPA scored it, trust the test row not the val number" warning off it.
         pin_altered_instruction=(
-            optimizable_body(selected_instruction) != selected_instruction.strip()),
+            optimizable_body(optimized_instruction)
+            != optimizable_body(selected_instruction)),
         # "unpinned_candidate" whenever the pin actually changed the text that
         # ships, i.e. exactly when GEPA rewrote the instruction. Note this is
         # true even though `pin_altered_instruction` is False: that flag asks

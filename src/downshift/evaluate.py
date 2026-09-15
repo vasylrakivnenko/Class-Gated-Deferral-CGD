@@ -90,17 +90,50 @@ def assert_ledger_intact(lm, start: int, what: str) -> None:
     Raising beats warning here: a warning scrolls past and the wrong number
     still lands in results.json and on the chart. Raising costs the run and
     keeps the benchmark honest, and the fix is one setting.
+
+    `start` is the offset the caller is about to slice from. It used to be
+    accepted and ignored, which left the one failure it can prove unchecked:
+    once eviction has popped from the front, a recorded offset points past the
+    end and `lm.history[start:]` comes back EMPTY, i.e. zero tokens and zero
+    calls rather than a loud error.
     """
     cap = history_cap()
     n = len(lm.history)
+    if start > n:
+        raise RuntimeError(
+            f"{what}: lm.history has shrunk from {start:,} entries to {n:,}, so DSPy "
+            f"evicted calls from the front and the slice this measurement reads "
+            f"(lm.history[{start:,}:]) is empty -- it would report zero tokens and "
+            f"zero calls instead of failing.")
     if n >= cap:
         raise RuntimeError(
             f"{what}: lm.history holds {n:,} entries at the {cap:,} cap, so DSPy has "
             f"evicted earlier calls and token totals would be silently LOW (this can "
             f"invert the cost ranking). Raise it before the run, e.g. "
-            f"dspy.settings.configure(max_history_size={max(cap * 4, 100_000):,})."
-            .replace(",)", ")"))
+            f"dspy.settings.configure(max_history_size={max(cap * 4, 100_000)}).")
         # note: no partial-credit path -- a truncated ledger is not a number.
+
+
+def requested_max_tokens(spec: ModelSpec, max_tokens: int) -> int:
+    """The output budget a call to `spec` will REALLY carry.
+
+    DSPy refuses OpenAI reasoning models unless max_tokens is >= 16000 (or
+    None) and temperature is 1.0 (or None), because a small cap can truncate
+    the model mid-reasoning and return empty content. max_tokens is a ceiling,
+    not a spend commitment -- the bill still follows the tokens actually
+    emitted, which we measure.
+
+    Factored out because the capability screen has to gate on this number, not
+    on the configured one. The bump used to live inside `build_lm` *below* the
+    `spec.fits()` call, so a gpt-5-family deployment whose `max_output` sat
+    under 16,000 was screened at 1,024, passed, and then received a request it
+    could not honour -- the exact "refuse before spending, not after
+    truncating" failure the gate exists to prevent. `experiment._budget_for`
+    calls this for the same reason.
+    """
+    if any(tag in spec.call_id for tag in _REASONING_TIER):
+        return max(max_tokens, 16000)
+    return max_tokens
 
 
 def build_lm(spec: ModelSpec, max_tokens: int = 1024, cache: bool = False):
@@ -116,6 +149,10 @@ def build_lm(spec: ModelSpec, max_tokens: int = 1024, cache: bool = False):
     if spec.runtime != HOSTED:
         raise ValueError(f"{spec.key}: runtime {spec.runtime!r} has no LM")
 
+    # Resolve the budget BEFORE the gate, so the gate screens the number the
+    # request will actually carry.
+    max_tokens = requested_max_tokens(spec, max_tokens)
+
     # Refuse before spending, not after truncating. A deployment capped below
     # the requested budget does not error -- it returns a short, truncated
     # answer that fails to parse, so the row reads as a model too weak to
@@ -124,14 +161,6 @@ def build_lm(spec: ModelSpec, max_tokens: int = 1024, cache: bool = False):
     fine, why = spec.fits(max_tokens)
     if not fine:
         raise ValueError(f"{spec.key}: {why}. Lower max_tokens or drop this model.")
-
-    # DSPy refuses OpenAI reasoning models unless max_tokens is >= 16000 (or
-    # None) and temperature is 1.0 (or None), because a small cap can truncate
-    # the model mid-reasoning and return empty content. max_tokens is a ceiling,
-    # not a spend commitment -- the bill still follows the tokens actually
-    # emitted, which we measure.
-    if any(tag in spec.call_id for tag in _REASONING_TIER):
-        max_tokens = max(max_tokens, 16000)
 
     kwargs = dict(model=spec.call_id, max_tokens=max_tokens, cache=cache)
     if spec.api_base:
@@ -408,8 +437,18 @@ def run_eval(spec: ModelSpec, program, examples, labels: tuple[str, ...],
         mean_cached_tokens=mean_cached, total_cached_tokens=total_cached,
         mean_cache_write_tokens=mean_cache_write,
         total_cache_write_tokens=total_cache_write,
-        cost_per_1k_calls=spec.cost_per_1k_calls(mean_in, mean_out, mean_cached,
-                                                 mean_cache_write),
+        # A row that billed NOTHING for items it was asked to classify has an
+        # UNMEASURED price, not a zero one. Without this, a model whose every
+        # call raised (a 404 on an undeployed name is the common case -- the
+        # registry has rows that 404 until their deployment exists) reported
+        # mean_in = mean_out = 0, priced at $0.0000, and landed at the chart's
+        # axis floor labelled "free": the most flattering position on the plot,
+        # awarded to the row that answered nothing. NaN is the file's existing
+        # signal for "the caller has to decide", and the chart already refuses
+        # to draw it.
+        cost_per_1k_calls=(spec.cost_per_1k_calls(mean_in, mean_out, mean_cached,
+                                                  mean_cache_write)
+                           if n_calls or not n else float("nan")),
         n_calls=n_calls,
         instruction=instruction,
     )

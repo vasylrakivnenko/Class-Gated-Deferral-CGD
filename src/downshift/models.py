@@ -34,7 +34,7 @@ the published Pareto frontier.
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 # Where the model runs, which decides both how we call it and how we price it.
 LOCAL, HOSTED = "local", "hosted"

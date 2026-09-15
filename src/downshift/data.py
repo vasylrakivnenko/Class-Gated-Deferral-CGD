@@ -141,6 +141,13 @@ class Task:
     test: list = field(repr=False)       # never seen by any optimizer
     pool: list = field(repr=False)       # extra labels for encoder fine-tuning
     input_field: str = "sentence"
+    # Declared rather than bolted on after construction. Both used to be set as
+    # dynamic attributes by the loaders only, so any Task built another way
+    # raised AttributeError from `demands()` / `run_experiment` -- and the
+    # `getattr(self, "spec", None)` dance that `demands()` still tolerates was
+    # there to paper over exactly that.
+    spec: "TaskSpec | None" = None
+    n_duplicates_dropped: int = 0
 
     def __repr__(self) -> str:
         return (f"Task({self.name}: train={len(self.train)} val={len(self.val)} "
@@ -275,10 +282,27 @@ def split_fingerprint(examples) -> str:
 
     Hashes text and label together, in order, so it detects reordering as well
     as substitution.
+
+    Raises on an example carrying no `sentence`. The field name is hardcoded
+    (every `to_examples` below builds `sentence=`), and the previous
+    `getattr(ex, "sentence", "")` default meant that an example shaped any other
+    way -- `Task.input_field` is a configurable, so this is reachable -- hashed
+    as empty bytes for EVERY item. The digest then reduced to a function of the
+    split's LENGTH, which is exactly the too-weak guard this function was
+    written to replace, and `verify_or_record_split` would have certified two
+    completely different splits as identical. A silent downgrade of a
+    verification is worse than no verification.
     """
     h = hashlib.sha256()
     for ex in examples:
-        h.update(str(getattr(ex, "sentence", "")).encode("utf-8"))
+        text = getattr(ex, "sentence", None)
+        if text is None:
+            raise ValueError(
+                "split_fingerprint hashes the `sentence` field and this example has "
+                "none, so the digest would depend only on the split's length and "
+                "verify_or_record_split would pass for two different splits. Rename "
+                "the input field to `sentence` or extend this function.")
+        h.update(str(text).encode("utf-8"))
         h.update(b"\x00")
         h.update(str(getattr(ex, "label", "")).encode("utf-8"))
         h.update(b"\x1e")
@@ -307,8 +331,23 @@ def _stratified_take(rng: np.random.Generator, by_label: dict[str, list], n: int
     Trimmed items go BACK to `by_label`, never to the void. The caller draws
     test, then val, then train from the same shrinking pool, so an item dropped
     on the floor here would vanish from every split and from `pool` as well.
+
+    An exhausted pool is refused here rather than absorbed. The caller draws
+    three splits from one shrinking pool, so a dataset smaller than
+    n_test + n_val + n_train used to fail in one of two silent ways: a pool with
+    something left over under-filled the last split and `results.json` recorded
+    the smaller number with no message, and a pool with nothing left divided by
+    zero and raised a bare ZeroDivisionError from inside a share calculation.
+    Both hid the one fact the caller needs -- the dataset is too small for the
+    splits that were asked for.
     """
     total = sum(len(v) for v in by_label.values())
+    if total < n:
+        raise ValueError(
+            f"dataset too small: {n} items requested but only {total} left in the "
+            f"pool. The splits are drawn in sequence from one pool, so reduce "
+            f"n_test + n_val + n_train to at most the number of usable rows "
+            f"(duplicates and blank rows are dropped before this point).")
     taken: dict[str, list] = {}
     for lab in labels:
         share = len(by_label[lab]) / total
@@ -422,43 +461,21 @@ def load_financial_phrasebank(n_train: int = 200, n_val: int = 200, n_test: int 
 
     The order matters: test is carved out *first*, before anything else can
     touch it.
+
+    Delegates to `load_task`. It used to be a 50-line copy of that function's
+    body, and the copy had drifted in ways that mattered: it never set
+    `task.spec`, so `Task.demands()` on a task from here fell back to an EMPTY
+    instruction and measured a prompt the run would never send; and it kept
+    blank-text rows that `load_task` drops. `tests_invariants.py` asserts the
+    split discipline through this entry point, so the suite was validating the
+    copy while `run_experiment` ran the original.
     """
-    from datasets import concatenate_datasets, load_dataset
-    import dspy
-
-    ds = load_dataset(DATASET_REPO)
-    full = concatenate_datasets([ds["train"], ds["test"]])
-    names = tuple(full.features["label"].names)  # ('negative', 'neutral', 'positive')
-
-    # Deduplicate before splitting. The raw set has 5 exact-duplicate sentences;
-    # left in, one can land in train and its twin in test, which silently turns a
-    # held-out item into a memorised one. Small here, fatal as a habit.
-    seen: set[str] = set()
-    by_label: dict[str, list[tuple[str, str]]] = {lab: [] for lab in names}
-    n_dupes = 0
-    for row in full:
-        text = row["text"].strip()
-        if text in seen:
-            n_dupes += 1
-            continue
-        seen.add(text)
-        by_label[names[row["label"]]].append((text, names[row["label"]]))
-
-    rng = np.random.default_rng(seed)
-    working = {lab: list(by_label[lab]) for lab in names}
-
-    def to_examples(pairs):
-        return [dspy.Example(sentence=t, label=l).with_inputs("sentence") for t, l in pairs]
-
-    test = to_examples(_stratified_take(rng, working, n_test, names))
-    val = to_examples(_stratified_take(rng, working, n_val, names))
-    train = to_examples(_stratified_take(rng, working, n_train, names))
-    pool = to_examples([item for lab in names for item in working[lab]])
-
-    task = Task(name="financial_phrasebank_allagree", labels=names,
-                train=train, val=val, test=test, pool=pool)
-    task.n_duplicates_dropped = n_dupes
+    task = load_task(TASKS["financial_phrasebank"], n_train, n_val, n_test, seed)
+    # Historic name, kept so results directories and stored payloads written
+    # against this loader keep resolving.
+    task.name = "financial_phrasebank_allagree"
     return task
+
 
 def verify_or_record_split(payload: dict, task, path: str) -> None:
     """Refuse to add rows to a run whose split cannot be shown to match.
@@ -473,7 +490,6 @@ def verify_or_record_split(payload: dict, task, path: str) -> None:
     must not read the same: the rows already on disk were all measured inside
     one dataset load, which is good evidence but not proof.
     """
-    from downshift.data import split_fingerprint
     fresh = split_fingerprint(task.test)
     stored = (payload.get("task") or {}).get("split_fingerprint")
     if stored is None:

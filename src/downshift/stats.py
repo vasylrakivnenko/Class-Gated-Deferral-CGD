@@ -171,17 +171,30 @@ def paired_bootstrap_diff(correct_a: np.ndarray, correct_b: np.ndarray,
     point: it preserves the correlation between the two models, which is what
     makes the paired comparison tighter than the unpaired one.
     """
+    diffs = _bootstrap_diffs(correct_a, correct_b, n_boot=n_boot, seed=seed)
+    if diffs is None:
+        return float("nan"), float("nan")
+    alpha = 1 - confidence
+    return float(np.quantile(diffs, alpha / 2)), float(np.quantile(diffs, 1 - alpha / 2))
+
+
+def _bootstrap_diffs(correct_a: np.ndarray, correct_b: np.ndarray,
+                     n_boot: int = 10_000, seed: int = 0):
+    """One paired resample of (acc_a - acc_b), or None for an empty input.
+
+    Factored out so that a caller needing both a CI and a p-value derives them
+    from the SAME resample. `non_inferiority_test` used to draw two, seeded
+    `seed` and `seed + 1`, which made its own `passes` flag and its own
+    `p_value` two answers to one question computed on different samples.
+    """
     a = np.asarray(correct_a, dtype=float)
     b = np.asarray(correct_b, dtype=float)
     n = a.size
     if n == 0:
-        return float("nan"), float("nan")
-
+        return None
     rng = np.random.default_rng(seed)
     idx = rng.integers(0, n, size=(n_boot, n))
-    diffs = a[idx].mean(axis=1) - b[idx].mean(axis=1)
-    alpha = 1 - confidence
-    return float(np.quantile(diffs, alpha / 2)), float(np.quantile(diffs, 1 - alpha / 2))
+    return a[idx].mean(axis=1) - b[idx].mean(axis=1)
 
 
 # ── the test our product actually needs ─────────────────────────────────────
@@ -233,20 +246,30 @@ def non_inferiority_test(correct_candidate: np.ndarray, correct_baseline: np.nda
 
     diff = float(cand.mean() - base.mean())
 
-    # One-sided at `confidence` == two-sided at (1 - 2*(1-confidence)).
+    # ONE resample, used for both the interval and the p-value. Drawing two
+    # (the CI on `seed`, the p-value on `seed + 1`) let the decision rule and
+    # the number printed beside it disagree near the boundary: at n=100 with 11
+    # candidate-only and 6 baseline-only correct, seed 0 gave lo=-0.01 (passes)
+    # while seed 1 gave p=0.0531 (not significant at 0.05), and experiment.py
+    # ANDs those two together. Sharing the resample makes them consistent by
+    # construction: `lo` is the 5th percentile of `boot`, so lo > -margin and
+    # p < 0.05 are the same statement about the same sample.
     two_sided = 1 - 2 * (1 - confidence)
-    lo, hi = paired_bootstrap_diff(cand, base, confidence=two_sided, n_boot=n_boot, seed=seed)
-
-    # Bootstrap p-value for H0: diff <= -margin.
-    rng = np.random.default_rng(seed + 1)
-    n = cand.size
-    idx = rng.integers(0, n, size=(n_boot, n))
-    boot = cand[idx].mean(axis=1) - base[idx].mean(axis=1)
-    p_value = float(np.mean(boot - diff <= -margin - diff)) if n else float("nan")
+    boot = _bootstrap_diffs(cand, base, n_boot=n_boot, seed=seed)
+    alpha = 1 - two_sided
+    if boot is None:
+        lo = hi = p_value = float("nan")
+    else:
+        lo = float(np.quantile(boot, alpha / 2))
+        hi = float(np.quantile(boot, 1 - alpha / 2))
+        # H0: diff <= -margin. Algebraically what the two-sample form computed
+        # (`boot - diff <= -margin - diff` cancels to this), now on the sample
+        # the interval came from.
+        p_value = float(np.mean(boot <= -margin))
 
     passes = bool(lo > -margin)
     if passes and diff >= 0:
-        verdict = f"non-inferior (and not worse on the point estimate)"
+        verdict = "non-inferior (and not worse on the point estimate)"
     elif passes:
         verdict = f"non-inferior within the {margin:.0%} margin"
     elif hi < -margin:

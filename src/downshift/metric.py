@@ -70,6 +70,24 @@ _CONFUSION_HINTS = {
 }
 
 
+def _undecorated(value) -> str:
+    """Lowercase and drop decoration, WITHOUT eating any leading word.
+
+    `normalize` does two separable jobs, and only the first is safe to apply
+    before a match is attempted: removing the punctuation a small model wraps
+    its answer in, and stripping a leading "label"/"answer"/"sentiment". The
+    second destroys any label that legitimately begins with one of those words,
+    so `_resolve` tries this half on its own first -- `**answerable**` resolves
+    here, where `normalize` hands `_canonical` the string "able" and it scores 0.
+    """
+    if value is None:
+        return ""
+    text = str(value).strip().lower()
+    for junk in ("*", "`", '"', "'", ".", ":"):
+        text = text.replace(junk, " ")
+    return " ".join(text.split())
+
+
 def normalize(value) -> str:
     """Collapse a model's answer to a bare lowercase label.
 
@@ -78,16 +96,66 @@ def normalize(value) -> str:
     models with what is really a formatting difference, which is the opposite of
     what an honest benchmark should do.
     """
-    if value is None:
-        return ""
-    text = str(value).strip().lower()
-    for junk in ("*", "`", '"', "'", ".", ":"):
-        text = text.replace(junk, " ")
-    text = " ".join(text.split())
+    text = _undecorated(value)
     for prefix in ("label", "sentiment", "answer", "the sentiment is", "it is"):
         if text.startswith(prefix):
             text = text[len(prefix):].strip()
     return text
+
+
+# Words that invert the label they precede. A refusal or a denial names the
+# label it is rejecting, so a matcher that ignores them reads "not positive" as
+# a vote for `positive`.
+_NEGATORS = (
+    "not", "no", "never", "non", "neither", "nor", "without",
+    "isn't", "isnt", "wasn't", "wasnt", "aren't", "arent",
+    "cannot", "can't", "cant", "don't", "dont", "doesn't", "doesnt",
+    "rather than", "instead of", "other than", "unlike", "besides",
+)
+
+
+def _mentions(answer: str, label: str) -> bool:
+    """Is `label` named in `answer` as a whole word, and not negated?
+
+    The plain `label in answer` test this replaces scored two different kinds
+    of wrong answer as correct, in the direction that flatters the models:
+
+        labels ('yes','no'),  answer "unknown"               -> booked as 'no'
+        labels (positive...), answer "the sentiment is not positive"
+                                                             -> booked 'positive'
+
+    Both inflate accuracy, and only the LLM rows reach this matcher (the
+    classical and encoder rows predict by class index), so both bias exactly
+    the comparison the benchmark exists to make.
+
+    Whole-word means the character on each side is not a word character, with
+    `_` counted as part of the word as `\\b` does. That is also what keeps
+    nested label sets straight: `card_not_working` no longer matches inside
+    `virtual_card_not_working`, so a verbose answer naming the long label
+    resolves to it instead of being refused as ambiguous.
+    """
+    needle = label.lower()
+    if not needle:
+        return False
+    at = answer.find(needle)
+    while at >= 0:
+        before = answer[at - 1] if at else ""
+        end = at + len(needle)
+        after = answer[end] if end < len(answer) else ""
+        boundary = not ((before.isalnum() or before == "_")
+                        or (after.isalnum() or after == "_"))
+        if boundary and not _negated_before(answer, at):
+            return True
+        at = answer.find(needle, at + 1)
+    return False
+
+
+def _negated_before(answer: str, at: int) -> bool:
+    """Does a negation word immediately precede the label at `at`?"""
+    words = answer[:at].split()
+    if not words:
+        return False
+    return words[-1] in _NEGATORS or " ".join(words[-2:]) in _NEGATORS
 
 
 def _canonical(answer: str, labels: tuple[str, ...]) -> str:
@@ -161,6 +229,13 @@ def _resolve(raw, labels: tuple[str, ...]) -> str:
     ci = [l for l in labels if l.lower() == lowered]
     if len(ci) == 1:
         return ci[0]
+    # Decoration stripped but no prefix eaten. This layer is what makes the
+    # `answerable -> able` case in the docstring above actually hold once the
+    # answer is decorated: '**answerable**' matches neither the exact nor the
+    # case-insensitive test, and prefix-stripping would leave "able".
+    bare = _canonical(_undecorated(text), labels)
+    if bare:
+        return bare
     return _canonical(normalize(text), labels)
 
 
@@ -187,13 +262,31 @@ def score_prediction(gold, pred, labels: tuple[str, ...]) -> tuple[float, str, s
     # and the GEPA feedback string quoted a gold answer the dataset never held.
     gold_label = _resolve(raw_gold, labels) or normalize(raw_gold)
 
-    answer = normalize(getattr(pred, "label", None))
+    answer = _undecorated(getattr(pred, "label", None))
     predicted = _resolve(getattr(pred, "label", None), labels)
     if not predicted:
         # Recover a label mentioned inside a longer answer before giving up.
         # `.lower()` on the label here too: this line carried the same defect,
         # so a capitalised label could never be recovered from a longer answer.
-        hits = [l for l in labels if l.lower() in answer]
+        hits = [l for l in labels if _mentions(answer, l)]
+        # Label sets nest, and the plain `len(hits) == 1` test refused every
+        # nested case as unparseable. banking77 has three such pairs --
+        # card_not_working / virtual_card_not_working, and exchange_rate inside
+        # both card_payment_wrong_exchange_rate and
+        # wrong_exchange_rate_for_cash_withdrawal -- covering 16 of 251 test
+        # items, so a verbose-but-exactly-right answer on any of them scored 0
+        # and was booked as a parse failure. Same shape as the
+        # `Refund_not_showing_up` casing bug documented in `_canonical`, and
+        # biased in the same direction: only the LLM arm reaches this matcher.
+        #
+        # When every hit is a substring of the longest one, the answer named a
+        # single label and the shorter hits are fragments of its own text, so
+        # the longest is the answer. Two genuinely different labels mentioned in
+        # one reply is still ambiguous and still refused.
+        if len(hits) > 1:
+            longest = max(hits, key=len)
+            if all(h.lower() in longest.lower() for h in hits):
+                hits = [longest]
         predicted = hits[0] if len(hits) == 1 else ""
 
     # `predicted and` is load-bearing: without it, a dataset with a missing gold

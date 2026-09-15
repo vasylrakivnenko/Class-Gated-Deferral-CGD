@@ -149,6 +149,26 @@ def plot_cost_vs_accuracy(rows: list[ChartRow], out_path: str,
                           title: str = "Cheapest model that clears the bar",
                           subtitle: str = "",
                           footnote: str = "") -> str:
+    # Validated BEFORE the figure exists. The check used to sit after
+    # plt.subplots() and raise, and the raise skipped the plt.close(fig) at the
+    # bottom -- so every refused call leaked a figure into pyplot's global
+    # manager (verified: three refused calls, three figures still open), which
+    # the scripts that chart in a loop do repeatedly.
+    #
+    # An unknown price must not reach the cost axis. models.UNKNOWN is -1.0 and
+    # a NaN can arrive from arithmetic on it; both used to sail through the
+    # `> 1e-9` test below and get drawn at `floor`, i.e. rendered as FREE -- the
+    # most flattering position on the chart, for a row whose price nobody could
+    # verify. Fail loudly instead: excluding the row is the caller's decision to
+    # make explicitly, not something the plotter should do quietly.
+    unpriced = [r.label for r in rows
+                if r.cost_per_1k is None or np.isnan(r.cost_per_1k) or r.cost_per_1k < 0]
+    if unpriced:
+        raise ValueError(
+            f"refusing to plot {len(unpriced)} row(s) with an unknown or negative "
+            f"cost_per_1k: {unpriced}. An unverified price drawn at the axis floor reads "
+            f"as free. Exclude these rows or supply a measured price.")
+
     # Label room is bought in pixels, and at a fixed 9.5pt label size every
     # pixel added to the figure is one the placement search can spend without
     # touching the type size. Wider does double duty on a log x-axis: it also
@@ -166,21 +186,8 @@ def plot_cost_vs_accuracy(rows: list[ChartRow], out_path: str,
     # 1.86e-11 instead of exact 0.0. Treating anything below the epsilon as
     # free keeps one units artifact from setting a floor twelve more orders
     # of magnitude smaller and making every axis tick unreadable.
-    # An unknown price must not reach the cost axis. models.UNKNOWN is -1.0 and
-    # a NaN can arrive from arithmetic on it; both used to sail through the
-    # `> 1e-9` test below and get drawn at `floor`, i.e. rendered as FREE -- the
-    # most flattering position on the chart, for a row whose price nobody could
-    # verify. Fail loudly instead: excluding the row is the caller's decision to
-    # make explicitly, not something the plotter should do quietly.
-    import math as _math
-    unpriced = [r.label for r in rows
-                if r.cost_per_1k is None or _math.isnan(r.cost_per_1k) or r.cost_per_1k < 0]
-    if unpriced:
-        raise ValueError(
-            f"refusing to plot {len(unpriced)} row(s) with an unknown or negative "
-            f"cost_per_1k: {unpriced}. An unverified price drawn at the axis floor reads "
-            f"as free. Exclude these rows or supply a measured price.")
-
+    # (The unpriced-row refusal that used to live here now runs before the
+    # figure is created -- see the top of this function.)
     positive = [r.cost_per_1k for r in rows if r.cost_per_1k > 1e-9]
     floor = (min(positive) / 12) if positive else 1e-5
 
@@ -281,8 +288,17 @@ def plot_cost_vs_accuracy(rows: list[ChartRow], out_path: str,
     # left three free baselines sitting at what reads as a real price. Add an
     # explicit tick at the floor; the formatter already labels it "free".
     if any(r.cost_per_1k <= 1e-9 for r in rows):
+        # `set_xticks` FIXES the tick list, and Axis.set_ticks widens the view
+        # to contain every tick it is given. `get_xticks` on a log axis returns
+        # the locator's full decade list, which runs past the data, so feeding
+        # it back pushed the right edge up to the next decade above the priciest
+        # row (measured: 29.2 -> 100.0 with a $20 maximum) and left an empty
+        # decade of whitespace. Capture the data-driven right edge first and
+        # restore it, or the log axis stops showing the 75x spread it exists
+        # to show.
+        right = ax.get_xlim()[1]
         ax.set_xticks(list(ax.get_xticks()) + [floor], minor=False)
-        ax.set_xlim(left=floor / 2.2)
+        ax.set_xlim(floor / 2.2, right)
 
     families = [f for f in FAMILY_COLORS if any(r.family == f for r in rows)]
     handles = [Line2D([0], [0], marker="o", color="none", label=f,

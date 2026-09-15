@@ -33,8 +33,8 @@ import numpy as np
 from . import encoders, stats
 from .chart import ChartRow, cost_footnote, plot_cost_vs_accuracy
 from .data import get_task, load_task, split_fingerprint
-from .evaluate import EvalResult, run_eval
-from .models import BY_KEY, LOCAL, OPEN, ModelSpec, missing_keys
+from .evaluate import EvalResult, requested_max_tokens, run_eval
+from .models import ALL_MODELS, BY_KEY, LOCAL, ModelSpec, missing_keys
 from .optimize import OptimizationRun, run_gepa
 from .program import build_program
 
@@ -47,7 +47,10 @@ class ExperimentConfig:
     optimize: list[str] = field(default_factory=lambda: [
         "qwen3-0.6b-direct", "qwen3-1.7b-direct",
     ])
-    reference_model: str = ""          # the "expensive" model we compare against
+    # The "expensive" model every PASS/FAIL is paired against. Must be one of
+    # `candidates` (validate_config enforces it); "" means auto-select the most
+    # accurate evaluated row.
+    reference_model: str = ""
     reflection_model: str = "gpt-oss-20b-direct"
     run_encoders: bool = True
     finetune_encoder: bool = True
@@ -80,7 +83,32 @@ class ExperimentConfig:
 
 
 def _profile_for(key: str) -> str:
-    return "reasoning" if key.endswith("-reasoning") else "direct"
+    """Which program wrapper this row runs under: DIRECT or REASONING.
+
+    The `-direct`/`-reasoning` suffix marks OUR prompt profile, and a pair
+    sharing it differs only in how we prompt one set of weights -- which is why
+    both halves of the pair carry the same `call_id`. The suffix is not ours to
+    claim when it is part of the vendor's deployment NAME: xAI ships
+    `grok-4-1-fast-reasoning` and `grok-4-1-fast-non-reasoning` as two separate
+    deployments at one rate, and `models.py` says in as many words that our
+    profiles measure the prompt side while that pair "measures the weights
+    side". A bare `endswith("-reasoning")` matched BOTH of those rows (the
+    non-reasoning one too, since its name also ends in "-reasoning") and wrapped
+    each in ChainOfThought at the reasoning budget, so the row that exists to
+    isolate one switch was charted with two switches flipped.
+
+    So: a `-reasoning` suffix is a profile marker only when another registry row
+    serves the same `call_id`. Derived from the registry, so adding a model
+    stays a data change.
+    """
+    if not key.endswith("-reasoning"):
+        return "direct"
+    spec = BY_KEY.get(key)
+    if spec is None:                      # unknown key: honour the suffix
+        return "reasoning"
+    shares_weights = any(m.call_id == spec.call_id and m.key != key
+                         for m in ALL_MODELS)
+    return "reasoning" if shares_weights else "direct"
 
 
 def _budget_for(cfg: "ExperimentConfig", key: str, spec: ModelSpec) -> int:
@@ -90,9 +118,16 @@ def _budget_for(cfg: "ExperimentConfig", key: str, spec: ModelSpec) -> int:
     honest if it screens on the number that will really be requested. A budget
     is not a demand -- the bill follows the tokens emitted -- but the endpoint
     rejects or truncates against the budget, so that is what has to fit.
+
+    `requested_max_tokens` is the mirror, not a re-derivation: `build_lm` raises
+    the budget to 16,000 for the OpenAI reasoning tier, and a screen that
+    checked the configured number instead read as "checked" while checking a
+    budget no request would ever carry.
     """
     profile = _profile_for(key)
-    return cfg.reasoning_max_tokens if profile == "reasoning" or spec.think else cfg.max_tokens
+    configured = (cfg.reasoning_max_tokens
+                  if profile == "reasoning" or spec.think else cfg.max_tokens)
+    return requested_max_tokens(spec, configured)
 
 
 def screen_candidates(cfg: "ExperimentConfig", task) -> dict:
@@ -125,7 +160,14 @@ def screen_candidates(cfg: "ExperimentConfig", task) -> dict:
         if not spec.available:
             unavailable.append((key, f"{spec.label}: no API key or endpoint configured"))
             continue
-        fine, why = spec.fits(_budget_for(cfg, key, spec), demands.p95_prompt_tokens)
+        # The LONGEST prompt, not the p95. Every test item is scored, so an
+        # item that overflows the context window comes back as a provider error
+        # and is booked as a wrong answer -- and screening on the p95 let up to
+        # 5% of items do that on a model this function had just reported as
+        # fitting "every deployment on file". A 5-point accuracy loss from
+        # truncation is larger than the Wilson half-width the comparison turns
+        # on, and nothing downstream can tell it apart from a weak model.
+        fine, why = spec.fits(_budget_for(cfg, key, spec), demands.max_prompt_tokens)
         if not fine:
             rejected.append((key, why))
         else:
@@ -230,8 +272,15 @@ def validate_config(cfg) -> None:
     no comparisons -- the documented quick start silently produced a chart with
     no acceptance decisions in it at all. Failing here costs a second; failing
     silently costs the whole point of the run.
+
+    An EMPTY `reference_model` is the documented auto-select and is allowed:
+    run_experiment then pairs against the most accurate evaluated row. The
+    unconditional check rejected it, so the field's own default made
+    `ExperimentConfig()` raise and the auto-select branch was unreachable dead
+    code. What must stay fatal is a reference that is NAMED and never
+    evaluated, which is the bug this was written for.
     """
-    if cfg.reference_model not in cfg.candidates:
+    if cfg.reference_model and cfg.reference_model not in cfg.candidates:
         raise ValueError(
             f"reference_model {cfg.reference_model!r} is not in candidates, so it will "
             f"never be evaluated and every paired comparison would be skipped. Add it to "
@@ -250,7 +299,6 @@ def cost_basis_for(key: str, cost_per_1k: float) -> str:
     nonzero number is a "proxy" estimate off somebody else's rate card, not a
     bill; everything else is a measured hosted bill. See chart.cost_footnote.
     """
-    from .models import BY_KEY, LOCAL
     if cost_per_1k is None or cost_per_1k <= 1e-9:
         return "free"
     spec = BY_KEY.get(key.replace("+gepa", ""))
@@ -311,7 +359,7 @@ def run_experiment(cfg: ExperimentConfig) -> dict:
         if cfg.finetune_encoder:
             try:
                 results["finetuned-encoder"] = encoders.run_finetuned_encoder(
-                    encoder_train, task.test, seed=cfg.seed)
+                    encoder_train, task.test, seed=cfg.seed, labels=task.labels)
                 print("  " + results["finetuned-encoder"].summary())
             except Exception as exc:
                 print(f"  finetuned-encoder skipped: {type(exc).__name__}: {str(exc)[:120]}")
@@ -344,7 +392,20 @@ def run_experiment(cfg: ExperimentConfig) -> dict:
             if spec is None or not spec.available:
                 continue
             profile = _profile_for(key)
-            mt = cfg.reasoning_max_tokens if profile == "reasoning" or spec.think else cfg.max_tokens
+            # `_budget_for`, not a second inline copy of its body: the helper
+            # exists precisely to keep the screened budget and the requested
+            # budget identical, and the copy here had already drifted (it
+            # missed the reasoning-tier bump that build_lm applies).
+            mt = _budget_for(cfg, key, spec)
+            # The deductive screen applies here too. This loop iterated
+            # cfg.optimize and checked only `available`, so a candidate the
+            # screen had refused as arithmetically impossible was still handed
+            # to GEPA and billed for hundreds of rollouts -- the one thing the
+            # "refuse before spending" stage exists to prevent.
+            fine, why = spec.fits(mt, screen["demands"].p95_prompt_tokens)
+            if not fine:
+                print(f"  skipping {spec.label}: {why}")
+                continue
             print(f"  optimizing {spec.label} ...", flush=True)
             optimized, record = run_gepa(spec, task, profile, reflection,
                                          max_metric_calls=cfg.max_metric_calls,
@@ -376,16 +437,26 @@ def run_experiment(cfg: ExperimentConfig) -> dict:
                       f"{record.selected_instruction_tokens} instruction tokens, "
                       f"{record.prompt_cost_ratio:.2f}x input cost, scored "
                       f"{-record.val_cost_penalty * 100:+.1f} accuracy points")
-            results[key + "+gepa"] = run_eval(
-                spec, optimized, task.test, task.labels, num_threads=cfg.num_threads,
-                max_tokens=mt, progress=True)
-            results[key + "+gepa"].label = spec.label + " + GEPA"
+            # Guarded like the stock-prompt sweep above. Unguarded, one failure
+            # here discarded the entire run -- every completed row, every paid
+            # baseline eval and the GEPA spend that had just finished -- for a
+            # single post-optimization eval that could not be scored.
+            try:
+                results[key + "+gepa"] = run_eval(
+                    spec, optimized, task.test, task.labels, num_threads=cfg.num_threads,
+                    max_tokens=mt, progress=True)
+                results[key + "+gepa"].label = spec.label + " + GEPA"
+            except Exception as exc:
+                print(f"    {key}+gepa eval FAILED: {type(exc).__name__}: {str(exc)[:140]}")
     elif cfg.optimize:
         print(f"\nGEPA skipped: reflection model {cfg.reflection_model!r} unavailable.")
 
     # ── statistics ────────────────────────────────────────────────────────
-    ref_key = cfg.reference_model or max(
-        results, key=lambda k: results[k].accuracy.point)
+    # Auto-select needs something to select from; `max()` on an empty dict
+    # raises, and "every candidate failed" should not surface as a bare
+    # ValueError from the statistics block.
+    ref_key = cfg.reference_model or (
+        max(results, key=lambda k: results[k].accuracy.point) if results else "")
     ref = results.get(ref_key)
     comparisons: dict[str, dict] = {}
     if ref is not None:
@@ -441,14 +512,40 @@ def run_experiment(cfg: ExperimentConfig) -> dict:
                   f"PASS verdict(s) would not survive Holm correction over this family of "
                   f"{len(ni_p)} non-inferiority tests. `passes` is UNCORRECTED; see "
                   f"passes_holm_corrected on each comparison.")
-            ni = comparisons[key]["non_inferiority"]
-            verdict = ni["verdict"]
-            mark = "PASS" if ni["passes"] else "----"
+
+        # One line per compared candidate. This loop used to be nested inside the
+        # `if n_would_flip:` above and to read `key`/`p`/`rej` left over from the
+        # McNemar Holm loop, so the table printed exactly ONE arbitrary row, and
+        # only on runs where a verdict happened to flip. Step 6 of the
+        # methodology -- "report what could not be distinguished, as prominently
+        # as what could" -- was therefore silently producing nothing.
+        for key in raw_p:
+            ni_row = comparisons[key]["non_inferiority"]
+            mark = "PASS" if ni_row["passes"] else "----"
+            holm = " (holm sig)" if comparisons[key]["holm_significant"] else ""
             print(f"  [{mark}] {results[key].label:<34} {results[key].accuracy.point:6.1%}  "
-                  f"diff {ni['diff']:+.1%}  p={p:.3f}"
-                  f"{' (holm sig)' if rej else ''}  {verdict}")
+                  f"diff {ni_row['diff']:+.1%}  p={raw_p[key]:.3f}"
+                  f"{holm}  {ni_row['verdict']}")
     else:
+        # Not a quiet fallback: the paired test against the reference IS the
+        # product's claim, so a run that could not produce one has to say which
+        # of the two ways it failed. `validate_config` only checks that a named
+        # reference is in `candidates`; it cannot know that the key would be
+        # screened out for a missing API key or that its eval would raise.
         bar = cfg.accuracy_bar
+        if not results:
+            print("\n! No candidate produced a result, so there are no paired "
+                  "comparisons and no accuracy bar.")
+        else:
+            why = ("no reference was named and no row scored" if not ref_key else
+                   f"reference row {ref_key!r} is missing -- it was screened out, "
+                   f"unavailable, or its eval failed")
+            print(f"\n! Paired comparisons SKIPPED: {why}. Every PASS/FAIL on the "
+                  f"chart is a paired test against the reference, so this run "
+                  f"reports accuracies only.")
+            if cfg.accuracy_bar is None:
+                print("  accuracy_bar is None and derives from the reference, so the "
+                      "chart draws no bar and marks nothing disqualified.")
 
     # ── chart ─────────────────────────────────────────────────────────────
     rows: list[ChartRow] = []
@@ -472,6 +569,21 @@ def run_experiment(cfg: ExperimentConfig) -> dict:
             always_label=(key in ALWAYS_LABEL_KEYS or key == ref_key),
             prompt_changed=(None if opt_record is None or opt_record.error
                             else _prompt_changed(opt_record))))
+
+    # The plotter refuses an unverified price rather than drawing it at the axis
+    # floor as FREE, and deciding what to do about one is the caller's job --
+    # this is that decision. Made here because every row was previously handed
+    # over unfiltered, so a single candidate with no verified rate card (or one
+    # whose every call errored, which now reports NaN rather than $0) raised
+    # from the plotter at the very END of the run, after all the spending.
+    priced = [r for r in rows
+              if r.cost_per_1k is not None and not np.isnan(r.cost_per_1k)
+              and r.cost_per_1k >= 0]
+    if len(priced) != len(rows):
+        dropped = [r.label for r in rows if not any(r is p for p in priced)]
+        print(f"  NOTE: {len(dropped)} row(s) kept out of the chart for want of a "
+              f"verified price (they stay in results.json): {dropped}")
+    rows = priced
 
     chart_path = str(out_dir / "cost_vs_accuracy.png")
     plot_cost_vs_accuracy(

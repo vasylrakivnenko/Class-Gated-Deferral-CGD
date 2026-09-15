@@ -427,15 +427,24 @@ check("an unrecorded limit passes, flagged rather than rejected",
 
 # 4. The budget the screen checks must be the budget the run requests. A screen
 # against a different number reads as "checked" while checking nothing.
+#
+# `want` goes through requested_max_tokens for the same reason the screen does:
+# build_lm raises the budget to 16,000 for the OpenAI reasoning tier, so a
+# `want` computed from the config alone asserted that the screen checks 1,024
+# for gpt-5-nano while the request carries 16,000 -- the check passed and the
+# mismatch it exists to catch was the one it was measuring against.
+from downshift.evaluate import requested_max_tokens as _req_mt
+
 for key in ("gpt-5-nano", "qwen3-1.7b-reasoning"):
     spec = BY_KEY.get(key)
     if spec is None:
         continue
     cfg_b = ExperimentConfig()
-    want = (cfg_b.reasoning_max_tokens
-            if key.endswith("-reasoning") or spec.think else cfg_b.max_tokens)
+    configured = (cfg_b.reasoning_max_tokens
+                  if key.endswith("-reasoning") or spec.think else cfg_b.max_tokens)
+    want = _req_mt(spec, configured)
     check(f"screen budget matches run budget for {key}",
-          _budget_for(cfg_b, key, spec) == want)
+          _budget_for(cfg_b, key, spec) == want, f"{_budget_for(cfg_b, key, spec)}")
 
 # 5. The reflection model is screened too. It used to be built unguarded at the
 # top of run_gepa, so an undersized one raised AFTER every paid eval was billed.
@@ -468,6 +477,132 @@ silent = [s.key for s in HOSTED_MODELS
           and s.cache_applies(271) == (True, "")]
 check("an unrecorded cache minimum is flagged, not assumed verified",
       not silent, f"silently assumed: {silent}")
+
+# 8. The six defects the second review pass left in place, each with the exact
+# input that reproduced it. They are grouped here because every one of them
+# moves a published number rather than raising, which is the class of bug this
+# file exists to catch.
+print("\nRegressions (each of these shipped a wrong-but-plausible number):")
+
+# A refusal or a negation names the label it is rejecting, and a bare substring
+# test credited it. Both of these were scored 1.0.
+check("a refusal is not credited as the label inside it",
+      _sp(_Ans("no"), _Ans("unknown"), ("yes", "no"))[0] == 0.0,
+      str(_sp(_Ans("no"), _Ans("unknown"), ("yes", "no"))))
+check("a negated label is not credited",
+      _sp(_Ans("positive"), _Ans("The sentiment is not positive"),
+          ("positive", "negative", "neutral"))[0] == 0.0)
+# ...while the whole-word rule must still recover a label from a longer answer,
+# including the nested banking77 pairs.
+check("a decorated label that begins with a stripped prefix still resolves",
+      _sp(_Ans("answerable"), _Ans("**answerable**"),
+          ("answerable", "unanswerable"))[0] == 1.0)
+check("a nested label is recovered from a verbose answer",
+      _sp(_Ans("virtual_card_not_working"),
+          _Ans("The intent is virtual_card_not_working"),
+          ("card_not_working", "virtual_card_not_working"))[0] == 1.0)
+check("the shorter half of a nested pair is not credited for the longer",
+      _sp(_Ans("card_not_working"),
+          _Ans("The intent is virtual_card_not_working"),
+          ("card_not_working", "virtual_card_not_working"))[0] == 0.0)
+check("two labels named in one answer are still refused",
+      _sp(_Ans("positive"), _Ans("could be positive or negative"),
+          ("positive", "negative", "neutral"))[0] == 0.0)
+
+# The non-inferiority decision and the p-value printed beside it must be one
+# test on one sample. They were drawn on `seed` and `seed + 1`, and experiment.py
+# ANDs them together, so the two could disagree at the boundary.
+def _paired(n, a_only, b_only, both):
+    ca = np.array([1] * a_only + [0] * b_only + [1] * both + [0] * (n - a_only - b_only - both))
+    cb = np.array([0] * a_only + [1] * b_only + [1] * both + [0] * (n - a_only - b_only - both))
+    return ca, cb
+
+_disagree = []
+for _n in (50, 100, 200, 250):
+    for _a in range(0, 21, 2):
+        for _b in range(0, 21, 2):
+            if _a + _b + 30 > _n:
+                continue
+            _ni = S.non_inferiority_test(*_paired(_n, _a, _b, 30), n_boot=4000)
+            if _ni.passes != (_ni.p_value < 0.05):
+                _disagree.append((_n, _a, _b, _ni.passes, round(_ni.p_value, 4)))
+check("the non-inferiority verdict and its p-value agree on every config",
+      not _disagree, f"{len(_disagree)} disagreements, e.g. {_disagree[:2]}")
+
+# An undersized pool must name the shortfall. It used to under-fill the last
+# split silently, or divide by zero once the pool was empty.
+from downshift.data import _stratified_take as _take
+
+def _pool(total, n_classes=3):
+    per = total // n_classes
+    return {f"c{i}": [type("E", (), {"label": f"c{i}", "sentence": f"c{i}-{j}"})()
+                      for j in range(per)] for i in range(n_classes)}
+
+for _total, _want in ((600, "refused"), (450, "refused"), (900, "served")):
+    _by, _rng, _sizes, _how = _pool(_total), np.random.default_rng(0), [], "served"
+    try:
+        for _n in (250, 200, 200):
+            _sizes.append(len(_take(_rng, _by, _n, tuple(_by))))
+    except ValueError:
+        _how = "refused"
+    except ZeroDivisionError:
+        _how = "ZeroDivisionError"
+    check(f"a {_total}-row pool asked for 650 items is {_want}", _how == _want,
+          f"{_how}, sizes {_sizes}")
+
+# The `-reasoning` suffix is our prompt profile, not part of a vendor deployment
+# name. Both xAI rows matched it (the non-reasoning one too) and were wrapped in
+# ChainOfThought, so the pair that isolates the weights switch had two switches
+# flipped.
+from downshift.experiment import _profile_for as _prof
+check("a vendor deployment named '-reasoning' keeps the DIRECT profile",
+      _prof("grok-4-1-fast-reasoning") == "direct", _prof("grok-4-1-fast-reasoning"))
+check("and so does its '-non-reasoning' sibling",
+      _prof("grok-4-1-fast-non-reasoning") == "direct",
+      _prof("grok-4-1-fast-non-reasoning"))
+check("a real profile pair (same call_id) still reads as REASONING",
+      _prof("qwen3-1.7b-reasoning") == "reasoning", _prof("qwen3-1.7b-reasoning"))
+
+# The screen must check the LONGEST prompt. Every test item is scored, so an
+# item over the context window returns a provider error and is booked wrong --
+# on a model the screen had just reported as fitting every deployment.
+import inspect as _inspect
+from downshift.experiment import screen_candidates as _screen
+_screen_src = _inspect.getsource(_screen)
+check("the capability screen sizes context against the longest prompt",
+      "max_prompt_tokens" in _screen_src and "p95_prompt_tokens" not in _screen_src)
+
+# A log x-axis must not be widened by its own tick list: set_xticks fixes the
+# ticks AND expands the view to contain them, and the locator's list runs a
+# decade past the data.
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as _plt
+from downshift.chart import ChartRow as _Row, plot_cost_vs_accuracy as _plot
+import tempfile as _tempfile
+
+_rows_x = [_Row("free local", "local", 0.0, 0.40, 0.34, 0.46),
+           _Row("cheap host", "openai", 0.05, 0.62, 0.56, 0.68),
+           _Row("frontier", "anthropic", 20.0, 0.81, 0.76, 0.86)]
+_seen = {}
+_orig_savefig = _plt.Figure.savefig
+
+
+def _spy(self, *a, **k):
+    _seen["xlim"] = self.axes[0].get_xlim()
+    return _orig_savefig(self, *a, **k)
+
+
+_plt.Figure.savefig = _spy
+try:
+    _plot(_rows_x, str(Path(_tempfile.mkdtemp()) / "x.png"),
+          majority_baseline=0.33, accuracy_bar=0.60)
+finally:
+    _plt.Figure.savefig = _orig_savefig
+check("a free row's floor tick does not widen the axis past the priciest row",
+      _seen["xlim"][1] < 50.0, f"right edge {_seen['xlim'][1]:.1f} for a $20 max")
+check("no figure is left open after charting", not _plt.get_fignums(),
+      str(_plt.get_fignums()))
 
 print()
 if FAILURES:
