@@ -911,3 +911,131 @@ regardless of the shape's fit to the model. On-demand B200 is $13/hr, H200
 $8/hr; the eval above ran on B200 by default when H200 would have sufficed for
 a 0.6B model. Both scoring deployments were torn down immediately after use;
 the fine-tuned adapters themselves are free to store and redeployable at need.
+
+## D26. Two similarity-based alternatives to the learned selector were measured — both lose, and the loss is informative
+
+Two questions this closes, both requested explicitly: "is train just full of
+near-duplicate conversations the selector is coasting on?" and "would
+retrieve-then-rerank do better than a single learned classifier?"
+
+**1-NN retrieval baseline** (`sft/eval/retrieval_baseline.py`): for each
+`test_seen` turn, find the most SIMILAR (cosine, TF-IDF word 1-2gram over the
+same `ContextWindow.text` every arm uses) train conversation-prefix and copy
+its skeleton + templates as the prediction — similarity, not exact match
+(an exact whole-conversation-prefix match covers only 0.22% of dev turns, so
+exact-match was never a live option). Scored on `test_seen` from the start,
+same population and predicate as every other number in this file:
+
+| method | conditional compose@1 (n=3,985) | unconditional (n=8,889) |
+|---|---|---|
+| **learned cache (TF-IDF+logreg)** | **27.7%** | **12.4%** |
+| 1-NN retrieval (similarity, no reranking) | 5.2% | 2.4% |
+
+Median neighbor similarity was only 0.47 — the "most similar" train
+conversation is often not that similar. **Decision: the selector is not
+coasting on near-duplicate conversations in train.** If it were, 1-NN would
+have landed close to 27.7%; it lands 5x below, and even below the skeleton-only
+label-blind constant (24.7% vs 26.3%) — the D5 guard this baseline exists to
+apply, one level up from a constant predictor (per D5's own spirit: a
+retrieval baseline tells you how much of a learned selector's score is "a
+similar conversation existed" vs. "the model learned something past raw
+similarity").
+
+**Retrieve-top-10-then-rerank** (`sft/eval/retrieval_rerank.py`): same TF-IDF
+1-NN retrieval widened to k=10, then a LOCAL neural cross-encoder
+(`cross-encoder/ms-marco-MiniLM-L-12-v2`, already cached, no download; jointly
+attends to (context, candidate), architecturally a reranker rather than a
+second embedding-cosine) reorders the 10 and the top pick is scored:
+
+| method | conditional compose@1 (n=3,985) | unconditional (n=8,889) |
+|---|---|---|
+| **learned cache (TF-IDF+logreg)** | **27.7%** | **12.4%** |
+| compose@10 retrieval ceiling (best of 10, no rerank) | 29.2% | 13.1% |
+| reranked top-1 | 7.6% | 3.4% |
+| 1-NN retrieval (k=1, no rerank) | 5.2% | 2.4% |
+
+Two findings, not one. **First, the ceiling itself is barely above the cache's
+own one-shot number** (29.2% vs 27.7%) — widening retrieval to 10 candidates
+buys almost no headroom over what the learned selector already gets right in
+one try, so there was never much for a reranker to find here. **Second, the
+reranker did not capture what little ceiling existed**: 7.6% is far below the
+29.2% ceiling, though still above the plain 1-NN floor (5.2%), so reranking
+bought a small real gain, not a fake one. `mean_distinct_candidates_of_k =
+8.49` rules out "the 10 candidates were redundant" as the explanation — the
+reranker had real choices and picked badly. The likely cause, flagged in the
+script's own docstring before this result existed: MS MARCO trains a
+cross-encoder on generic web query/passage relevance, not on customer-service
+dialogue acts; nothing here is domain-adapted. **Decision: neither similarity
+method threatens the cache's standing number**, and the retrieval ceiling
+result is a useful negative finding in its own right — it bounds how much
+"find something similar" can ever contribute on this bank, independent of
+which reranker is used.
+
+## D27. LLM-as-judge on the cache's compose@1 misses: most are reasonable paraphrases, not real errors — and three judge models converge on that, with one important divergence
+
+compose@1 is a strict mechanical match (predicted skeleton AND every template
+id must equal gold). A miss that way can be a genuinely wrong action or a
+perfectly reasonable reply that just didn't hit the one gold template id. This
+was never measured before now.
+
+**Protocol** (`sft/eval/build_llm_judge_sample.py` + `run_llm_judge.py`): 100
+`test_seen` turns sampled from the CONDITIONAL compose@1 misses (n=3,985 →
+2,883 misses; hits=1,102 exactly reproduces headline_test_seen's 0.2765,
+confirming the reproduction is exact), stratified across 47 distinct gold
+act-sequences so the sample is not dominated by one failure mode, seeded for
+reproducibility. Each row shows a judge model the FULL conversation thread up
+to that turn, the gold (reference) reply, and the cache's actual predicted
+reply for that ONE next turn — one judgment per row, full context, single
+response, not the whole thread. `_h5_arm`/`_h7_arm` were rerun with the exact
+config `select.json` certified (`selection.winners.compose`), refit on train,
+predicted on `test_seen`, kept instead of stripped — not a new model.
+
+**First pass, single judge** (`accounts/fireworks/models/glm-5p3-flash`, GLM
+5.3 Flash): a real bug surfaced and is worth recording — GLM-5.3-Flash is a
+REASONING model; `reasoning_content` is generated before `content` and both
+count against `max_tokens`, so an initial 150-token budget left ~52% of
+responses empty or truncated (unparseable). Raised to 700-900 tokens fixed it
+(2-3% parse errors remained, discarded, not counted).
+
+**Second pass, three independent judges** on the identical 100-row sample
+(`run_llm_judge_multi.py`): GLM-5.3-Flash, GLM-5.3 (full), and `gpt-oss-120b`
+(a different model family, to check whether agreement was just GLM agreeing
+with itself):
+
+| judge | appropriate | borderline | wrong |
+|---|---|---|---|
+| GLM-5.3-Flash | 74% | 17% | 9% |
+| GLM-5.3 (full) | 68% | 25% | 7% |
+| gpt-oss-120b | 69% | 15% | **16%** |
+
+| agreement | exact 3-way | coarse (adequate vs. wrong) |
+|---|---|---|
+| Flash vs. GLM-5.3 | 87.6% | 100% |
+| Flash vs. gpt-oss-120b | 81% | 89% |
+| GLM-5.3 vs. gpt-oss-120b | 76.3% | 89.7% |
+| all three unanimous | 73.2% | 89.7% |
+
+**Decision: most compose@1 misses are reasonable replies, not real errors —
+but the "wrong" rate is a range (7-16%), not a point, and gpt-oss-120b's
+independence from the GLM family makes 16% the more credible end of it.** The
+two GLM models agree almost perfectly at the coarse level (100%) but split on
+the appropriate/borderline line (GLM-5.3 full is pickier); gpt-oss-120b found
+roughly double the "wrong" rate of either GLM variant, and a same-family
+leniency effect (GLM judging GLM-adjacent outputs) cannot be ruled out from
+this data. Two concrete "wrong" examples worth keeping as illustrations: the
+predicted reply repeating a nonsensical question twice instead of continuing
+verification, and — the more serious case — a predicted reply that fabricated
+an unsupported claim ("annual holiday extravaganza with open bar and free
+flights") absent from the source content, i.e. a hallucination a gate would
+need to catch before this could safely auto-answer.
+
+**What this does NOT do: change 27.7%/12.4% compose@1.** Those remain the
+headline. This explains their texture — roughly three-quarters of what the
+strict metric calls "wrong" would likely read as fine to a person, which
+matters for interpreting how bad the gap to 100% really is, but is not itself
+a validated accuracy. **Caveats that ship with this result, not glossed
+over:** LLM-judge leniency bias is documented and unquantified here; the judge
+is shown the gold answer as a reference, which biases toward generosity when
+the candidate merely resembles the gold topic; n=100, one sampling seed; and —
+same open-caveat status as the act labeller (D24) — no human has checked any
+of these 100 rows yet.

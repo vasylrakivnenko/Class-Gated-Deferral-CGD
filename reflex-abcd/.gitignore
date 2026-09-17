@@ -19,3 +19,4 @@ sft/data/abcd_train_lexical.jsonl
 sft/data/abcd_train_structured.jsonl
 sft/data/abcd_test_seen_lexical.jsonl
 sft/eval/data/eval_prompts_test_seen.jsonl
+sft/eval/logs/
