@@ -438,10 +438,12 @@ def load_task(spec: TaskSpec, n_train: int = 200, n_val: int = 200,
     train = to_examples(_stratified_take(rng, working, n_train, names))
     pool = to_examples([item for lab in names for item in working[lab]])
 
-    task = Task(name=spec.key, labels=names, train=train, val=val, test=test, pool=pool)
-    task.n_duplicates_dropped = n_dupes
-    task.spec = spec
-    return task
+    # Passed to the constructor, not bolted on afterwards. `spec` and
+    # `n_duplicates_dropped` were promoted to real dataclass fields precisely so
+    # that a Task built any other way would not raise from `demands()`; setting
+    # them as dynamic attributes here kept the pattern the fields exist to retire.
+    return Task(name=spec.key, labels=names, train=train, val=val, test=test,
+                pool=pool, spec=spec, n_duplicates_dropped=n_dupes)
 
 
 def load_financial_phrasebank(n_train: int = 200, n_val: int = 200, n_test: int = 250,

@@ -22,6 +22,32 @@ from downshift.program import build_program, record_prompt_changed
 import os
 
 
+def _drop_unpriced(rows):
+    """Keep the plotter's refusal out of the end of a finished script.
+
+    `plot_cost_vs_accuracy` rejects NaN and negative costs, and NaN became
+    reachable for any row whose every call failed, not just registry rows with
+    no rate card. Every script that charts from results.json has to make the
+    same call run_experiment makes, or re-charting a finished run dies at the
+    very last step.
+    """
+    import math
+    keep, drop = [], []
+    for r in rows:
+        c = r.cost_per_1k
+        (keep if c is not None and not math.isnan(c) and c >= 0 else drop).append(r)
+    for r in keep:
+        if r.linked_from is not None:
+            t = r.linked_from[0]
+            if t is None or math.isnan(t) or t < 0:
+                r.linked_from = None
+    if drop:
+        print(f"  NOTE: {len(drop)} row(s) left off the chart for want of a verified "
+              f"price: {[r.label for r in drop]}")
+    return keep
+
+
+
 
 
 TASK = os.environ.get("DS_TASK", "financial_phrasebank")
@@ -115,7 +141,7 @@ for key, res in results.items():
             # which reads a same-prompt replicate as a GEPA improvement.
             prompt_changed=record_prompt_changed(
                 payload.get("optimizations", {}).get(base))))
-plot_cost_vs_accuracy(rows, CHART, majority_baseline=payload["task"]["majority_accuracy"],
+plot_cost_vs_accuracy(_drop_unpriced(rows), CHART, majority_baseline=payload["task"]["majority_accuracy"],
     accuracy_bar=bar, title="Cheapest model that clears the bar",
     subtitle=(f"{payload['task']['label']} — {payload['task']['n_test']} held-out test items, "
               f"never seen by the optimizer. Bars are 95% Wilson intervals."),

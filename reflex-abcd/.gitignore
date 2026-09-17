@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+outputs/compile/bank/
+outputs/compile/labels/
+outputs/compile/*.md
+outputs/calibration/
+outputs/checkpoints/
+outputs/runs/*/
+outputs/llm_cache/
+!outputs/**/.gitkeep

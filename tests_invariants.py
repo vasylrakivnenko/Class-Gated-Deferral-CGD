@@ -435,16 +435,78 @@ check("an unrecorded limit passes, flagged rather than rejected",
 # mismatch it exists to catch was the one it was measuring against.
 from downshift.evaluate import requested_max_tokens as _req_mt
 
-for key in ("gpt-5-nano", "qwen3-1.7b-reasoning"):
+# The expectation comes from `_profile_for`, not from a second copy of the rule
+# it replaced. `key.endswith("-reasoning")` was the rule _profile_for was
+# rewritten for getting wrong, so asserting against it made the test disagree
+# with production on exactly the rows the rewrite was about -- and the loop only
+# covered two keys, so it could not see the disagreement.
+from downshift.experiment import _profile_for as _prof_for
+for key in ("gpt-5-nano", "qwen3-1.7b-reasoning", "qwen3-1.7b-direct",
+            "grok-4-1-fast-reasoning", "grok-4-1-fast-non-reasoning"):
     spec = BY_KEY.get(key)
     if spec is None:
         continue
     cfg_b = ExperimentConfig()
     configured = (cfg_b.reasoning_max_tokens
-                  if key.endswith("-reasoning") or spec.think else cfg_b.max_tokens)
+                  if _prof_for(key) == "reasoning" or spec.think or "reasoning" in key
+                  else cfg_b.max_tokens)
     want = _req_mt(spec, configured)
     check(f"screen budget matches run budget for {key}",
           _budget_for(cfg_b, key, spec) == want, f"{_budget_for(cfg_b, key, spec)}")
+
+# A vendor deployment that reasons natively must keep the reasoning OUTPUT
+# budget even though it runs under the DIRECT wrapper. Conflating the two
+# dropped the Grok pair from 2,500 output tokens to 1,024, which a reasoning
+# deployment spends inside its own reasoning before emitting a label.
+for key in ("grok-4-1-fast-reasoning", "grok-4-1-fast-non-reasoning"):
+    spec = BY_KEY.get(key)
+    if spec is None:
+        continue
+    cfg_b = ExperimentConfig()
+    check(f"{key} runs the DIRECT wrapper", _prof_for(key) == "direct", _prof_for(key))
+    check(f"{key} still gets the reasoning output budget",
+          _budget_for(cfg_b, key, spec) == cfg_b.reasoning_max_tokens,
+          f"{_budget_for(cfg_b, key, spec)} vs {cfg_b.reasoning_max_tokens}")
+
+# The pin detector has to be ABLE to notice a deletion. Asked through
+# `optimizable_body` on both sides it was False by construction on every run, so
+# it could not have caught the 51-point regression it exists to catch.
+#
+# Note what this does and does not assert. Today's `with_format_contract` only
+# appends -- it strips the contract and re-adds it, nothing else -- so no input
+# makes it delete, and an earlier version of this test wrongly expected a rogue
+# trailer to be removed. So the predicate is exercised directly: it must be
+# False when the selected text survives and True when it does not.
+from downshift.program import with_format_contract as _wfc
+
+def _pin_altered(selected, optimized):
+    return selected.strip() not in optimized
+
+_clean = "Classify the sentiment."
+check("pin detector is quiet when the pin only appends",
+      not _pin_altered(_clean, _wfc(_clean)))
+check("pin detector fires when the shipped text lost the selected body",
+      _pin_altered(_clean, "Answer with one word.\n\nSomething else entirely."))
+check("and today's pin genuinely only appends, for every shape tried",
+      all(t.strip() in _wfc(t) for t in
+          (_clean, "Classify.\n\nReturn a JSON object with one key.", "  spaced  ")))
+
+# Auto-selecting the reference must not land on a free row. `results` holds the
+# classical and encoder rows too, and on banking77 the encoder is the most
+# accurate row on the board, which would make "non-inferior to a free TF-IDF"
+# the published question.
+import json as _json
+from pathlib import Path as _Path
+_f = _Path("runs/banking77/results.json")
+if _f.exists():
+    _res = _json.loads(_f.read_text())["results"]
+    _prompted = {k: v for k, v in _res.items() if v["n_calls"] > 0}
+    _auto = max(_prompted, key=lambda k: _prompted[k]["accuracy"]["point"])
+    check("auto-selected reference is a prompted row, not a free one",
+          _res[_auto]["n_calls"] > 0, f"{_auto}")
+    _overall = max(_res, key=lambda k: _res[k]["accuracy"]["point"])
+    check("and the most accurate row on that task IS a free one, so it mattered",
+          _res[_overall]["n_calls"] == 0, f"{_overall}")
 
 # 5. The reflection model is screened too. It used to be built unguarded at the
 # top of run_gepa, so an undersized one raised AFTER every paid eval was billed.

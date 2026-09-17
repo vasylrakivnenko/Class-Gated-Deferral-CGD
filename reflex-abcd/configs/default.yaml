@@ -1,0 +1,622 @@
+# REFLEXIVE v1 — configuration defaults.
+#
+# This file is spec Section 12, verbatim, plus the additions listed under
+# "REFLEX ADDITIONS" inside each block and marked `# +`.
+#
+# Spec Section 10 is binding: NO numeric threshold, model id, path or price may
+# appear in Python source. Everything tunable lives here and is overridable on
+# the CLI with `--set dotted.key=value` (e.g. `--set gate.alpha=0.05`).
+#
+# `<fill: ...>` placeholders are DELIBERATELY UNFILLED. Do not invent values.
+# Any code that reads a `<fill...>` value must raise, not guess.
+
+data:
+  abcd_dir: /private/tmp/claude-501/-Users-vasyl-zadumai/12e40f00-be9f-4f43-9226-7a491b668aef/scratchpad/abcd  # + (spec default was data/abcd; data is already downloaded here)
+  # full thread by default. Measured on real ABCD: 49.5% of predicted turns have NO
+  # customer message immediately before them (22.5% follow a tool/action result,
+  # 20.4% follow another agent turn, 6.6% are openers), so a short window starves
+  # half the dataset. Full thread fits: mean 174 tok, p99 551, 1.5% over max_len.
+  # `full` = whole conversation so far; an int = that many prior turns.
+  # + Re-measured by the 4.1 implementation over all 13,392 dev agent-side contexts
+  #   (ModernBERT-base tokenizer): turns only mean 168.6 tok / p99 512 / 1.00% over
+  #   max_len -- matches the 174/551/1.5% above -- but the state line build_context
+  #   appends costs ~55 tokens, giving mean 223.7 / p99 646 / 4.05% over max_len.
+  #   Tokenize contexts with truncation_side="left": the state is the LAST line, so
+  #   left truncation keeps both it and the most recent turns.
+  context_turns_K: full
+  context_K_ablation: [4, 6, 10, full]
+  max_len: 512
+  novel_subflows_count: 5
+  novel_subflows_seed: 13          # the resulting list is written to the manifest
+  learning_curve_fractions: [0.10, 0.25, 0.50, 1.00]
+  # + REFLEX ADDITIONS (verified data facts; see README "Dataset notes")
+  version: "1.1"                   # + -> abcd_v1.1.json
+  turn_list_key: delexed           # + the processed turn list; spec 3.2 does not name it
+  synthesize_end_conversation: true # + replicate utils/process.py (one extra example per convo)
+  cache_raw_in_process: true       # + memoize the 116MB corpus on (path, mtime, size) so
+                                   #   build_partitions and a caller that also needs
+                                   #   `scenario` share ONE 0.9GB parse instead of two.
+                                   #   The object is shared: treat it as read-only.
+  # + THE LEAKAGE BOUNDARY (spec 6.1 step 4). build_context exposes a scenario field only
+  #   once the CUSTOMER has stated it. These three keys are the whole policy; they change
+  #   what the model can see, so spec 10 puts them here rather than in Python.
+  disclosure_scenario_groups: [personal, order, product]  # + scenario blocks that may ever
+                                   #   be disclosed. `flow` and `subflow` are NOT blocks and
+                                   #   are excluded below as well: subflow IS the gold intent.
+  disclosure_exclude_fields: [flow, subflow, order.products]  # + never disclosed, whatever
+                                   #   the customer says. `order.products` is a python-repr
+                                   #   blob (brand/type/amount/image_url) no customer utters.
+  disclosure_min_value_chars: 4    # + shortest scenario value allowed to match by surface
+                                   #   text. Below 4, `ny` / `yes` / `1` (state, packaging,
+                                   #   num_products) match nearly every conversation and the
+                                   #   state string becomes noise. ABCD's <slot> markers are
+                                   #   matched regardless of length.
+
+compile:
+  sentence_splitter: pysbd
+  dedup_threshold: 0.92
+  # A merge is BLOCKED when two forms request different named fields, even above
+  # dedup_threshold. Measured cause (DECISIONS D16): single-linkage at 0.92 put
+  # "what is your order id?" and "and your username, email, and order id?" into a
+  # 988-form cluster canonicalised as "can i have your account id and order id?".
+  # 32.1% of field-requesting merged forms disagreed with their canonical, giving
+  # an expected 4.92% of ALL retrieve turns asking the customer for the wrong
+  # identifiers. Field-set equality is transitive, so blocking pairwise unions
+  # yields field-homogeneous clusters with no post-hoc splitting.
+  # Set false to reproduce the pre-fix bank (E3-style ablation).
+  merge_block_on_field_mismatch: true
+  # Surface phrase -> canonical field. Longest phrase wins on overlap.
+  merge_field_terms:
+    account id: account_id
+    account number: account_id
+    "account #": account_id
+    order id: order_id
+    order number: order_id
+    "order #": order_id
+    username: username
+    user name: username
+    email: email
+    e-mail: email
+    full name: name
+    phone: phone
+    phone number: phone
+    zip code: zip
+    zip: zip
+    pin number: pin
+    pin: pin
+    street address: address
+    address: address
+    membership level: membership
+    membership: membership
+  min_template_count: 2
+  act_inventory: [ACK, VERIFY, ASK, INFORM, INSTRUCT, CONFIRM, OFFER, CLOSE, OTHER]
+  act_label_model: cheap           # LLM used once, offline
+  delex_check_sample: 200
+  act_check_sample: 300
+  # + REFLEX ADDITIONS
+  act_labeler: rules_plus_embed    # + FREE LOCAL default. Other option: `llm`
+                                   #   `llm` additionally requires llm.enabled: true
+  act_labeler_embed_model: sentence-transformers/all-MiniLM-L6-v2  # + free, local
+  act_rules_path: null             # + optional YAML of act cue rules; null = built-in
+  slot_registry_backbone: ontology_non_enumerable  # + use ABCD's own <slot> vocabulary
+  guard_glued_markers: true        # + 357/21297 ABCD markers are glued to alnum chars
+  max_example_context_ids: 5       # + spec 5.2 "up to 5 training turn ids"
+  # + REFLEX ADDITIONS from the 4.2 implementation (spec 10 bans all of these
+  #   from Python source). Owned by src/reflex/compile.py.
+  dedup_embed_model: sentence-transformers/all-MiniLM-L6-v2  # + NOT model.encoder. Measured on
+                                   #   15 real ABCD sentences (105 pairs): raw ModernBERT-base
+                                   #   puts 59% of ALL pairs at cosine >= 0.92 (CLS; 29% mean-
+                                   #   pooled) -- "what is your membership level?" ~ "the shipping
+                                   #   fee is $4.99 per item." = 0.961 -- so single-linkage at the
+                                   #   dedup threshold collapses the bank into one cluster. The
+                                   #   same 105 pairs under this sentence-trained model: 0 >= 0.92,
+                                   #   true paraphrases 0.80-0.82. Deviation recorded in README.
+  embed_max_len: 64                # + tokens per sentence when embedding. Every batch is padded
+                                   #   to exactly this, so a vector never depends on its batch.
+  embed_batch_size: 128            # + sentences per embedding batch, and rows per dedup
+                                   #   similarity block
+  min_literal_match_chars: 4       # + the exact-match delex tier ignores surfaces shorter than
+                                   #   this: scenario values like "any"/"yes" would otherwise eat
+                                   #   "anything" and every affirmative
+  delex_match_types: [id, email, phone, address, money, date, name]  # + SlotSpec.type values the
+                                   #   exact-match tier may mask. `other`-typed slots
+                                   #   (membership_level, payment_method, shipping_status) are
+                                   #   excluded: "we accept credit card, debit card and paypal" is
+                                   #   a policy list, not this customer's payment method.
+  delex_regex_slots: [email, phone]  # + blind-regex tier. Deliberately NOT money or date: 1,275
+                                   #   $-amounts in train agent turns are policy constants
+                                   #   ($4.99 gift wrap, $15 tailoring) that no source can fill,
+                                   #   so masking them would manufacture unavailable_slot
+                                   #   escalations. Money/dates are masked only when they match a
+                                   #   value this conversation actually contains.
+  # Mask usernames the agent INVENTS from the customer's name (first-initial +
+  # surname + digits). Measured: 296 agent-stated usernames in train, 0 equal the
+  # scenario's own username field, 288 (97.3%) match this stem rule. Without it
+  # 22 templates / 248 occurrences of real handles reach the bank and the fast
+  # path hands one customer another person's username. See DEFECTS_OPEN D-1.
+  derive_username_from_name: true
+  delex_ner_model: null            # + LOCAL NER tier, off. Measured upside: 0.03% of train agent
+                                   #   turns contain an unmarked customer name. A hosted NER model
+                                   #   is forbidden outright.
+  sample_seed: 0                   # + seed for the delex_check / act_check samples
+  act_embed_min_similarity: 0.25   # + nearest-centroid floor. A sentence whose best act
+                                   #   centroid is below this is labeled OTHER rather than
+                                   #   forced into the nearest act; without a floor OTHER is
+                                   #   unreachable and the inventory is effectively 8 acts.
+  act_label_batch_size: 50         # + spec 6.2 step 3a "batch by 50". ONLY used by the `llm`
+                                   #   act labeler, which is off (llm.enabled: false).
+  act_label_max_tokens: 1200       # + completion cap for that same disabled labeler: one
+                                   #   "<n>. LABEL" line per sentence in a batch.
+
+model:
+  # QUALITY FIRST. Latency is a budget, not a gate (maintainer, 2026-09-16:
+  # "20ms is not so strict.. no one will notice 20ms vs 45ms"). The fast path is
+  # ~100x an LLM turn regardless, so pick the strongest encoder that fits, and let
+  # E3c price the small one rather than letting a 20ms target choose the engine.
+  encoder: answerdotai/ModernBERT-base
+  fallback_encoder: microsoft/deberta-v3-base
+  small_encoder: answerdotai/ModernBERT-small   # if unavailable, use a MiniLM-class encoder
+  query_mlp: [512, 256]
+  hard_negatives_per_positive: 10
+  # + REFLEX ADDITIONS (spec 10: no model id, width or numeric knob in Python).
+  #   Owned by src/reflex/models.py. ENCODER AVAILABILITY ON THIS MACHINE:
+  #   `answerdotai/ModernBERT-base` loads from the local HF cache; BOTH
+  #   `microsoft/deberta-v3-base` and `answerdotai/ModernBERT-small` do NOT
+  #   (the latter does not exist on the Hub at all) and huggingface.co is
+  #   unreachable from here, so the fallbacks are untested paths.
+  fallback_small_encoder: jhu-clsp/ettin-encoder-68m  # + `small_encoder` stand-in: 68M
+                                   #   ModernBERT-architecture encoder (d=512), cached locally
+  local_files_only: false          # + true = never touch the network; use the HF cache only
+  pooling: cls                     # + context vector = last_hidden_state[:, 0]. ModernBERT
+                                   #   exposes no pooler. Other option: `mean`
+  dropout: 0.1                     # + dropout inside the query MLP and before the heads
+  value_context_len: 100           # + H4 copy-span width. utils/process.py pads the AST
+                                   #   context-token input to exactly 100, and the value
+                                   #   label space is len(value_list) + this
+  template_max_len: 64             # + max tokens when embedding one template (frozen encoder)
+  infonce_temperature: 0.05        # + H7 InfoNCE temperature; cosine scores are divided by it
+  add_slot_marker_tokens: true     # + utils/load.py adds the 11 ABCD <slot> markers to the
+                                   #   tokenizer; H4's copy targets are those markers' positions
+
+train:
+  seeds: [1, 2, 3]
+  epochs: 5
+  batch_size: 32
+  lr: 2.0e-5
+  weight_decay: 0.01
+  loss_weights: {nextstep: 1.0, intent: 1.0, action: 1.0, values: 1.0, skeleton: 1.0, template: 2.0, act: 0.5}
+  early_stopping_patience: 2
+  # + REFLEX ADDITIONS
+  checkpoint_dir: outputs/checkpoints  # + spec 11.2 says "-> model checkpoint" but names no path
+  # + KEYS src/reflex/train.py ALREADY READS BUT THAT WERE ABSENT FROM THIS FILE.
+  #   Without them every `reflex train` raised KeyError before the first batch.
+  truncation_side: left            # + DECISIONS D13. build_context puts the `state|` line LAST
+                                   #   and 4.05% of contexts exceed data.max_len. HEAD truncation
+                                   #   would throw away the state AND the most recent turns --
+                                   #   the worst possible loss. Do NOT "fix" this to `right`.
+  warmup_ratio: 0.06               # + linear warmup as a share of total optimizer steps
+  max_grad_norm: 1.0               # + gradient clipping
+  log_every: 50                    # + optimizer steps between training log lines
+  value_position: first            # + H4 has no position input, so the a/b/c positions of
+                                   #   verify-identity / validate-purchase are indistinguishable
+                                   #   to it. `first` trains position 'a'. train.py refuses any
+                                   #   other value rather than pretending to model positions.
+  multi_value_actions: [verify-identity, validate-purchase]  # + the two buttons utils/process.py
+                                   #   expands into " a"/" b"/" c" sub-actions
+  h7_position_strategy: cycle      # + which act position of a multi-act skeleton H7 trains on
+                                   #   each epoch. `cycle` = epoch % n_positions (a pure function
+                                   #   of the epoch, so it stays deterministic); `first` = always 0
+  hard_negatives_from_cache: true  # + mine H7 negatives from the frozen template cache rather
+                                   #   than re-embedding every step
+  derive_missing_labels: true      # + derive TurnLabels for a split with no labels/<split>.jsonl
+                                   #   instead of failing; `reflex compile` only persists train
+  dev_max_conversations: 0         # + 0 = the whole dev split. A positive value caps the
+                                   #   early-stopping dev pass.
+  # + SMOKE PATH. THE ONLY TRAINING PATH THAT FITS THIS MACHINE. The box these
+  #   defaults were chosen on has 24GB RAM and was swapping (29.8/30.7GB) hard
+  #   enough to take one fine-tune step from 0.306s to 241s -- a 790x slowdown
+  #   from swap alone. Keep these small; raise them only on a machine with headroom.
+  smoke: false                     # + true = shrink the run to the four keys below
+  smoke_conversations: 40          # + train conversations under smoke
+  smoke_dev_conversations: 10      # + dev conversations under smoke
+  smoke_epochs: 1                  # + epochs under smoke
+  smoke_max_steps: 20              # + hard optimizer-step cap under smoke (0 = uncapped)
+
+gate:
+  alpha: 0.02
+  alpha_sweep: [0.005, 0.01, 0.02, 0.05, 0.10]
+  novelty_percentile: 99
+  softmax_threshold_ablation: 0.90
+  # QUOTED DELIBERATELY. YAML 1.1 coerces a bare `off` to the BOOLEAN False, so
+  # str(cfg).lower() becomes "false" and any code comparing against "off" raises.
+  # That bug shipped once and broke every evaluate_gate call. Same trap applies to
+  # bare on/yes/no/y/n. Keep the quotes; do not "tidy" them away.
+  affect_signal: "off"             # Phase 2
+  # + REFLEX ADDITIONS: the E3b gate ablations. Spec 7 names the arms but spec 10
+  #   forbids the switches from living in Python. Owned by src/reflex/gate.py.
+  #   A CASCADE IS A COST DIAL, NOT AN ACCURACY DEVICE: an ablation that raises
+  #   the reflex rate is a cost win, never an accuracy win, and each of these
+  #   switches exactly ONE of spec 6.6's three signals so its price is
+  #   attributable. A disabled signal is still measured and still reported in the
+  #   GateOutput fields -- it just stops routing.
+  confidence_mode: conformal       # + conformal | softmax_threshold. The ablation arm
+                                   #   replaces the calibrated set {p >= 1 - q_h} with a
+                                   #   raw p >= softmax_threshold_ablation test, which is
+                                   #   what prices the conformal quantile.
+  use_novelty: true                # + false = E3b no-novelty arm (signal 2 off)
+  use_availability: true           # + false = E3b no-availability arm (signal 3 off:
+                                   #   neither unseen_action nor unavailable_slot routes)
+  prob_sum_tolerance: 1.0e-3       # + the gate refuses a head whose scores are not a
+                                   #   distribution to within this. The conformal rule is
+                                   #   meaningless on logits (SelectorScores: "Do not pass
+                                   #   logits") and the failure is silent -- a threshold of
+                                   #   1 - q against raw scores would pass or escalate
+                                   #   nearly everything and no metric would say why.
+  # + DECISIONS D16 runtime backstop. Single-linkage dedup once merged templates that
+  #   request DIFFERENT named fields ("what is your order id?" canonicalised as "can i
+  #   have your account id and order id?"), 35.1% of field-requesting merged forms
+  #   diverging, ~4.9% of all retrieve turns asking for the wrong identifiers. The fix
+  #   is compile.merge_block_on_field_mismatch, at BUILD time, and it took divergence
+  #   to 0.0% -- so this is a backstop, not the defence. CONFORMAL CONFIDENCE CANNOT
+  #   CATCH IT: the model can be perfectly confident in an internally inconsistent
+  #   template. null = no sidecar (today's state: the bank has no divergent cluster and
+  #   Template, spec 5.2, is frozen with nowhere to carry a per-template flag). Set it
+  #   to a JSON list of template ids, or {template_id: flag}, and any selection using a
+  #   flagged template escalates. A path that does not exist RAISES rather than
+  #   silently passing: a guard that cannot fire is worse than no guard.
+  template_consistency_path: null  # + e.g. outputs/compile/bank/inconsistent_templates.json
+  use_template_consistency: true   # + the D16 backstop's OWN switch, deliberately NOT folded
+                                   #   into use_availability: an E3b arm that removes two
+                                   #   mechanisms at once measures neither. Both report
+                                   #   reason `unavailable_slot` (the frozen GateReason
+                                   #   vocabulary has no other availability-class value) and
+                                   #   are told apart by missing_slots being EMPTY on a
+                                   #   template-consistency escalation. Report that as its
+                                   #   own row, not folded into the slot count.
+
+# + REFLEX ADDITIONS: spec 6.8 names no knobs of its own, but spec 10 forbids the
+#   ones below from living in Python source. Owned by src/reflex/calibrate.py.
+calibrate:
+  novelty_index_backend: auto      # + auto | faiss | numpy. `auto` prefers faiss and
+                                   #   falls back to the exact numpy brute force when
+                                   #   faiss-cpu is not installed (see README deviation 3).
+                                   #   Both are EXACT, so novelty_distance is identical.
+  novelty_percentile_method: linear # + numpy.percentile `method=`; named so the
+                                   #   threshold is reproducible across numpy versions.
+  encode_batch_size: 64            # + rows per encode_context call when indexing train
+  norm_epsilon: 1.0e-12            # + L2-normalization guard; a zero-norm context stays
+                                   #   zero, so its cosine is 0 and it reads as novel
+  min_head_scores: 1               # + refuse to emit q_h from fewer dev scores than this
+  h7_absent_gold: max_nonconformity # + max_nonconformity | skip. What to do at an act
+                                   #   position where the gold template is not in that
+                                   #   position's candidate set (the predicted skeleton
+                                   #   disagreed with the gold one). `max_nonconformity`
+                                   #   scores it s = 1.0, which is what the gate will
+                                   #   actually face; `skip` drops the row.
+  write_diagnostics: true          # + dev ECE + in-sample coverage sidecar.
+                                   #   REPORTING ONLY. The gate never reads it:
+                                   #   a calibration gap is not a gate.
+  max_train_contexts: 0            # + cap on the train contexts behind the novelty index.
+                                   #   0 = all (105,175 agent turns). NOT a tuning knob: it
+                                   #   exists because a full index is one encoder pass per
+                                   #   train turn and the development box could not finish
+                                   #   one. A capped index covers less of train, so every
+                                   #   novelty_distance reads HIGH and the `novel` gate
+                                   #   reason over-fires. Any reported number needs 0.
+  max_dev_turns: 0                 # + cap on the dev turns behind the conformal quantiles.
+                                   #   0 = all (~13,284). Same status as above: a quantile
+                                   #   from fewer points is wider and noisier. Both caps
+                                   #   subsample by an EVEN STRIDE over the split (never a
+                                   #   head slice) and warn loudly when they bite.
+
+# + REFLEX ADDITIONS: spec 6.7 names no knobs of its own, but spec 10 forbids the
+#   ones below from living in Python source. Owned by src/reflex/fill.py.
+#   THE ONE RULE: a slot with no available value is a GATE FAILURE, never a
+#   guess. Nothing in this block may be used to supply a default value.
+fill:
+  scenario_field_slot_aliases:     # + scenario leaf -> registry slot, for the leaves whose
+    member_level: membership_level #   ABCD name differs from the registry name. Every other
+                                   #   leaf matches its slot name (or its singular, for the
+                                   #   pluralized product lists), so this table stays at one
+                                   #   entry instead of duplicating the registry.
+  # + The DEFECTS D-4 guard. `required_slots` drives the gate's unavailable_slot
+  #   signal, and a weakly-supported requirement escalates a whole button for a
+  #   value its turns never carried -- silently, because the metrics only show a
+  #   lower reflex rate. OFF as a DELIBERATE DEFERRAL (maintainer, 2026-09-16):
+  #   ActionPattern (spec 5.4) is frozen with no support field, so the assertion
+  #   cannot be made at the point of use; and D-4 was fixed AT SOURCE in compile
+  #   with a regression test proven to fail on the pre-fix module, so a sidecar
+  #   would be a second line of defence behind a tested first one. The switch is
+  #   built and tested both ways. To enable: write {slot: support} or
+  #   {button: {slot: support}} to slot_support_path in the compiler, set true.
+  require_slot_support_metadata: false
+  slot_support_path: outputs/compile/bank/required_slot_support.json
+  min_required_slot_support: 0.50  # + below the 0.58 minimum the post-D-4 bank actually
+                                   #   measures, so a correct bank passes and a regression
+                                   #   toward the pre-fix minority-vote slots does not
+
+llm:
+  enabled: false                   # + PAID-CALL KILL SWITCH. Hard rule: ZERO paid API calls.
+                                   #   llm_agent.py is fully implemented but raises
+                                   #   LLMDisabledError while this is false.
+  strong: "<fill: model id>"
+  cheap: "<fill: model id>"
+  temperature: 0
+  max_prompt_revisions: 2
+  cache_dir: outputs/llm_cache
+  budget_usd_per_run: 50
+  prices_usd_per_million: {strong: {in: <fill>, out: <fill>}, cheap: {in: <fill>, out: <fill>}}
+  price_list_date: "<fill: YYYY-MM-DD>"
+  # + REFLEX ADDITIONS
+  dry_run: true                    # + spec 10 "a dry-run flag estimates token volume"
+  provider: "<fill: provider id>"   # + no provider chosen; do not invent one
+  max_retries_on_parse_failure: 1  # + spec 6.9 step 2 "retry once"
+  # + KEYS src/reflex/llm_agent.py ALREADY READS BUT THAT WERE ABSENT FROM THIS FILE.
+  #   All of them are inert while llm.enabled is false; the three `<fill>` ones are
+  #   deliberately unfilled so a paid call cannot be made by accident.
+  wire_format: "<fill: wire format>"   # + no provider chosen; do not invent one
+  api_base: "<fill: https://... >"     # + ditto
+  api_key_env: "<fill: ENV VAR NAME>"  # + name of the env var holding the key; never the key
+  request_timeout_s: 60            # + per-request HTTP timeout
+  max_tokens_out: 256              # + completion cap: the spec 6.9 reply is one small JSON object
+  est_tokens_out: 64               # + dry-run estimate of that reply, for token-volume accounting
+  tokenizer: heuristic             # + LOCAL counter only. `heuristic` divides characters by
+                                   #   chars_per_token and needs no model files; switch to
+                                   #   `tiktoken:<encoding>` or `hf:<model_id>` once a provider is
+                                   #   chosen. A hosted token-counting endpoint is still a paid call.
+  chars_per_token: 4.0             # + the heuristic's divisor
+
+cost:
+  cpu_price_per_hour_usd: 0.20
+  inference_threads: 4
+
+latency:
+  # Reported, NOT a pass/fail gate. Spec section 9 criterion 5's 20ms p95 is recorded as
+  # measured-and-missed rather than failing the build. Measured CPU/4-thread medians:
+  # ModernBERT-base 34ms @ K=6, 56ms @ full-mean, 95ms @ full-p90; bge-small 20/31ms.
+  target_p95_ms: 45
+  gate_on_latency: false
+
+eval:
+  n_bootstrap: 1000
+  ci: 0.95
+  failure_sample: 100
+  # + REFLEX ADDITIONS
+  ece_bins: 10                     # + spec 8.5 "10 bins"
+  official_utils_dir: /private/tmp/claude-501/-Users-vasyl-zadumai/12e40f00-be9f-4f43-9226-7a491b668aef/scratchpad/abcd  # + parent of utils/
+  use_kb_labels: false             # + MUST stay false: components/ is not vendored (README)
+  percentile_method: linear        # + numpy.percentile `method=` for the 8.6 p50/p95,
+                                   #   named so latency numbers are reproducible across
+                                   #   numpy versions.
+  probs_filename: probs.jsonl      # + OPTIONAL spec 8.5 side-car next to decisions.jsonl.
+                                   #   decisions.jsonl logs prediction-set SIZES and no
+                                   #   probabilities, so ECE and exact per-head coverage
+                                   #   are not derivable from it. One JSON object per turn:
+                                   #   {"convo_id", "turn_index",
+                                   #    "max_prob": {head: float},
+                                   #    "correct": {head: bool},
+                                   #    "gold_in_set": {head: bool}}
+                                   #   Absent -> evaluate reports coverage BOUNDS, never a
+                                   #   guessed point value.
+
+# + REFLEX ADDITION: spec 9's PASS / PARTIAL / STOP thresholds. Spec 9 states them
+#   in prose and spec 10 forbids them from living in Python source, so they live
+#   here. Owned by src/reflex/evaluate.py `verdict()`. Do not tune these to reach
+#   a verdict -- spec 9's last line ("report it, do not tune the baseline down to
+#   reach it") is binding.
+verdict:
+  min_reflex_rate: 0.50            # criterion 1
+  stop_reflex_rate: 0.30           # STOP-AND-RETHINK below this
+  parity_tolerance_points: 1.0     # criterion 2: delta >= -1.0 points
+  parity_ci_lower_points: -2.0     # criterion 2: 95% CI lower bound of the delta
+  parity_metrics: {cds: Joint_Accuracy, ast: Joint_Accuracy}  # official key per family
+  min_novel_escalation_rate: 0.95  # criterion 3
+  coverage_slack: 0.01             # criterion 4: coverage >= 1 - alpha - slack
+  max_fastpath_p95_latency_ms: 20  # criterion 5
+
+growth:
+  promote_min_count: 3
+
+# + REFLEX ADDITIONS: paths and reproducibility knobs. Spec 10/11 require these to
+#   exist but Section 12 does not enumerate them.
+paths:
+  outputs_dir: outputs
+  compile_dir: outputs/compile
+  bank_dir: outputs/compile/bank
+  labels_dir: outputs/compile/labels
+  calibration_path: outputs/calibration/gate.json
+  novelty_index_template: outputs/calibration/novelty_index_seed{seed}.npz  # + {seed} is formatted in
+  calibration_diagnostics_path: outputs/calibration/dev_calibration_diagnostics.json  # + REPORTING ONLY
+  runs_dir: outputs/runs
+  prompt_agent_a: prompts/agent_A.txt
+  prompt_act_labeling: prompts/act_labeling.txt
+
+# + REFLEX ADDITIONS: owned by src/reflex/run.py.
+run:
+  forced_reflex: false             # + THE $0 MODE (CLI: `reflex run --forced-reflex`).
+                                   #   The gate still runs and its real verdict is logged, but an
+                                   #   escalated turn is NOT handed to the LLM: it is recorded
+                                   #   unanswered, route="escalated", zero tokens. Every spec 8.1
+                                   #   routing metric, spec 8.4 novelty and the escalation-reason
+                                   #   distribution then come out for nothing, with llm.enabled
+                                   #   still false. Arm-level QUALITY is NOT obtainable this way --
+                                   #   nobody answered the escalated turns -- and the report says so.
+  write_probs_sidecar: true        # + emit eval.probs_filename beside decisions.jsonl so spec 8.5
+                                   #   ECE and per-head coverage are exact instead of bounded
+  flush_every: 500                 # + decisions buffered before each append to decisions.jsonl
+  progress_every: 1000             # + turns between progress lines on stderr
+  max_turns: 0                     # + 0 = every agent turn of the split. A positive value
+                                   #   truncates the run; a truncated run is marked in the manifest
+                                   #   and must never be reported as a headline number.
+
+# + REFLEX ADDITIONS: owned by src/reflex/report.py. Spec 4.10 forbids computing
+#   anything in the reporter, so every number it prints either comes from a
+#   metrics.json or is a MEASURED constant recorded here with its provenance.
+report:
+  figure_dpi: 140
+  figure_width_in: 7.2
+  figure_height_in: 4.4
+  float_precision: 4
+  percent_precision: 2
+  max_failure_examples: 3          # + spec 11.3 section 8: "three anonymized examples"
+  # + BANK FIDELITY -- THREE NUMBERS, NEVER ONE (DECISIONS D16/D18). This
+  #   REPLACES the earlier "template coverage 61.01% is the CEILING on the reflex
+  #   rate" framing, which was wrong and is not to be caveated back in: every one
+  #   of the 71,133 train retrieve turns is assigned templates, so the fast path
+  #   always emits something and 61.01% bounds nothing. What it measures is EXACT
+  #   RECONSTRUCTION -- how often the bank rebuilds the human's utterance verbatim.
+  #   The third number is the one that costs a customer something: how often a
+  #   merged canonical asks for DIFFERENT named identifiers than the form it
+  #   replaced. Print all three together or the reader draws the old conclusion.
+  bank_templates: 4505             # + post-fix bank (was 4,417 before the D16 merge guard)
+  bank_assignment_rate: 1.0        # + every retrieve turn is assigned templates
+  bank_exact_reconstruction_rate: 0.6060   # + share of train agent UTTERANCES rebuilt verbatim,
+                                   #   measured by `reflex compile` over 71,133 turns.
+                                   #   THIS NUMBER BELONGS TO ONE BANK. It is the POST-FIX bank,
+                                   #   bank_hash 654d796ecc51cea1, 4,505 templates -- the bank on
+                                   #   disk and the one every run scores against. The widely
+                                   #   quoted 0.6101 / 0.6530 pair is the PRE-FIX bank,
+                                   #   bank_hash 98c2e937bea518d6, 4,417 templates, and printing
+                                   #   it beside a post-fix bank hash is the D6 failure mode
+                                   #   ("a baseline is only a baseline WITH its configuration
+                                   #   attached"). The D16 merge guard cost 0.41 points of exact
+                                   #   reconstruction to buy the wrong-field rate below going
+                                   #   35.1% -> 0.0%; report both halves of that trade, never one.
+                                   #   Re-measure this whenever the bank is recompiled.
+  bank_exact_reconstruction_sentences: 0.6495   # + post-fix, same bank (was 0.6530 pre-fix)
+  # + WRONG-FIELD RATE, measured before and after the D16 field-set merge guard.
+  #   Pre-fix, single-linkage at compile.dedup_threshold chained 988 distinct
+  #   phrasings into one canonical, so "what is your order id?" could be answered
+  #   with "can i have your account id and order id?". Post-fix is 0.0 because
+  #   field-set equality is transitive: blocking field-mismatched pairwise unions
+  #   yields field-homogeneous clusters with nothing left to disagree.
+  bank_wrong_field_rate: 0.0       # + POST-FIX, share of field-requesting merged forms
+  bank_wrong_field_rate_occurrence_weighted: 0.0
+  bank_wrong_field_rate_prefix: 0.351               # + pre-fix, same denominator
+  bank_wrong_field_rate_prefix_occurrence_weighted: 0.332
+  bank_wrong_field_turn_rate_prefix: 0.0492         # + pre-fix, share of ALL retrieve turns
+  strict_template_coverage: null   # + DEFECTS_OPEN D-7: share of covered utterances whose gold
+                                   #   sentence is within dedup_threshold of the canonical it was
+                                   #   merged into. NOT YET MEASURED -> renders UNMEASURED. Never
+                                   #   estimate it.
+  # + Label-blind constant bars and the best cheap (TF-IDF+logreg) bars from the
+  #   frozen probe harness, dev n=13,284, CI half-width 0.68 points, digest
+  #   08ad053a37a67cc36aeec16e0a02306c. DECISIONS D2b / D6 / D7 and DEFECTS_OPEN.
+  #   These are EXTERNAL to any run in this report and are labelled as such.
+  probe_constant_bars: {nextstep: 0.7227, intent: 0.0226, action: 0.7227, skeleton: 0.2559}
+  probe_cheap_bars: {nextstep: 0.8345, intent: 0.8074, action: 0.8136, skeleton: null}
+  probe_ci_half_width_points: 0.68
+  probe_dev_n: 13284
+
+runtime:
+  deterministic: true              # + torch.use_deterministic_algorithms where available
+  torch_threads: 4                 # + must equal cost.inference_threads for latency numbers
+  device: cpu                      # + fast path is CPU-only at inference (spec 10)
+  train_device: auto               # + training may use a GPU
+
+# + REFLEX ADDITIONS: spec 4.5 / 6.5 inference knobs. Spec 10 forbids every one of
+#   these from Python source. Owned by src/reflex/select.py.
+select:
+  require_novelty_index: true      # + refuse to score without the calibrator's index. A missing
+                                   #   index silently reports novelty_distance 0.0, which turns
+                                   #   gate signal 2 off without saying so.
+  # ---- PER-HEAD CONTEXT (DECISIONS D2b and D7) ---------------------------------
+  # Measured on the frozen probe harness (38,795 train / 13,284 dev rows, CI half-
+  # width 0.68 pts): intent wants the FULL THREAD untagged (0.8074 vs 0.6153 at k6,
+  # +19.2); nextstep and action want a k6 window with recency-tagged tokens
+  # (0.8345-0.8351 on nextstep, +2.8 over the best plain TF-IDF bar and +4.5 over a
+  # 33.7M-param frozen-encoder MLP, verified twice). skeleton and template are
+  # UNMEASURED on either axis and inherit -- do not promote them on the strength of
+  # the other heads.
+  #
+  # select.py implements the mechanism (one encoder pass per DISTINCT context
+  # string, each head read from its own pass), but it stays INACTIVE until a
+  # checkpoint says it was trained the same way: reflex.train builds ONE
+  # context_text per example and models.forward derives every head from that one
+  # query, so re-windowing at inference is a train/test mismatch that subtracts
+  # accuracy rather than adding the measured gain. Recency tagging was additionally
+  # measured on TF-IDF, where it repairs a bag of words' permutation invariance;
+  # what it does to a transformer, which already encodes order, is unmeasured.
+  head_context:
+    enabled: true                  # + false = every head reads ContextWindow.text
+    require_checkpoint_match: true # + the guard above. false runs the plan as an
+                                   #   ablation against a checkpoint trained otherwise
+    checkpoint_key: head_context   # + metadata["extra"][<this>] must equal the plan
+    recency_mode: word             # + word = tag every token (what D7 measured on
+                                   #   TF-IDF); turn = tag the line once (what an
+                                   #   encoder input can afford)
+    plan:
+      nextstep: {K: 6, tag_recency: true, recency_buckets: 3}
+      action:   {K: 6, tag_recency: true, recency_buckets: 3}
+      values:   {K: 6, tag_recency: true, recency_buckets: 3}
+      intent:   {K: full, tag_recency: false, recency_buckets: 3}
+      skeleton: {K: inherit, tag_recency: false, recency_buckets: 3}
+      template: {K: inherit, tag_recency: false, recency_buckets: 3}
+  # Novelty is deliberately NOT in `plan`: reflex.calibrate indexes
+  # ContextWindow.text, so querying that index with any other rendering would
+  # compare two different distributions and make novelty_distance meaningless.
+
+  # ---- H4 decoding --------------------------------------------------------------
+  value_restrict_to_action: true   # + H4 is a single 226-way head over
+                                   #   [enumerable values | copy positions]. Restrict it to the
+                                   #   predicted action's own candidates and renormalize, so the
+                                   #   conformal set is over the choices that turn actually has.
+                                   #   false emits the raw 226-way distribution, unrestricted.
+  value_slots_source: bank_then_union  # + bank | ontology_union | bank_then_union.
+                                   #   The bank's ActionPattern.required_slots give the
+                                   #   right ARITY for the 7 buttons that kept slots
+                                   #   after DEFECTS_OPEN D-4 (min support 58%); the
+                                   #   other 23 fall back to one value for the whole
+                                   #   action, which is all H4 was trained to predict
+                                   #   (train.value_position: first supervises values[0]).
+  slot_category_aliases:           # + DEFECTS_OPEN D-4 "minor naming mismatch": the
+                                   #   registry slot name and the ontology value category
+                                   #   differ for these two buttons.
+    shipping_status: shipping_option
+    name: product
+  multi_value_actions: [verify-identity, validate-purchase]  # + fallback mirror of
+                                   #   train.multi_value_actions; select prefers train's key.
+  truncation_side: left            # + fallback mirror of train.truncation_side (D13).
+
+  # ---- scoring ------------------------------------------------------------------
+  template_embed_batch_size: 64    # + templates per frozen-encoder batch in the one-time
+                                   #   bank embedding build_selector does
+  score_inapplicable_heads: false  # + true populates every head regardless of the
+                                   #   PREDICTED branch. Costs an H7 pass per turn and
+                                   #   removes a real bias: calibrate keeps an H3/H5/H7 row
+                                   #   only where the head is populated, so turns whose
+                                   #   nextstep was mispredicted -- the hard ones -- drop
+                                   #   out of those conformal quantiles and they come out
+                                   #   optimistic.
+
+  # ---- candidate mapping (spec 6.5 step 5) --------------------------------------
+  candidate_match_backend: lexical  # + lexical | sentence_transformer. MEASURED, n=1000,
+                                   #   synthetic near-miss probe (the mapper's actual job: the
+                                   #   right skeleton with one act's template swapped for a
+                                   #   sibling phrasing; recover the true utterance from 100
+                                   #   candidates): lexical word 1-2gram cosine 51.6% recall@1
+                                   #   vs all-MiniLM-L6-v2 41.6%, paired McNemar chi2 = 35.3
+                                   #   (189 lexical-only wins vs 89 MiniLM-only), and 0.4s vs
+                                   #   5.8s for the same 1,000 queries. Candidate mapping is a
+                                   #   NEAR-DUPLICATE match, not a paraphrase match, and a
+                                   #   semantic embedder actively blurs the distinction the
+                                   #   mapper needs. CAVEAT: the probe is synthetic -- no
+                                   #   checkpoint exists yet, so there are no real H7 mistakes
+                                   #   to map. Re-measure on real dev predictions before
+                                   #   treating 51.6% as the mapper's accuracy.
+                                   #   The task encoder is not an option either way: D12
+                                   #   measured raw ModernBERT-base putting 59% of ABCD
+                                   #   sentence pairs at cosine >= 0.92 ("what is your
+                                   #   membership level?" vs "the shipping fee is $4.99 per
+                                   #   item." = 0.961).
+  candidate_embed_model: sentence-transformers/all-MiniLM-L6-v2  # + free, local, the same
+                                   #   model compile.dedup_embed_model uses
+  candidate_embed_batch_size: 64   # + delexicalized candidates embedded per encoder call
+  candidate_embed_cache: 20000     # + delex+embedding entries cached across turns, keyed by the
+                                   #   global utterance id. The 100-candidate pools overlap heavily.
+  candidate_normalizers: [casefold, collapse_whitespace]  # + applied to BOTH sides before
+                                   #   the exact-match test and before the cosine
+  exact_match_similarity: 1.0      # + similarity reported when a candidate's delexicalized form
+                                   #   equals the composed text (spec 6.5 step 5: exact match wins)
+  compose_join: " "                # + how chosen templates' text_delex are joined into
+                                   #   Selection.composed_text_delex

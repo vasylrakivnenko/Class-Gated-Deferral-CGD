@@ -1,0 +1,33 @@
+# REFLEXIVE v1 pinned dependencies (spec 10: "Pin versions in requirements.txt").
+#
+# Versions marked [venv] are pinned to whatever is ALREADY INSTALLED in
+# /Users/vasyl/zadumai/.venv, to avoid churn. Versions marked [new] are not in
+# that venv and had to be chosen; both are pure-Python or wheel-only and
+# uninstalled as of this writing, so install them before running `reflex compile`
+# or anything that touches the novelty index.
+#
+# NOTE: that venv is Python 3.12.8, not the 3.11 spec 10 asks for. See README
+# "Deviations from the spec".
+
+# --- core, already present [venv] ---
+torch==2.14.0
+transformers==5.17.0
+scikit-learn==1.9.0
+numpy==2.5.3
+pandas==3.0.5
+PyYAML==6.0.3
+pytest==9.1.1
+sentence-transformers==6.0.1
+
+# --- transitive pins, held to the venv's versions so a fresh install matches ---
+tokenizers==0.23.2
+safetensors==0.8.0
+scipy==1.18.1
+
+# --- NOT in the venv; must be installed [new] ---
+# faiss-cpu backs the spec 6.6 novelty index (IndexFlatIP over normalized
+# vectors == exact cosine). Flat/exact is required for determinism (spec 10).
+faiss-cpu==1.12.0
+# pysbd is the spec 12 `compile.sentence_splitter`. Rule-based, no model
+# download, deterministic.
+pysbd==0.3.4

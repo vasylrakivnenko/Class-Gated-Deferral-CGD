@@ -138,24 +138,86 @@ def _mentions(answer: str, label: str) -> bool:
     if not needle:
         return False
     at = answer.find(needle)
+    # negation is judged separately, on the raw text (see `_negated`)
     while at >= 0:
         before = answer[at - 1] if at else ""
         end = at + len(needle)
         after = answer[end] if end < len(answer) else ""
         boundary = not ((before.isalnum() or before == "_")
                         or (after.isalnum() or after == "_"))
-        if boundary and not _negated_before(answer, at):
+        if boundary:
             return True
         at = answer.find(needle, at + 1)
     return False
 
 
-def _negated_before(answer: str, at: int) -> bool:
-    """Does a negation word immediately precede the label at `at`?"""
-    words = answer[:at].split()
-    if not words:
-        return False
-    return words[-1] in _NEGATORS or " ".join(words[-2:]) in _NEGATORS
+# Words that end a negation's reach even without punctuation.
+_CLAUSE_WORDS = {"but", "though", "however", "although", "whereas", "yet"}
+_SENTENCE_ENDS = ".!?;\n"
+
+
+def _sentences(raw) -> list[str]:
+    """Split on sentence enders, lowercased. Done on the RAW text deliberately.
+
+    `_undecorated` deletes `.` so that `U.S.` can still match its label, which
+    also destroys every sentence boundary. So negation is judged on the
+    original string, where "not sure. definitely positive" still has a break in
+    it, while matching continues to use the punctuation-free form.
+    """
+    text = str(raw or "").lower()
+    out, cur = [], []
+    for ch in text:
+        if ch in _SENTENCE_ENDS:
+            if cur:
+                out.append("".join(cur))
+            cur = []
+        else:
+            cur.append(ch)
+    if cur:
+        out.append("".join(cur))
+    return out
+
+
+def _negated(raw, label: str) -> bool:
+    """Does every mention of `label` in `raw` sit under a negation?
+
+    A one-or-two word lookback left the bias it was written to remove: verified
+    on the shipped code, "I would not say negative" and "definitely not at all
+    negative" both resolved to `negative`, booking a denial as a vote for the
+    label it rejects. Only the LLM rows reach this matcher, so that inflates
+    exactly the arm the benchmark compares.
+
+    Scans back from the label to the start of ITS OWN sentence, or to a
+    contrastive conjunction, so a negation cannot reach across a break.
+    Requires EVERY mention to be negated: "not positive, actually negative"
+    should still resolve `negative` from its second clause.
+    """
+    needle = label.lower()
+    seen = False
+    for sent in _sentences(raw):
+        at = sent.find(needle)
+        while at >= 0:
+            seen = True
+            words = sent[:at].split()
+            negated = False
+            for w in reversed(words):
+                # Trailing clause punctuation is checked BEFORE stripping it:
+                # in "not positive, actually negative" the comma is the only
+                # thing stopping the negation reaching the second clause, and
+                # stripping first made that answer score 0 for a correct
+                # `negative`.
+                if w.rstrip("\"')").endswith((",", ";", ":")):
+                    break
+                bare = w.strip(",;:\"'()")
+                if bare in _NEGATORS:
+                    negated = True
+                    break
+                if bare in _CLAUSE_WORDS:
+                    break
+            if not negated:
+                return False          # one clean mention is enough
+            at = sent.find(needle, at + 1)
+    return seen
 
 
 def _canonical(answer: str, labels: tuple[str, ...]) -> str:
@@ -268,7 +330,9 @@ def score_prediction(gold, pred, labels: tuple[str, ...]) -> tuple[float, str, s
         # Recover a label mentioned inside a longer answer before giving up.
         # `.lower()` on the label here too: this line carried the same defect,
         # so a capitalised label could never be recovered from a longer answer.
-        hits = [l for l in labels if _mentions(answer, l)]
+        raw_pred = getattr(pred, "label", None)
+        hits = [l for l in labels
+                if _mentions(answer, l) and not _negated(raw_pred, l)]
         # Label sets nest, and the plain `len(hits) == 1` test refused every
         # nested case as unparseable. banking77 has three such pairs --
         # card_not_working / virtual_card_not_working, and exchange_rate inside
@@ -283,10 +347,15 @@ def score_prediction(gold, pred, labels: tuple[str, ...]) -> tuple[float, str, s
         # single label and the shorter hits are fragments of its own text, so
         # the longest is the answer. Two genuinely different labels mentioned in
         # one reply is still ambiguous and still refused.
-        if len(hits) > 1:
-            longest = max(hits, key=len)
-            if all(h.lower() in longest.lower() for h in hits):
-                hits = [longest]
+        # The whole-word rule above already resolves every nested pair this
+        # branch was written for -- `_` counts as a word character, so
+        # `card_not_working` no longer matches inside `virtual_card_not_working`
+        # and those answers arrive with a single hit. What remained fired only
+        # for whitespace-nested label sets, where it silently resolved a genuine
+        # multi-label mention to the longest label: labels ('no', 'no annual
+        # fee') with the answer "no, there is no annual fee" collapsed to
+        # `no annual fee` where the rule below correctly refuses as ambiguous.
+        # Removed rather than kept as untested weight that can only do harm.
         predicted = hits[0] if len(hits) == 1 else ""
 
     # `predicted and` is load-bearing: without it, a dataset with a missing gold

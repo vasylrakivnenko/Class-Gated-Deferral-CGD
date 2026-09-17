@@ -1,0 +1,106 @@
+{
+ "en-US": {
+  "mean_whitespace_tokens": 6.924787215563661,
+  "mean_sklearn_tokens": 6.5480284870592325,
+  "mean_whitespace_tokens_rejected": 0.4623936077818308,
+  "share_whitespace_tokens_rejected": 0.06677369186775699,
+  "combining_mark_char_share": 0.0,
+  "share_utts_with_zero_sklearn_tokens": 0.0003474031613687685
+ },
+ "de-DE": {
+  "mean_whitespace_tokens": 6.57173875282265,
+  "mean_sklearn_tokens": 6.49365989230502,
+  "mean_whitespace_tokens_rejected": 0.08858780614903596,
+  "share_whitespace_tokens_rejected": 0.013480116827679174,
+  "combining_mark_char_share": 0.0,
+  "share_utts_with_zero_sklearn_tokens": 0.0003474031613687685
+ },
+ "es-ES": {
+  "mean_whitespace_tokens": 7.221816918533959,
+  "mean_sklearn_tokens": 6.949713392391871,
+  "mean_whitespace_tokens_rejected": 0.27722772277227725,
+  "share_whitespace_tokens_rejected": 0.03838753126803925,
+  "combining_mark_char_share": 0.0,
+  "share_utts_with_zero_sklearn_tokens": 0.00017370158068438424
+ },
+ "fr-FR": {
+  "mean_whitespace_tokens": 7.464999131492097,
+  "mean_sklearn_tokens": 7.48375890220601,
+  "mean_whitespace_tokens_rejected": 0.9998262984193156,
+  "share_whitespace_tokens_rejected": 0.13393521965748326,
+  "combining_mark_char_share": 0.0,
+  "share_utts_with_zero_sklearn_tokens": 0.0002605523710265763
+ },
+ "ru-RU": {
+  "mean_whitespace_tokens": 5.87997220774709,
+  "mean_sklearn_tokens": 5.337849574431127,
+  "mean_whitespace_tokens_rejected": 0.6078686816050026,
+  "share_whitespace_tokens_rejected": 0.10337951611473811,
+  "combining_mark_char_share": 0.0,
+  "share_utts_with_zero_sklearn_tokens": 0.0
+ },
+ "zh-CN": {
+  "mean_whitespace_tokens": 1.0476810838978634,
+  "mean_sklearn_tokens": 1.043859649122807,
+  "mean_whitespace_tokens_rejected": 0.014156678825777315,
+  "share_whitespace_tokens_rejected": 0.0135123932686728,
+  "combining_mark_char_share": 0.0,
+  "share_utts_with_zero_sklearn_tokens": 0.000694806322737537
+ },
+ "ja-JP": {
+  "mean_whitespace_tokens": 1.1670140698280353,
+  "mean_sklearn_tokens": 1.1572867813097099,
+  "mean_whitespace_tokens_rejected": 0.05454229633489665,
+  "share_whitespace_tokens_rejected": 0.046736622758056116,
+  "combining_mark_char_share": 0.0,
+  "share_utts_with_zero_sklearn_tokens": 0.0006079555323953448
+ },
+ "ko-KR": {
+  "mean_whitespace_tokens": 4.881188118811881,
+  "mean_sklearn_tokens": 4.02023623414973,
+  "mean_whitespace_tokens_rejected": 0.8618203925655723,
+  "share_whitespace_tokens_rejected": 0.17655955304081705,
+  "combining_mark_char_share": 0.0,
+  "share_utts_with_zero_sklearn_tokens": 0.003126628452318916
+ },
+ "ar-SA": {
+  "mean_whitespace_tokens": 5.256644085461177,
+  "mean_sklearn_tokens": 5.232239013375022,
+  "mean_whitespace_tokens_rejected": 0.039603960396039604,
+  "share_whitespace_tokens_rejected": 0.007534076827757125,
+  "combining_mark_char_share": 0.0005889236464316581,
+  "share_utts_with_zero_sklearn_tokens": 8.685079034219212e-05
+ },
+ "hi-IN": {
+  "mean_whitespace_tokens": 7.592843494875804,
+  "mean_sklearn_tokens": 3.467865207573389,
+  "mean_whitespace_tokens_rejected": 6.71790863296856,
+  "share_whitespace_tokens_rejected": 0.8847684846266471,
+  "combining_mark_char_share": 0.3862246473186719,
+  "share_utts_with_zero_sklearn_tokens": 0.02622893868334202
+ },
+ "th-TH": {
+  "mean_whitespace_tokens": 3.354872329338197,
+  "mean_sklearn_tokens": 5.431127323258641,
+  "mean_whitespace_tokens_rejected": 2.690290081639743,
+  "share_whitespace_tokens_rejected": 0.8019053536294916,
+  "combining_mark_char_share": 0.2247932696195442,
+  "share_utts_with_zero_sklearn_tokens": 0.0019107173875282265
+ },
+ "sw-KE": {
+  "mean_whitespace_tokens": 6.470644432864339,
+  "mean_sklearn_tokens": 6.433819697759249,
+  "mean_whitespace_tokens_rejected": 0.04229633489664756,
+  "share_whitespace_tokens_rejected": 0.006536649530891374,
+  "combining_mark_char_share": 0.0,
+  "share_utts_with_zero_sklearn_tokens": 0.00017370158068438424
+ },
+ "am-ET": {
+  "mean_whitespace_tokens": 5.584592669793295,
+  "mean_sklearn_tokens": 5.367639395518499,
+  "mean_whitespace_tokens_rejected": 0.2658502692374501,
+  "share_whitespace_tokens_rejected": 0.04760423632602914,
+  "combining_mark_char_share": 0.0,
+  "share_utts_with_zero_sklearn_tokens": 0.0002605523710265763
+ }
+}

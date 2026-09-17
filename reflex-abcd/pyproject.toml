@@ -1,0 +1,23 @@
+# Packaging for REFLEXIVE v1. Spec 11.1 does not list this file; it exists so
+# that `python -m reflex <command>` (spec 11.2) works after `pip install -e .`
+# without anyone having to set PYTHONPATH. Recorded as a deviation in README.
+#
+# Dependency versions are PINNED IN requirements.txt (spec 10 asks for that file
+# by name). They are intentionally not duplicated here -- two pin lists drift.
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "reflex-abcd"
+version = "1.0.0.dev0"
+description = "REFLEXIVE v1: skeleton-first response selection with a confidence gate, evaluated on ABCD"
+requires-python = ">=3.11"
+license = { text = "See README (ABCD data is licensed separately)" }
+
+[project.scripts]
+reflex = "reflex.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

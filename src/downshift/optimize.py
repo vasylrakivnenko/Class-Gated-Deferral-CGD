@@ -368,9 +368,16 @@ def run_gepa(spec: ModelSpec, task, profile: str, reflection_spec: ModelSpec,
         # false positive on the exact assertion this field exists to make, and
         # experiment.py prints a "the format pin rewrote this candidate after
         # GEPA scored it, trust the test row not the val number" warning off it.
+        # Asked WITHOUT going through `optimizable_body`, which is what made the
+        # previous spelling vacuous: `optimized` is `with_format_contract(selected)`
+        # and that is `optimizable_body(selected) + contract`, so comparing the two
+        # stripped bodies is comparing a value with itself -- False by construction
+        # on every run, for a field whose whole job is to notice the day it is not.
+        # Substring instead: if the selected text still appears verbatim in what
+        # ships, the pin only appended. If it does not, the pin removed something,
+        # which is the 51-point regression above.
         pin_altered_instruction=(
-            optimizable_body(optimized_instruction)
-            != optimizable_body(selected_instruction)),
+            selected_instruction.strip() not in optimized_instruction),
         # "unpinned_candidate" whenever the pin actually changed the text that
         # ships, i.e. exactly when GEPA rewrote the instruction. Note this is
         # true even though `pin_altered_instruction` is False: that flag asks

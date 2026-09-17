@@ -1,0 +1,171 @@
+{
+ "en-US": {
+  "mean_chars_nospace": 28.73974445191661,
+  "ettin_en": {
+   "pieces_per_utt": 7.601882985877606,
+   "pieces_per_char": 0.26450767502807937,
+   "unk_share": 0.0
+  },
+  "e5_multi": {
+   "pieces_per_utt": 8.029926025554808,
+   "pieces_per_char": 0.27940144140771245,
+   "unk_share": 0.0
+  }
+ },
+ "de-DE": {
+  "mean_chars_nospace": 34.008069939475455,
+  "ettin_en": {
+   "pieces_per_utt": 12.644586415601882,
+   "pieces_per_char": 0.37181135060312437,
+   "unk_share": 0.0
+  },
+  "e5_multi": {
+   "pieces_per_utt": 9.544048419636853,
+   "pieces_per_char": 0.2806406960648606,
+   "unk_share": 0.0
+  }
+ },
+ "es-ES": {
+  "mean_chars_nospace": 33.03127101546738,
+  "ettin_en": {
+   "pieces_per_utt": 12.246469401479489,
+   "pieces_per_char": 0.3707538046521098,
+   "unk_share": 0.0
+  },
+  "e5_multi": {
+   "pieces_per_utt": 8.94317417619368,
+   "pieces_per_char": 0.27074871481651147,
+   "unk_share": 0.0
+  }
+ },
+ "fr-FR": {
+  "mean_chars_nospace": 35.925016812373904,
+  "ettin_en": {
+   "pieces_per_utt": 13.484196368527236,
+   "pieces_per_char": 0.3753427991127002,
+   "unk_share": 0.0
+  },
+  "e5_multi": {
+   "pieces_per_utt": 10.83759246805649,
+   "pieces_per_char": 0.30167257887889487,
+   "unk_share": 0.0
+  }
+ },
+ "ru-RU": {
+  "mean_chars_nospace": 31.574310692669805,
+  "ettin_en": {
+   "pieces_per_utt": 19.073301950235372,
+   "pieces_per_char": 0.6040765904879555,
+   "unk_share": 0.0
+  },
+  "e5_multi": {
+   "pieces_per_utt": 8.922326832548755,
+   "pieces_per_char": 0.2825818406423718,
+   "unk_share": 0.0
+  }
+ },
+ "zh-CN": {
+  "mean_chars_nospace": 10.38836583725622,
+  "ettin_en": {
+   "pieces_per_utt": 14.89172831203766,
+   "pieces_per_char": 1.4335005664346983,
+   "unk_share": 0.0
+  },
+  "e5_multi": {
+   "pieces_per_utt": 7.561197041022193,
+   "pieces_per_char": 0.7278524033015051,
+   "unk_share": 4.447013830213012e-05
+  }
+ },
+ "ja-JP": {
+  "mean_chars_nospace": 15.320780094149294,
+  "ettin_en": {
+   "pieces_per_utt": 15.758910558170813,
+   "pieces_per_char": 1.0285971380914756,
+   "unk_share": 0.0
+  },
+  "e5_multi": {
+   "pieces_per_utt": 9.146603900470746,
+   "pieces_per_char": 0.5970064085681678,
+   "unk_share": 0.0
+  }
+ },
+ "ko-KR": {
+  "mean_chars_nospace": 11.562878278412912,
+  "ettin_en": {
+   "pieces_per_utt": 25.529926025554808,
+   "pieces_per_char": 2.2079213679190417,
+   "unk_share": 0.0
+  },
+  "e5_multi": {
+   "pieces_per_utt": 8.708473436449227,
+   "pieces_per_char": 0.7531406304524835,
+   "unk_share": 7.722305880535928e-05
+  }
+ },
+ "ar-SA": {
+  "mean_chars_nospace": 22.590786819098856,
+  "ettin_en": {
+   "pieces_per_utt": 18.76731674512441,
+   "pieces_per_char": 0.8307509116618292,
+   "unk_share": 0.0
+  },
+  "e5_multi": {
+   "pieces_per_utt": 8.335574983187627,
+   "pieces_per_char": 0.3689811713924239,
+   "unk_share": 0.0
+  }
+ },
+ "hi-IN": {
+  "mean_chars_nospace": 28.86415601882986,
+  "ettin_en": {
+   "pieces_per_utt": 34.654001344989915,
+   "pieces_per_char": 1.2005894550453158,
+   "unk_share": 0.0
+  },
+  "e5_multi": {
+   "pieces_per_utt": 9.731338264963012,
+   "pieces_per_char": 0.3371426574404138,
+   "unk_share": 0.0
+  }
+ },
+ "th-TH": {
+  "mean_chars_nospace": 28.51613987895091,
+  "ettin_en": {
+   "pieces_per_utt": 34.17484868863483,
+   "pieces_per_char": 1.1984388081172543,
+   "unk_share": 0.0
+  },
+  "e5_multi": {
+   "pieces_per_utt": 9.296234028244788,
+   "pieces_per_char": 0.3259990330986829,
+   "unk_share": 0.0
+  }
+ },
+ "sw-KE": {
+  "mean_chars_nospace": 32.34902488231338,
+  "ettin_en": {
+   "pieces_per_utt": 15.167787491593813,
+   "pieces_per_char": 0.4688792798785939,
+   "unk_share": 0.0
+  },
+  "e5_multi": {
+   "pieces_per_utt": 9.80598520511096,
+   "pieces_per_char": 0.303130781863917,
+   "unk_share": 0.0
+  }
+ },
+ "am-ET": {
+  "mean_chars_nospace": 19.138197713517147,
+  "ettin_en": {
+   "pieces_per_utt": 60.84095494283793,
+   "pieces_per_char": 3.1790326264560678,
+   "unk_share": 0.0
+  },
+  "e5_multi": {
+   "pieces_per_utt": 11.664761264290517,
+   "pieces_per_char": 0.6095015548957253,
+   "unk_share": 0.0
+  }
+ }
+}
