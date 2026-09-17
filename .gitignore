@@ -8,3 +8,7 @@ data/cache/
 *.png.bak
 .env
 .pytest_cache/
+
+# ABCD corpus: re-clonable public dataset (scripts/download_abcd.sh), 122MB unzipped.
+# Kept out of /tmp after an OOM reboot wiped it; kept out of git because it is upstream data.
+data/abcd/

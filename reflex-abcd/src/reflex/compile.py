@@ -2135,10 +2135,13 @@ def write_act_check(bank: Bank, cfg: dict[str, Any]) -> str:
 def _write_compile_stats(bank: Bank, cfg: dict[str, Any], stats: dict[str, Any]) -> str:
     """Write the compile provenance sidecar (bank sizes, coverage, top skeletons).
 
-    TEMPLATE COVERAGE is the number to read first: it is the share of train agent
-    utterances every sentence of which survives into the bank, and it is the hard
-    ceiling on the reflex rate -- the fast path cannot answer a turn the bank
-    cannot say.
+    TEMPLATE FIDELITY is the number to read first: the share of train agent
+    utterances every sentence of which survives into the bank VERBATIM.
+
+    It is NOT a ceiling on the reflex rate, and DECISIONS D16 retired that
+    framing repo-wide. Every retrieve turn is assigned templates, so the fast
+    path can always emit something; what this bounds is how often it emits the
+    utterance exactly, not how often it can answer at all.
     """
     coverage_turns = stats["template_coverage_turns"]
     coverage_sentences = stats["template_coverage_sentences"]
@@ -2164,14 +2167,21 @@ def _write_compile_stats(bank: Bank, cfg: dict[str, Any], stats: dict[str, Any])
         f"| action patterns | {len(bank.actions)} |",
         f"| slot registry entries | {len(bank.slot_registry.slots)} |",
         "",
-        "## Template coverage -- the ceiling on the reflex rate",
+        "## Template fidelity -- NOT a ceiling on the reflex rate (DECISIONS D16)",
         "",
         f"- agent utterances fully reconstructible from the bank: **{100.0 * coverage_turns:.2f}%**",
         f"- sentences reconstructible: **{100.0 * coverage_sentences:.2f}%**",
         "",
         "A turn counts only if EVERY one of its sentences survived dedup and the",
-        "`compile.min_template_count` filter. No gate, selector or encoder can lift the",
-        "fast path above this number.",
+        "`compile.min_template_count` filter.",
+        "",
+        "This is a FIDELITY rate, not a cap. Every retrieve turn is assigned templates",
+        "(assignment rate 1.0 by construction), so the fast path can always emit",
+        "something -- what this number bounds is how often it emits the utterance",
+        "VERBATIM. DECISIONS D16 retired the \"ceiling on the reflex rate\" framing;",
+        "do not reintroduce it. D16's third number, the expected wrong-field rate, is",
+        "measured outside compile and printed by the reporter from",
+        "`report.bank_wrong_field_rate*` -- it is the one a customer would feel.",
         "",
         "## Top 20 skeletons",
         "",

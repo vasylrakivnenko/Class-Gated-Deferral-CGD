@@ -26,6 +26,7 @@ Each test below corresponds to a defect that was LIVE in this build:
 
 from __future__ import annotations
 
+import inspect
 import json
 import os
 
@@ -88,6 +89,29 @@ def test_fidelity_is_not_described_as_a_ceiling(cfg: dict) -> None:
     assert float(get_dotted(cfg, "report.bank_assignment_rate")) == 1.0, (
         "assignment rate is 1.0 by construction; if it ever is not, the 'the fast path always "
         "emits something' claim in the report is wrong and must be re-derived."
+    )
+
+
+def test_compile_summary_does_not_call_fidelity_a_ceiling() -> None:
+    """DECISIONS D16 applies to `compile`'s own sidecar, not only to the reporter.
+
+    The config-side guard above kept the REPORTER honest while
+    `_write_compile_stats` went on printing "the ceiling on the reflex rate" into
+    outputs/compile/compile_summary.md -- the file a reader opens first. A phrase
+    D16 retired repo-wide must not survive in the one artifact that is read
+    before any run exists.
+    """
+    import reflex.compile as compile_mod
+
+    src = inspect.getsource(compile_mod._write_compile_stats)
+    lowered = src.lower()
+    assert "ceiling on the reflex rate" not in lowered or "not a ceiling" in lowered, (
+        "compile_summary.md describes template fidelity as a ceiling on the reflex "
+        "rate. DECISIONS D16: every retrieve turn is assigned templates, so the "
+        "number bounds verbatim fidelity, not what the fast path can answer."
+    )
+    assert "no gate, selector or encoder can lift" not in lowered, (
+        "the retired D16 claim is back in the compile sidecar"
     )
 
 

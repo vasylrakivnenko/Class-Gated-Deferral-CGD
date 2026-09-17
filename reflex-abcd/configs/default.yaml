@@ -11,7 +11,8 @@
 # Any code that reads a `<fill...>` value must raise, not guess.
 
 data:
-  abcd_dir: /private/tmp/claude-501/-Users-vasyl-zadumai/12e40f00-be9f-4f43-9226-7a491b668aef/scratchpad/abcd  # + (spec default was data/abcd; data is already downloaded here)
+  abcd_dir: /Users/vasyl/zadumai/data/abcd  # + (spec default was data/abcd). Cloned 2026-09-16 to a REAL path:
+                                   #   the previous /tmp location was wiped by an OOM reboot.
   # full thread by default. Measured on real ABCD: 49.5% of predicted turns have NO
   # customer message immediately before them (22.5% follow a tool/action result,
   # 20.4% follow another agent turn, 6.6% are openers), so a short window starves
@@ -383,7 +384,7 @@ eval:
   failure_sample: 100
   # + REFLEX ADDITIONS
   ece_bins: 10                     # + spec 8.5 "10 bins"
-  official_utils_dir: /private/tmp/claude-501/-Users-vasyl-zadumai/12e40f00-be9f-4f43-9226-7a491b668aef/scratchpad/abcd  # + parent of utils/
+  official_utils_dir: /Users/vasyl/zadumai/data/abcd  # + parent of utils/
   use_kb_labels: false             # + MUST stay false: components/ is not vendored (README)
   percentile_method: linear        # + numpy.percentile `method=` for the 8.6 p50/p95,
                                    #   named so latency numbers are reproducible across
@@ -468,9 +469,10 @@ report:
   #   The third number is the one that costs a customer something: how often a
   #   merged canonical asks for DIFFERENT named identifiers than the form it
   #   replaced. Print all three together or the reader draws the old conclusion.
-  bank_templates: 4505             # + post-fix bank (was 4,417 before the D16 merge guard)
+  bank_templates: 4489             # + post-D1 bank (4,505 pre-PII-fix; 4,417 pre-D16 merge guard).
+                                   #   -16 = username-bearing templates collapsing after masking.
   bank_assignment_rate: 1.0        # + every retrieve turn is assigned templates
-  bank_exact_reconstruction_rate: 0.6060   # + share of train agent UTTERANCES rebuilt verbatim,
+  bank_exact_reconstruction_rate: 0.6067   # + share of train agent UTTERANCES rebuilt verbatim,
                                    #   measured by `reflex compile` over 71,133 turns.
                                    #   THIS NUMBER BELONGS TO ONE BANK. It is the POST-FIX bank,
                                    #   bank_hash 654d796ecc51cea1, 4,505 templates -- the bank on
@@ -483,7 +485,7 @@ report:
                                    #   reconstruction to buy the wrong-field rate below going
                                    #   35.1% -> 0.0%; report both halves of that trade, never one.
                                    #   Re-measure this whenever the bank is recompiled.
-  bank_exact_reconstruction_sentences: 0.6495   # + post-fix, same bank (was 0.6530 pre-fix)
+  bank_exact_reconstruction_sentences: 0.6501   # + post-fix, same bank (was 0.6530 pre-fix)
   # + WRONG-FIELD RATE, measured before and after the D16 field-set merge guard.
   #   Pre-fix, single-linkage at compile.dedup_threshold chained 988 distinct
   #   phrasings into one canonical, so "what is your order id?" could be answered
