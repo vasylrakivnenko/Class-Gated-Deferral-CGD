@@ -1,0 +1,70 @@
+{
+  "models": [
+    "accounts/fireworks/models/glm-5p3-flash",
+    "accounts/fireworks/models/glm-5p3",
+    "accounts/fireworks/models/gpt-oss-120b"
+  ],
+  "n_rows": 100,
+  "per_model": {
+    "glm-5p3-flash": {
+      "counts": {
+        "appropriate": 62,
+        "borderline": 17,
+        "wrong": 16,
+        "parse_error": 5
+      },
+      "n_scored": 95,
+      "share_appropriate": 0.6526315789473685,
+      "share_borderline": 0.17894736842105263,
+      "share_wrong": 0.16842105263157894
+    },
+    "glm-5p3": {
+      "counts": {
+        "appropriate": 58,
+        "borderline": 25,
+        "wrong": 10,
+        "parse_error": 7
+      },
+      "n_scored": 93,
+      "share_appropriate": 0.6236559139784946,
+      "share_borderline": 0.26881720430107525,
+      "share_wrong": 0.10752688172043011
+    },
+    "gpt-oss-120b": {
+      "counts": {
+        "appropriate": 56,
+        "wrong": 28,
+        "borderline": 16
+      },
+      "n_scored": 100,
+      "share_appropriate": 0.56,
+      "share_borderline": 0.16,
+      "share_wrong": 0.28
+    }
+  },
+  "agreement": {
+    "pairwise": {
+      "glm-5p3-flash vs glm-5p3": {
+        "n_compared": 89,
+        "exact_3way_agreement": 0.8876404494382022,
+        "coarse_adequate_vs_wrong_agreement": 0.9438202247191011
+      },
+      "glm-5p3-flash vs gpt-oss-120b": {
+        "n_compared": 95,
+        "exact_3way_agreement": 0.8631578947368421,
+        "coarse_adequate_vs_wrong_agreement": 0.9157894736842105
+      },
+      "glm-5p3 vs gpt-oss-120b": {
+        "n_compared": 93,
+        "exact_3way_agreement": 0.8172043010752689,
+        "coarse_adequate_vs_wrong_agreement": 0.8494623655913979
+      }
+    },
+    "all_models_unanimous": {
+      "n_compared": 89,
+      "exact_3way": 0.8089887640449438,
+      "coarse_adequate_vs_wrong": 0.8651685393258427
+    }
+  },
+  "caveat": "All judges are LLMs, and LLM-judge leniency bias is well documented -- cross-model agreement shows whether models CONVERGE, it does not mean they are CORRECT. No human audit of this sample exists yet."
+}

@@ -10,8 +10,8 @@ and never touches a score.
 
 THE THREE MODES, AND WHY THE THIRD ONE EXISTS
 ---------------------------------------------
-``llm.enabled`` is false and stays false -- ZERO PAID API CALLS is a hard
-project rule -- so the arms are not symmetric:
+``llm.enabled`` defaults to false -- ZERO PAID API CALLS is a hard project rule
+by default -- so the arms are not symmetric while it stays off:
 
 ``arm="A"``
     The LLM answers every turn (spec 6.9) and every decision is
@@ -20,10 +20,17 @@ project rule -- so the arms are not symmetric:
     BEFORE any data is loaded, in about a second.
 
 ``arm="B"``
-    select -> gate -> (fill | escalate). Fully runnable and free until the first
-    escalation, which needs an answerer and therefore raises.
+    select -> gate -> (fill | escalate). Fully runnable and free until the
+    first escalation. If ``llm.enabled`` is true (and the price table is
+    filled), the escalation is handed to :func:`reflex.llm_agent.llm_decide`
+    and actually answered -- the agent handle is built once, up front, and
+    reused across every escalated turn (spec 6.9 step 5's response cache and
+    the running spend counter both depend on that). If ``llm.enabled`` is
+    false, an escalation has nobody to answer it and raises, unless
+    ``run.forced_reflex`` is set (below).
 
-``arm="B"`` with ``run.forced_reflex``  **<-- the one that pays for itself**
+``arm="B"`` with ``run.forced_reflex``, ``llm.enabled`` still false
+    **<-- the one that pays for itself**
     The gate still runs and its REAL verdict is recorded -- route, reason,
     prediction-set sizes, novelty distance -- but an escalated turn is not
     handed to anyone. It is logged unanswered: no utterance, no candidate, zero
@@ -67,6 +74,7 @@ from reflex.schemas import (
     Decision,
     EvalRecord,
     GateOutput,
+    LLMDecision,
     NormalizedTurn,
     RunManifest,
     Selection,
@@ -538,6 +546,7 @@ def _run_arm_b(
     from reflex.data import build_context
     from reflex.fill import check_availability, collect_slot_sources, compose_utterance
     from reflex.gate import evaluate_gate
+    from reflex.llm_agent import build_llm_agent, llm_decide
     from reflex.select import (
         build_selector,
         delexicalize_candidates,
@@ -553,6 +562,14 @@ def _run_arm_b(
     raw = load_raw_abcd(cfg)
     utterances = load_utterances(cfg)
     calibration = _resolve_calibration(cfg, alpha)
+
+    # Arm B answers its own escalations when the kill switch is on: build the
+    # agent handle ONCE (it carries the response cache and the running spend
+    # counter, spec 6.9 step 5) rather than per turn. Building it never calls
+    # the API -- only `llm_decide` does -- so this costs nothing when the run
+    # goes on to escalate zero turns.
+    llm_enabled = bool(get_dotted(cfg, "llm.enabled"))
+    llm_agent_handle = build_llm_agent(cfg, model_key) if llm_enabled else None
 
     partition = getattr(partitions, split, None)
     if not isinstance(partition, dict):
@@ -673,9 +690,18 @@ def _run_arm_b(
         elapsed_ms = (time.perf_counter() - started) * 1000.0
 
         escalated = gate_output.route != "reflex"
+        llm_decision: Optional[LLMDecision] = None
         if escalated:
             n_escalated += 1
-            if not forced_reflex:
+            if llm_agent_handle is not None:
+                candidate_ids = turn.candidates or []
+                candidate_texts = (
+                    delexicalize_candidates(candidate_ids, utterances, registry, cfg)
+                    if candidate_ids
+                    else []
+                )
+                llm_decision = llm_decide(llm_agent_handle, context, turn, candidate_texts, cfg)
+            elif not forced_reflex:
                 _flush()
                 raise LLMDisabledError(
                     f"convo {convo_id} turn {turn_index} escalated with reason "
@@ -694,6 +720,7 @@ def _run_arm_b(
             utterance_text=utterance_text,
             elapsed_ms=elapsed_ms,
             escalated=escalated,
+            llm_decision=llm_decision,
         )
         if not escalated and selection.nextstep == "retrieve_utterance" and turn.candidates:
             decision = _with_exact_match(
@@ -754,16 +781,52 @@ def _build_decision(
     utterance_text: Optional[str],
     elapsed_ms: float,
     escalated: bool,
+    llm_decision: Optional[LLMDecision] = None,
 ) -> Decision:
     """Assemble the spec 5.5 Decision for one Arm B turn.
 
-    On an UNANSWERED escalation (forced-reflex), everything the fast path would
-    have said is withheld except H1 and H2, which :class:`Decision` types as
-    non-optional strings. The withheld fields -- action, values, skeleton,
-    templates, utterance, candidate -- are what make the arm-level quality
-    columns of such a run unusable, and that is the honest accounting: nobody
-    answered this turn.
+    Three shapes, not two:
+
+    * ``route == "reflex"``: the fast path answered -- below, unchanged.
+    * ``escalated`` and ``llm_decision`` is not ``None``: the LLM actually
+      answered it (``llm.enabled``). The Decision's H1/H2/action/values/
+      utterance now come from the LLM's parsed response, not the fast path's
+      (rejected) selection, and ``llm_tokens_in``/``llm_tokens_out``/
+      ``latency_ms_llm`` are no longer zero. ``skeleton_id``/``template_ids``
+      stay ``None`` -- the LLM answers freely (spec 6.9), it does not compose
+      from the bank. ``candidate_rank`` carries ``LLMDecision.candidate_index``
+      so :func:`_correct_flags` can score ``retrieve_utterance`` turns exactly
+      as it already does for the fast path.
+    * ``escalated`` and ``llm_decision`` is ``None`` (forced-reflex, UNANSWERED):
+      everything the fast path would have said is withheld except H1 and H2,
+      which :class:`Decision` types as non-optional strings. The withheld
+      fields -- action, values, skeleton, templates, utterance, candidate --
+      are what make the arm-level quality columns of such a run unusable, and
+      that is the honest accounting: nobody answered this turn.
     """
+    if escalated and llm_decision is not None:
+        return Decision(
+            convo_id=int(convo_id),
+            turn_index=int(turn_index),
+            arm="B",
+            route="escalated",
+            nextstep=str(llm_decision.nextstep),
+            intent=str(llm_decision.intent),
+            action=llm_decision.action,
+            values=list(llm_decision.values) if llm_decision.values is not None else None,
+            skeleton_id=None,
+            template_ids=None,
+            utterance_text=llm_decision.utterance_text,
+            candidate_utt_id=None,
+            gate=gate_output,
+            llm_tokens_in=int(llm_decision.tokens_in),
+            llm_tokens_out=int(llm_decision.tokens_out),
+            latency_ms_fastpath=float(elapsed_ms),
+            latency_ms_llm=float(llm_decision.latency_ms),
+            candidate_rank=int(llm_decision.candidate_index),
+            exact_template_match=None,
+            cache_hit=bool(llm_decision.cache_hit),
+        )
     if escalated:
         return Decision(
             convo_id=int(convo_id),

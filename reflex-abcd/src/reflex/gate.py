@@ -146,6 +146,13 @@ _TEMPLATES_KEY: str = "templates"
 #: :attr:`Calibration.quantiles` key shared by every H7 act position.
 _TEMPLATE_QUANTILE_KEY: str = "template"
 
+#: The :attr:`GateOutput.set_sizes` key holding one int per H4 value slot of
+#: the predicted action (empty list when the turn is not ``take_action``).
+_VALUES_KEY: str = "values"
+
+#: :attr:`Calibration.quantiles` key shared by every H4 value slot.
+_VALUE_QUANTILE_KEY: str = "value"
+
 #: The only supported ``gate.affect_signal`` value (spec 13 puts affect out of
 #: scope for v1). Compared case-insensitively against a STRING -- see
 #: :func:`_check_affect_signal` for why the type matters.
@@ -488,6 +495,35 @@ def evaluate_gate(
             if size != 1:
                 low_confidence = True
     set_sizes[_TEMPLATES_KEY] = template_sizes
+
+    # --- signal 1b: H4 value confidence, per slot of a predicted action ----- #
+    # Reviewer-confirmed gap: this block did not exist. A take_action turn's
+    # argument values (SelectorScores.value_probs, one distribution per slot --
+    # already produced by select._score_values, just never consulted here)
+    # passed the gate regardless of confidence, including a 50/50-probability
+    # value or an EMPTY argument list. Mirrors the template loop exactly: a
+    # slot with no candidate distribution at all (an empty value_probs[i], the
+    # "empty argument list" failure mode) is size 0, never a free pass; a
+    # slot whose prediction set is not a singleton is low_confidence, exactly
+    # like every other head. Requires calibration.quantiles["value"] -- run
+    # `reflex calibrate` against a checkpoint calibrated under this change
+    # before evaluate_gate is called on live take_action turns; there is no
+    # silent fallback, per this module's existing "a missing quantile is not
+    # a zero" rule for every other head.
+    value_sizes: list[int] = []
+    if applicable["action"] and scores.value_probs:
+        q_value = _quantile(calibration, quantiles, _VALUE_QUANTILE_KEY)
+        for slot_index, probs in enumerate(scores.value_probs):
+            if not probs:
+                value_sizes.append(0)
+                low_confidence = True
+                continue
+            _validate_probs(f"value[{slot_index}]", probs, cfg)
+            size = len(_confidence_set(probs, q_value, cfg))
+            value_sizes.append(size)
+            if size != 1:
+                low_confidence = True
+    set_sizes[_VALUES_KEY] = value_sizes
 
     # --- signal 2: novelty --------------------------------------------------- #
     novelty_distance = float(scores.novelty_distance)

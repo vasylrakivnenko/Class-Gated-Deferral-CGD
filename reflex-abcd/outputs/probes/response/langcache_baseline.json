@@ -1,0 +1,609 @@
+{
+ "summary": {
+  "method": "LangCache managed semantic cache (real dense embedding + vector search, via REST API) -- same 'copy nearest neighbor's answer' rule as D26's TF-IDF 1-NN baseline",
+  "n_train_stored": 500,
+  "n_test_queried": 100,
+  "similarity_threshold": 0.0,
+  "n_no_match_above_threshold": 39,
+  "mean_similarity_of_matches": 0.9155093447540984,
+  "median_similarity_of_matches": 0.8997905,
+  "compose@1_of_queried": 0.05,
+  "skeleton_only_of_queried": 0.18,
+  "compare_against_D26": {
+   "learned_cache_TFIDF_logreg": {
+    "conditional": 0.2765370138017566
+   },
+   "1NN_TFIDF_no_rerank": {
+    "conditional": 0.05244667503136763,
+    "median_similarity": 0.47
+   }
+  },
+  "caveat": "SMALL-SCALE probe (n_train stored / n_test queried are far below D26's full 43,159/3,985) -- meant to show DIRECTION only: does a real embedding model find more genuinely-similar neighbors than TF-IDF did, not a certified headline number. A larger stored population would very likely raise the hit rate somewhat (more candidates to match against), independent of embedding quality.",
+  "elapsed_s": 8.3
+ },
+ "rows": [
+  {
+   "turn_id": "test_seen:7253:8",
+   "matched": true,
+   "similarity": 0.8779518,
+   "skeleton_hit": false,
+   "full_hit": false
+  },
+  {
+   "turn_id": "test_seen:2067:0",
+   "matched": true,
+   "similarity": 1,
+   "skeleton_hit": false,
+   "full_hit": false
+  },
+  {
+   "turn_id": "test_seen:924:23",
+   "matched": false
+  },
+  {
+   "turn_id": "test_seen:7782:27",
+   "matched": false
+  },
+  {
+   "turn_id": "test_seen:4332:28",
+   "matched": false
+  },
+  {
+   "turn_id": "test_seen:5979:3",
+   "matched": true,
+   "similarity": 0.9395409,
+   "skeleton_hit": true,
+   "full_hit": false
+  },
+  {
+   "turn_id": "test_seen:10192:0",
+   "matched": true,
+   "similarity": 1,
+   "skeleton_hit": true,
+   "full_hit": true
+  },
+  {
+   "turn_id": "test_seen:2687:18",
+   "matched": false
+  },
+  {
+   "turn_id": "test_seen:4168:14",
+   "matched": true,
+   "similarity": 0.87376875,
+   "skeleton_hit": false,
+   "full_hit": false
+  },
+  {
+   "turn_id": "test_seen:189:7",
+   "matched": false
+  },
+  {
+   "turn_id": "test_seen:9579:0",
+   "matched": true,
+   "similarity": 1,
+   "skeleton_hit": false,
+   "full_hit": false
+  },
+  {
+   "turn_id": "test_seen:3010:5",
+   "matched": false
+  },
+  {
+   "turn_id": "test_seen:1213:15",
+   "matched": true,
+   "similarity": 0.8210224,
+   "skeleton_hit": false,
+   "full_hit": false
+  },
+  {
+   "turn_id": "test_seen:1427:5",
+   "matched": true,
+   "similarity": 0.91246116,
+   "skeleton_hit": false,
+   "full_hit": false
+  },
+  {
+   "turn_id": "test_seen:5972:24",
+   "matched": true,
+   "similarity": 0.86460793,
+   "skeleton_hit": false,
+   "full_hit": false
+  },
+  {
+   "turn_id": "test_seen:2734:16",
+   "matched": true,
+   "similarity": 0.8666067,
+   "skeleton_hit": false,
+   "full_hit": false
+  },
+  {
+   "turn_id": "test_seen:5671:18",
+   "matched": false
+  },
+  {
+   "turn_id": "test_seen:8137:18",
+   "matched": false
+  },
+  {
+   "turn_id": "test_seen:3299:15",
+   "matched": true,
+   "similarity": 0.9201856,
+   "skeleton_hit": false,
+   "full_hit": false
+  },
+  {
+   "turn_id": "test_seen:7352:26",
+   "matched": false
+  },
+  {
+   "turn_id": "test_seen:8241:0",
+   "matched": true,
+   "similarity": 1,
+   "skeleton_hit": true,
+   "full_hit": true
+  },
+  {
+   "turn_id": "test_seen:2317:13",
+   "matched": true,
+   "similarity": 0.8659911,
+   "skeleton_hit": true,
+   "full_hit": false
+  },
+  {
+   "turn_id": "test_seen:4512:0",
+   "matched": true,
+   "similarity": 1,
+   "skeleton_hit": true,
+   "full_hit": false
+  },
+  {
+   "turn_id": "test_seen:7910:0",
+   "matched": true,
+   "similarity": 1,
+   "skeleton_hit": false,
+   "full_hit": false
+  },
+  {
+   "turn_id": "test_seen:7506:0",
+   "matched": true,
+   "similarity": 1,
+   "skeleton_hit": false,
+   "full_hit": false
+  },
+  {
+   "turn_id": "test_seen:1792:5",
+   "matched": false
+  },
+  {
+   "turn_id": "test_seen:10497:12",
+   "matched": true,
+   "similarity": 0.8428674,
+   "skeleton_hit": false,
+   "full_hit": false
+  },
+  {
+   "turn_id": "test_seen:8433:2",
+   "matched": true,
+   "similarity": 0.8518493,
+   "skeleton_hit": false,
+   "full_hit": false
+  },
+  {
+   "turn_id": "test_seen:6516:2",
+   "matched": true,
+   "similarity": 0.8815404,
+   "skeleton_hit": true,
+   "full_hit": false
+  },
+  {
+   "turn_id": "test_seen:1656:6",
+   "matched": true,
+   "similarity": 0.89266604,
+   "skeleton_hit": false,
+   "full_hit": false
+  },
+  {
+   "turn_id": "test_seen:3626:21",
+   "matched": false
+  },
+  {
+   "turn_id": "test_seen:2926:8",
+   "matched": true,
+   "similarity": 0.8806486,
+   "skeleton_hit": false,
+   "full_hit": false
+  },
+  {
+   "turn_id": "test_seen:7506:12",
+   "matched": false
+  },
+  {
+   "turn_id": "test_seen:6565:20",
+   "matched": false
+  },
+  {
+   "turn_id": "test_seen:5866:17",
+   "matched": true,
+   "similarity": 0.79755807,
+   "skeleton_hit": false,
+   "full_hit": false
+  },
+  {
+   "turn_id": "test_seen:9395:5",
+   "matched": true,
+   "similarity": 0.8289398,
+   "skeleton_hit": false,
+   "full_hit": false
+  },
+  {
+   "turn_id": "test_seen:9029:6",
+   "matched": true,
+   "similarity": 0.8994149,
+   "skeleton_hit": false,
+   "full_hit": false
+  },
+  {
+   "turn_id": "test_seen:10123:19",
+   "matched": false
+  },
+  {
+   "turn_id": "test_seen:3952:2",
+   "matched": true,
+   "similarity": 0.89361584,
+   "skeleton_hit": false,
+   "full_hit": false
+  },
+  {
+   "turn_id": "test_seen:2650:22",
+   "matched": false
+  },
+  {
+   "turn_id": "test_seen:4784:0",
+   "matched": true,
+   "similarity": 1,
+   "skeleton_hit": true,
+   "full_hit": false
+  },
+  {
+   "turn_id": "test_seen:5384:2",
+   "matched": true,
+   "similarity": 0.8944975,
+   "skeleton_hit": false,
+   "full_hit": false
+  },
+  {
+   "turn_id": "test_seen:3007:1",
+   "matched": true,
+   "similarity": 0.83028984,
+   "skeleton_hit": true,
+   "full_hit": false
+  },
+  {
+   "turn_id": "test_seen:2100:9",
+   "matched": true,
+   "similarity": 0.8363898,
+   "skeleton_hit": false,
+   "full_hit": false
+  },
+  {
+   "turn_id": "test_seen:7714:20",
+   "matched": true,
+   "similarity": 0.8323232,
+   "skeleton_hit": true,
+   "full_hit": false
+  },
+  {
+   "turn_id": "test_seen:9381:3",
+   "matched": true,
+   "similarity": 0.9461292,
+   "skeleton_hit": false,
+   "full_hit": false
+  },
+  {
+   "turn_id": "test_seen:1711:2",
+   "matched": true,
+   "similarity": 0.9619306,
+   "skeleton_hit": false,
+   "full_hit": false
+  },
+  {
+   "turn_id": "test_seen:8777:1",
+   "matched": true,
+   "similarity": 0.99999994,
+   "skeleton_hit": false,
+   "full_hit": false
+  },
+  {
+   "turn_id": "test_seen:602:0",
+   "matched": true,
+   "similarity": 1,
+   "skeleton_hit": true,
+   "full_hit": true
+  },
+  {
+   "turn_id": "test_seen:7782:4",
+   "matched": true,
+   "similarity": 0.95066744,
+   "skeleton_hit": false,
+   "full_hit": false
+  },
+  {
+   "turn_id": "test_seen:5566:16",
+   "matched": false
+  },
+  {
+   "turn_id": "test_seen:8192:5",
+   "matched": true,
+   "similarity": 0.945971,
+   "skeleton_hit": false,
+   "full_hit": false
+  },
+  {
+   "turn_id": "test_seen:5866:0",
+   "matched": true,
+   "similarity": 1,
+   "skeleton_hit": true,
+   "full_hit": false
+  },
+  {
+   "turn_id": "test_seen:5463:22",
+   "matched": true,
+   "similarity": 0.8087362,
+   "skeleton_hit": true,
+   "full_hit": false
+  },
+  {
+   "turn_id": "test_seen:3342:24",
+   "matched": false
+  },
+  {
+   "turn_id": "test_seen:10110:10",
+   "matched": true,
+   "similarity": 0.8904326,
+   "skeleton_hit": false,
+   "full_hit": false
+  },
+  {
+   "turn_id": "test_seen:6322:21",
+   "matched": false
+  },
+  {
+   "turn_id": "test_seen:10052:8",
+   "matched": true,
+   "similarity": 0.8997905,
+   "skeleton_hit": true,
+   "full_hit": false
+  },
+  {
+   "turn_id": "test_seen:8531:0",
+   "matched": true,
+   "similarity": 1,
+   "skeleton_hit": false,
+   "full_hit": false
+  },
+  {
+   "turn_id": "test_seen:10424:14",
+   "matched": true,
+   "similarity": 0.87044334,
+   "skeleton_hit": false,
+   "full_hit": false
+  },
+  {
+   "turn_id": "test_seen:8534:13",
+   "matched": true,
+   "similarity": 0.8686738,
+   "skeleton_hit": false,
+   "full_hit": false
+  },
+  {
+   "turn_id": "test_seen:8523:14",
+   "matched": false
+  },
+  {
+   "turn_id": "test_seen:1514:8",
+   "matched": false
+  },
+  {
+   "turn_id": "test_seen:4672:0",
+   "matched": true,
+   "similarity": 1,
+   "skeleton_hit": false,
+   "full_hit": false
+  },
+  {
+   "turn_id": "test_seen:3743:13",
+   "matched": false
+  },
+  {
+   "turn_id": "test_seen:6049:0",
+   "matched": true,
+   "similarity": 1,
+   "skeleton_hit": true,
+   "full_hit": false
+  },
+  {
+   "turn_id": "test_seen:2599:26",
+   "matched": false
+  },
+  {
+   "turn_id": "test_seen:1922:2",
+   "matched": true,
+   "similarity": 0.93067694,
+   "skeleton_hit": false,
+   "full_hit": false
+  },
+  {
+   "turn_id": "test_seen:1592:18",
+   "matched": false
+  },
+  {
+   "turn_id": "test_seen:3342:2",
+   "matched": true,
+   "similarity": 0.90257794,
+   "skeleton_hit": false,
+   "full_hit": false
+  },
+  {
+   "turn_id": "test_seen:2556:21",
+   "matched": false
+  },
+  {
+   "turn_id": "test_seen:4886:23",
+   "matched": false
+  },
+  {
+   "turn_id": "test_seen:183:1",
+   "matched": true,
+   "similarity": 1,
+   "skeleton_hit": true,
+   "full_hit": false
+  },
+  {
+   "turn_id": "test_seen:5918:14",
+   "matched": false
+  },
+  {
+   "turn_id": "test_seen:8137:15",
+   "matched": false
+  },
+  {
+   "turn_id": "test_seen:4697:4",
+   "matched": true,
+   "similarity": 0.88410705,
+   "skeleton_hit": false,
+   "full_hit": false
+  },
+  {
+   "turn_id": "test_seen:6435:5",
+   "matched": false
+  },
+  {
+   "turn_id": "test_seen:8807:5",
+   "matched": true,
+   "similarity": 0.84730214,
+   "skeleton_hit": false,
+   "full_hit": false
+  },
+  {
+   "turn_id": "test_seen:169:5",
+   "matched": false
+  },
+  {
+   "turn_id": "test_seen:924:21",
+   "matched": false
+  },
+  {
+   "turn_id": "test_seen:2723:21",
+   "matched": false
+  },
+  {
+   "turn_id": "test_seen:8102:18",
+   "matched": false
+  },
+  {
+   "turn_id": "test_seen:276:5",
+   "matched": true,
+   "similarity": 0.86166894,
+   "skeleton_hit": true,
+   "full_hit": false
+  },
+  {
+   "turn_id": "test_seen:4663:14",
+   "matched": false
+  },
+  {
+   "turn_id": "test_seen:9923:10",
+   "matched": true,
+   "similarity": 0.8489647,
+   "skeleton_hit": false,
+   "full_hit": false
+  },
+  {
+   "turn_id": "test_seen:2607:5",
+   "matched": true,
+   "similarity": 0.90091825,
+   "skeleton_hit": false,
+   "full_hit": false
+  },
+  {
+   "turn_id": "test_seen:3334:17",
+   "matched": false
+  },
+  {
+   "turn_id": "test_seen:9225:11",
+   "matched": false
+  },
+  {
+   "turn_id": "test_seen:987:7",
+   "matched": false
+  },
+  {
+   "turn_id": "test_seen:8996:25",
+   "matched": false
+  },
+  {
+   "turn_id": "test_seen:7714:4",
+   "matched": true,
+   "similarity": 0.92764485,
+   "skeleton_hit": false,
+   "full_hit": false
+  },
+  {
+   "turn_id": "test_seen:8512:1",
+   "matched": true,
+   "similarity": 0.991765,
+   "skeleton_hit": false,
+   "full_hit": false
+  },
+  {
+   "turn_id": "test_seen:5879:15",
+   "matched": false
+  },
+  {
+   "turn_id": "test_seen:5421:0",
+   "matched": true,
+   "similarity": 1,
+   "skeleton_hit": true,
+   "full_hit": true
+  },
+  {
+   "turn_id": "test_seen:7986:2",
+   "matched": true,
+   "similarity": 0.94856197,
+   "skeleton_hit": false,
+   "full_hit": false
+  },
+  {
+   "turn_id": "test_seen:10014:10",
+   "matched": true,
+   "similarity": 0.8315612,
+   "skeleton_hit": false,
+   "full_hit": false
+  },
+  {
+   "turn_id": "test_seen:5691:7",
+   "matched": true,
+   "similarity": 0.8650081,
+   "skeleton_hit": false,
+   "full_hit": false
+  },
+  {
+   "turn_id": "test_seen:8697:11",
+   "matched": true,
+   "similarity": 0.8578013,
+   "skeleton_hit": false,
+   "full_hit": false
+  },
+  {
+   "turn_id": "test_seen:6291:0",
+   "matched": true,
+   "similarity": 1,
+   "skeleton_hit": true,
+   "full_hit": true
+  },
+  {
+   "turn_id": "test_seen:8503:10",
+   "matched": false
+  }
+ ]
+}

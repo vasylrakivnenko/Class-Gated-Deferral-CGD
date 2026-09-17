@@ -396,10 +396,12 @@ class GateOutput(DictSchema):
         reason: ``ok`` when routed to the fast path; otherwise the
             highest-precedence failing signal per :data:`GATE_REASON_PRECEDENCE`.
         set_sizes: Conformal prediction-set size per head. Keys are exactly
-            ``"nextstep"``, ``"intent"``, ``"action"``, ``"skeleton"`` (ints) and
+            ``"nextstep"``, ``"intent"``, ``"action"``, ``"skeleton"`` (ints),
             ``"templates"`` (a list of ints, one per act position in the chosen
-            skeleton). Heads that do not apply to this turn report ``0`` (and
-            ``[]`` for templates), not a missing key.
+            skeleton) and ``"values"`` (a list of ints, one per H4 value slot
+            of the predicted action -- see ``select._value_slots``). Heads
+            that do not apply to this turn report ``0`` (and ``[]`` for
+            templates/values), not a missing key.
         novelty_distance: ``1 - max cosine(c, c_train)``.
         missing_slots: Registry slot names with no available value. Empty when
             availability passed.
@@ -794,8 +796,13 @@ class Calibration(DictSchema):
         alpha: The alpha these quantiles were computed at.
         quantiles: ``head -> q_h``. Keys are exactly ``"nextstep"``, ``"intent"``,
             ``"action"``, ``"skeleton"``, ``"template"`` (one shared q for H7
-            across act positions). Spec 6.6: prediction set =
-            ``{classes with softmax >= 1 - q_h}``.
+            across act positions) and ``"value"`` (one shared q for every H4
+            value slot -- gate.py's value-confidence check, added after the
+            review that found the gate never consulted H4 confidence at all;
+            a checkpoint calibrated before that fix has no ``"value"`` key and
+            :func:`reflex.gate._quantile` will refuse to invent one, per this
+            module's existing missing-quantile rule for every other head).
+            Spec 6.6: prediction set = ``{classes with softmax >= 1 - q_h}``.
         novelty_threshold: The ``gate.novelty_percentile`` percentile of
             ``novelty_distance`` over dev turns.
         alpha_sweep_quantiles: ``str(alpha) -> {head -> q_h}`` for every alpha in

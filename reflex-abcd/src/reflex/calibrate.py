@@ -39,6 +39,34 @@ different domain and is not a substitute for it.
 
 Read ``cfg``, never a literal: spec 10 forbids any numeric threshold, model id,
 path or price in code.
+
+THE TEMPLATE QUANTILE COLLAPSE (found and fixed by external review)
+---------------------------------------------------------------------
+``h7_absent_gold: max_nonconformity`` used to inject an explicit ``s=1.0`` row
+into the SAME nonconformity distribution ``conformal_quantile`` reads to set
+the template head's accept/reject threshold, whenever a position's gold
+template was absent from its candidate pool. At the real absent rate (~50% of
+dev template positions -- DECISIONS D23), that forces ``q`` to 1.0 and the
+threshold to 0.0: every candidate enters the prediction set, and the singleton
+gate then rejects every turn, regardless of how confident the model actually
+was. Reproduced with synthetic data at an absent rate as low as 3%: a
+99.9%-confident response was rejected. Fixed in ``_collect_dev_scores``:
+absent rows are now EXCLUDED from the quantile-determining distribution in
+BOTH ``h7_absent_gold`` modes -- the coverage gap they represent is a
+COVERAGE-ABSENCE fact ("is the true answer even a candidate here"), not a
+CONFIDENCE fact ("how sure is the model among the candidates it has"), and
+conflating the two is what broke the threshold. The coverage gap itself is
+NOT deleted -- it is reported as ``template_coverage`` in the diagnostics
+sidecar (``calibration_diagnostics_path``), visible and separate, never
+folded back into the routing threshold. What is still MISSING, and is a
+genuinely open item, not fixed here: there is no per-turn RUNTIME mechanism
+that can detect "this specific position's true answer is absent from the
+bank" the way dev calibration can (dev has gold labels; a live turn does not)
+-- per-candidate softmax alone cannot signal "the right answer isn't even a
+candidate." A proper fix needs a Learn-Then-Test-style two-stage design
+(https://arxiv.org/abs/2110.01052): calibrate "is this situation supported"
+separately from "is this specific response correct," each against its own
+objective. That redesign is out of scope for this pass.
 """
 
 from __future__ import annotations
@@ -686,8 +714,14 @@ def _collect_dev_scores(
     rows: Sequence[tuple[int, int, NormalizedTurn, ContextWindow]],
     labels: dict[str, Any],
     class_orders: dict[str, Sequence[str]],
-) -> tuple[dict[str, list[list[float]]], dict[str, list[int]], list[float]]:
-    """Score dev and bucket ``(probs, gold_index)`` per head. No decisions, no routing."""
+) -> tuple[dict[str, list[list[float]]], dict[str, list[int]], list[float], dict[str, int]]:
+    """Score dev and bucket ``(probs, gold_index)`` per head. No decisions, no routing.
+
+    Returns ``(probs, golds, novelty, template_coverage)``. ``template_coverage``
+    is ``{"n_positions": ..., "n_gold_present": ...}`` -- see the note on
+    ``h7_absent_gold`` below for why it exists as a SEPARATE return value
+    rather than folded into ``golds["template"]``.
+    """
     from reflex.data import turn_key
     from reflex.select import score_turn
 
@@ -700,6 +734,7 @@ def _collect_dev_scores(
     probs: dict[str, list[list[float]]] = {head: [] for head in _HEADS}
     golds: dict[str, list[int]] = {head: [] for head in _HEADS}
     novelty: list[float] = []
+    template_coverage = {"n_positions": 0, "n_gold_present": 0}
 
     for convo_id, turn_index, turn, context in rows:
         scores = score_turn(selector, context, turn, cfg)
@@ -730,21 +765,56 @@ def _collect_dev_scores(
                     else []
                 )
                 gold_template = gold_templates[position] if position < len(gold_templates) else None
+                template_coverage["n_positions"] += 1
                 if gold_template is not None and gold_template in candidates:
+                    template_coverage["n_gold_present"] += 1
                     probs["template"].append(list(position_probs))
                     golds["template"].append(candidates.index(gold_template))
                 elif absent_mode == "max_nonconformity":
-                    # The predicted skeleton's candidate set does not contain the
-                    # gold template, so p(gold) = 0 and s = 1. Append an explicit
-                    # zero column rather than dropping the row: dropping it would
-                    # hide the skeleton head's errors and inflate coverage.
-                    probs["template"].append(list(position_probs) + [0.0])
-                    golds["template"].append(len(position_probs))
+                    # BUG FOUND AND FIXED (see module docstring "THE TEMPLATE
+                    # QUANTILE COLLAPSE" below): this branch used to append an
+                    # explicit s=1 row into the SAME nonconformity distribution
+                    # `conformal_quantile` reads to set the accept/reject
+                    # threshold. At the real absent rate (~50% of dev template
+                    # positions -- the predicted skeleton's candidate pool
+                    # simply does not contain the gold template for that
+                    # position; see DECISIONS D23), that pushes q to 1.0 and the
+                    # threshold to 0.0, so EVERY candidate enters the prediction
+                    # set and the singleton gate (gate.py) then rejects every
+                    # turn -- reproduced with synthetic data at absent rates as
+                    # low as 3%. The original intent (comment removed above:
+                    # "dropping it would hide the skeleton head's errors and
+                    # inflate coverage") was sound in spirit -- an honest q
+                    # should reflect true end-to-end miscoverage -- but mixing
+                    # a COVERAGE-ABSENCE fact (is the true answer even a
+                    # candidate here) into the same distribution as a
+                    # CONFIDENCE fact (how sure is the model among the
+                    # candidates it has) makes the quantile answer a different,
+                    # much harder question than the one the gate can act on
+                    # per-turn, and is mathematically unstable at the coverage
+                    # rates this bank actually has. The fix: absent rows are
+                    # EXCLUDED from the quantile-determining distribution in
+                    # BOTH modes (below), and "max_nonconformity" now means
+                    # "count this position in the `template_coverage`
+                    # diagnostic as a miss" rather than "poison the threshold
+                    # with it" -- the coverage gap is still recorded and
+                    # visible, just not folded into a per-turn accept/reject
+                    # threshold it cannot honestly answer. `golds["template"]`
+                    # already skips negative indices (see `nonconformity_scores`
+                    # -- "Rows with a negative index are SKIPPED, not scored"),
+                    # so this is what "skip" mode already did for the quantile;
+                    # only the coverage BOOKKEEPING differs between the modes.
+                    # `probs["template"]` still gets a row appended (the real,
+                    # unmodified position_probs -- no extra column) so the two
+                    # lists stay index-aligned; nonconformity_scores skips it
+                    # via the gold<0 check before ever reading the row.
+                    probs["template"].append(list(position_probs))
+                    golds["template"].append(-1)
                 else:
                     probs["template"].append(list(position_probs))
                     golds["template"].append(-1)
 
-    return probs, golds, novelty
+    return probs, golds, novelty, template_coverage
 
 
 def _dev_labels(
@@ -857,7 +927,9 @@ def calibrate(cfg: dict[str, Any], checkpoint_path: str, seed: int) -> Calibrati
         what="the dev turns behind the conformal quantiles",
     )
     labels = {label.turn_id: label for label in _dev_labels(partitions.dev, bank, cfg)}
-    probs, golds, novelty = _collect_dev_scores(cfg, selector, dev_rows, labels, class_orders)
+    probs, golds, novelty, template_coverage = _collect_dev_scores(
+        cfg, selector, dev_rows, labels, class_orders
+    )
     scores_by_head = {
         head: nonconformity_scores(probs[head], golds[head]) for head in _HEADS
     }
@@ -902,7 +974,10 @@ def calibrate(cfg: dict[str, Any], checkpoint_path: str, seed: int) -> Calibrati
 
     # --- step 5: diagnostics. REPORTING ONLY; nothing above reads this back.
     if bool(get_dotted(cfg, "calibrate.write_diagnostics")):
-        _write_diagnostics(cfg, calibration, probs, golds, scores_by_head, novelty, len(dev_rows))
+        _write_diagnostics(
+            cfg, calibration, probs, golds, scores_by_head, novelty, len(dev_rows),
+            template_coverage,
+        )
     return calibration
 
 
@@ -914,6 +989,7 @@ def _write_diagnostics(
     scores_by_head: dict[str, list[float]],
     novelty: Sequence[float],
     n_dev_rows: int,
+    template_coverage: dict[str, int],
 ) -> str:
     """Write the dev ECE / in-sample-coverage sidecar. REPORTING ONLY, never a gate."""
     n_bins = int(get_dotted(cfg, "eval.ece_bins"))
@@ -944,6 +1020,20 @@ def _write_diagnostics(
         "dev_ece": ece,
         "dev_reliability": reliability,
         "dev_in_sample_coverage": coverage,
+        "template_coverage": {
+            **template_coverage,
+            "gold_present_rate": (
+                template_coverage["n_gold_present"] / template_coverage["n_positions"]
+            ) if template_coverage["n_positions"] else None,
+            "note": (
+                "Positions where the predicted skeleton's candidate pool did not "
+                "contain the gold template -- a coverage-absence fact, distinct from "
+                "the template head's CONFIDENCE among the candidates it does have. "
+                "This is reported here, separately, precisely so it is never folded "
+                "back into `quantiles['template']` -- see the h7_absent_gold handling "
+                "in _collect_dev_scores for why that used to collapse the gate."
+            ),
+        },
         "novelty_distance": {
             "percentile": float(get_dotted(cfg, "gate.novelty_percentile")),
             "threshold": calibration.novelty_threshold,

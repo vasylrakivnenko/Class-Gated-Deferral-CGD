@@ -721,13 +721,50 @@ def _encode_batch(bundle: _Selector, texts: Sequence[str], extra: Optional[dict[
         return bundle.model(batch)
 
 
+def _ontology_action_slots(ontology: dict[str, Any], action: str) -> list[str]:
+    """Full argument list for ``action`` per ``ontology.json``, file order.
+
+    Mirrors ``reflex.llm_agent._flatten_actions`` (Arm A's ground-truth slot
+    source for the same action) without importing that module, to keep this
+    reachable from the hot inference path without pulling in prompt-rendering
+    code. ``bundle.required_slots`` (bank-derived) is deliberately NOT this:
+    it is the subset the filler can source from disclosed state, used for
+    availability checking (D-4), and must stay narrow for that purpose. This
+    is the wider, ontology-complete list, used only to decide what H4 should
+    attempt to decode.
+    """
+    for _category, actions in (ontology.get("actions") or {}).items():
+        if isinstance(actions, dict) and action in actions:
+            slots = actions[action]
+            return list(slots) if slots else []
+    return []
+
+
 def _value_slots(bundle: _Selector, action: str) -> list[str]:
-    """Which slots H4 is decoded for, under ``select.value_slots_source``."""
+    """Which slots H4 is decoded for, under ``select.value_slots_source``.
+
+    ``bank_slots`` (``bundle.required_slots``) is only the subset of an
+    action's arguments the FILLER could source from disclosed state (see
+    ``compile.py``'s ``ActionPattern.required_slots`` docstring) -- it is NOT
+    the action's complete argument schema. Treating it as complete silently
+    drops arguments the filler never had a chance to source but H4 could
+    still be asked to decode (e.g. ``validate-purchase`` needs
+    ``[username, email, order_id]`` per the ontology; the bank records only
+    ``[email, order_id]``, so a bank-slots-only read never even attempts a
+    ``username`` value). ``bank_then_union`` now does what its name says:
+    bank slots first (bank order is what the filler-availability signal was
+    tuned against), then any ontology slot not already present, so H4 is
+    asked to decode every real argument, not just the sourceable ones.
+    """
     bank_slots = list(bundle.required_slots.get(action, []))
     if bundle.value_slots_source == "bank":
         return bank_slots
-    if bundle.value_slots_source == "bank_then_union" and bank_slots:
-        return bank_slots
+    if bundle.value_slots_source == "bank_then_union":
+        union = list(bank_slots)
+        for slot in _ontology_action_slots(bundle.ontology, action):
+            if slot not in union:
+                union.append(slot)
+        return union
     # ontology_union: one slot standing for the whole action, which is what H4
     # was trained to predict (train.value_position='first' supervises one value).
     return ["*"] if bundle.value_by_action.get(action) else []

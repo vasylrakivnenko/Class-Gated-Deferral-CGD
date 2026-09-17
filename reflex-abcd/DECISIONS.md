@@ -1039,3 +1039,230 @@ is shown the gold answer as a reference, which biases toward generosity when
 the candidate merely resembles the gold topic; n=100, one sampling seed; and —
 same open-caveat status as the act labeller (D24) — no human has checked any
 of these 100 rows yet.
+
+## D27b. CORRECTION to D27 — the sample was built with an optimistic bug, and the real wrong-rate is higher
+
+An external review of the whole codebase (not requested by this project —
+volunteered, and independently verified claim-by-claim before acting on any
+of it) found that `build_llm_judge_sample.py` assembled the "cache's
+predicted answer" shown to the judges using the wrong information for 86 of
+the 100 sampled rows.
+
+**The bug.** `_h7_arm`'s per-position predictions (`_pred_by_position`) are
+computed within each position's own **gold** act's classifier pool — `_h7_arm`
+partitions both fit and eval rows by `r.act`, which for an `H7Row` is always
+the correct act at that position, never whatever act a mispredicted skeleton
+would actually imply. For the 86 sampled turns where H5's predicted skeleton
+was WRONG (`skeleton_ok == False`), the text D27 showed the judges was
+assembled using the CORRECT act at every position anyway — an easier,
+non-deployable hypothetical the real decoder (`select.py`'s
+`_score_templates`, which scores `(query, act_id)` with no dependence on
+whether that act is "gold") would never actually produce once it has
+committed to the wrong skeleton.
+
+**The fix.** `build_llm_judge_sample.py` now fits one classifier per act
+(mirroring `_h7_arm`'s own per-act fit loop, same skip rule) and, for a
+wrong-skeleton row, scores each position against the act the PREDICTED
+skeleton assigns there — not the row's gold act. Verified: all 86 affected
+rows' text actually changed; the same 100 turn_ids were resampled;
+conditional compose@1 reproduction is unchanged at 0.2765 (this only touches
+the illustrative text, not the certified metric). Concrete example
+(`test_seen:924:2`): OLD (buggy) predicted text "i would happy to help.
+sure." vs. NEW (corrected) "can i have your full name?" — visibly worse, and
+the pattern held across most of the 86 changed rows (the buggy version was
+usually closer to gold, since it was built from gold acts).
+
+**Corrected three-judge result** (`sft/eval/data/llm_judge_sample_corrected.jsonl`,
+same 100 turns, same three judges):
+
+| judge | appropriate (old → new) | borderline (old → new) | wrong (old → new) |
+|---|---|---|---|
+| GLM-5.3-Flash | 74% → 65.3% | 17% → 17.9% | 9% → **16.8%** |
+| GLM-5.3 (full) | 68% → 62.4% | 25% → 26.9% | 7% → **10.8%** |
+| gpt-oss-120b | 69% → 56% | 15% → 16% | 16% → **28%** |
+
+Every judge's wrong-rate roughly doubled. Agreement stayed just as high
+(80.9% exact unanimous, 86.5% coarse — both slightly above the buggy run's),
+meaning the correction shifted what the judges converge on, not whether they
+converge.
+
+**Decision: D27's qualitative direction survives (most compose@1 misses are
+still judged "adequate," not "wrong," across all three models — 72-90% vs.
+the buggy run's 84-93%), but its headline magnitude was optimistic.** The
+honest wrong-rate range is now **10.8-28% (median ~17%)**, not 7-16%
+(median ~9%) as originally reported. gpt-oss-120b — already the stricter,
+non-GLM outlier before the fix — now puts it at 28%: more than 1 in 4
+sampled misses is a genuine problem, not roughly 1 in 6. **The corrected
+numbers, not D27's original ones, are what should be quoted going forward.**
+Both the original (buggy) and corrected sample/results files are kept in the
+repo side by side, not overwritten, so this correction is auditable.
+
+## D28. Fixed: the response gate could mathematically collapse to rejecting every response
+
+Also surfaced by the same external review, and reproduced independently
+before any code changed. `calibrate.py`'s template-head calibration
+(`h7_absent_gold: max_nonconformity`, the shipped default) injected an
+explicit nonconformity score of 1.0 for every dev position whose gold
+template was absent from the predicted skeleton's candidate pool — into the
+SAME score distribution used to set the accept/reject threshold for
+confident, covered turns. Coverage-absence (a structural fact: is the true
+answer even a candidate here) and confidence (given real candidates, how
+sure is the model) were being calibrated as one signal. At the real absent
+rate (~50% of dev template positions, matching D23's coverage numbers), this
+forces the conformal quantile to 1.0, the prediction-set threshold to 0.0
+(every class admitted), and the singleton gate then rejects every turn
+regardless of confidence. **Reproduced synthetically before any fix: at just
+3% absent, α=0.02, a 99.9%-confident response was rejected.**
+
+**Fix.** `_collect_dev_scores` now excludes absent rows from the score/gold
+pair `conformal_quantile` reads (both `h7_absent_gold` modes), while still
+reporting the coverage gap explicitly — a new `template_coverage`
+diagnostic (`n_positions`, `n_gold_present`) threaded into the calibration
+sidecar, so the gap is visible, not silently dropped. `gate.py` itself was
+not touched; the fix is entirely upstream in what `quantiles["template"]`
+gets set to. Two new regression tests (`tests/test_calibrate.py`, no tests
+existed for this module before): one reproduces the review's exact collapse
+numbers and shows post-fix acceptance instead of rejection; the other
+exercises the real `_collect_dev_scores` end to end and confirms the
+coverage gap still shows up in the diagnostic. The first draft of this fix
+had a real index-misalignment bug, caught by the second test before it
+shipped, not after.
+
+**Left deliberately unfixed, and said so plainly:** there is still no
+RUNTIME mechanism to detect "this position's true answer is absent from the
+bank" the way dev calibration can (dev has gold labels to check against; a
+live turn does not). A proper fix needs a Learn-Then-Test-style two-stage
+calibration (arxiv.org/abs/2110.01052) — calibrating "is this situation
+supported" separately from "is this specific response correct." That
+redesign remains open, not attempted here.
+
+## D29. Fixed: `required_slots` was treated as the complete action-argument schema, and the gate never checked value confidence
+
+Two more review-confirmed bugs in the action/value path, both fixed.
+
+**Bug A.** `compile.py`'s own docstring defines `ActionPattern.required_slots`
+as only the slots the filler could source from disclosed state — a subset,
+not the full argument schema. `select.py`'s `_value_slots`, under the
+shipped default `value_slots_source: bank_then_union`, ignored that and
+returned `bank_slots` alone whenever non-empty instead of unioning. Ground
+truth: the ontology's `validate-purchase`/`verify-identity`-shaped actions
+list 3 arguments; the compiled bank drops whichever ones the filler never
+had a chance to source (e.g. `username`) even though train labels carry real
+values for them — H4 was never even asked to decode the dropped slot.
+**Fix:** `bank_then_union` now genuinely unions bank slots with the full
+ontology slot list for that action. `bundle.required_slots` itself is
+untouched — it still (correctly) drives the narrower availability/
+`unavailable_slot` gate signal (D-4); only `_value_slots`'s USE of it
+changed.
+
+**Bug B.** `gate.py` had no confidence check at all for H4 value
+predictions — `_SCALAR_HEADS` covers nextstep/intent/action/skeleton, and a
+separate loop checks H7 templates, but nothing read `value_probs`.
+Reproduced: a `take_action` call with 50/50 argument probabilities, or an
+empty value prediction, passed the gate unconditionally. **Fix:** a new
+block in `evaluate_gate`, structurally identical to the template-position
+loop — each value slot's prediction-set size is checked against a new
+`Calibration.quantiles["value"]` key (same conformal mechanism every other
+head already uses); an empty or non-singleton prediction escalates, same
+reason precedence as every other head. A missing `"value"` quantile RAISES
+rather than silently falling back — consistent with this module's existing
+convention, and an honest new prerequisite: **`reflex calibrate` must be
+rerun to populate that quantile before this check is live end to end**
+(computing it was left out of D28's scope deliberately, to avoid two
+parallel fixes racing on `calibrate.py`).
+
+Nine new tests total across `tests/test_select.py` and `tests/test_gate.py`
+(the review's own 50/50 and empty-prediction reproductions, both now
+escalating; a confident-correct case proving the check discriminates rather
+than rejecting everything; multi-slot and no-value-slots edge cases; and a
+test proving the "no silent fallback" choice is real). Full suite: all pass,
+no regressions.
+
+## D30. Fixed: Arm B's escalation path never actually called the LLM
+
+Also review-confirmed: `run.py`'s `_run_arm_b`, on escalation, either raised
+`LLMDisabledError` unconditionally (with no check on `llm.enabled` at all) or,
+under `run.forced_reflex`, logged the escalation unanswered. `llm_decide`
+existed and was already unit-tested in isolation but nothing in the
+orchestrator ever called it — setting `llm.enabled=True` and filling in
+pricing did not complete the cascade; an enabled LLM was a dead end.
+
+**Not part of this fix, confirmed separately as correct, intentional
+behavior:** Arm A's raise (`LLMDisabledError` / a `ContractViolation` refusal)
+is the project's documented zero-paid-API-calls safety rail, asserted by an
+existing test. The review's framing of this specific sub-claim as a bug was
+itself wrong; it is not touched here.
+
+**Fix.** `_run_arm_b` now builds the LLM agent handle once, up front, only
+if `llm.enabled` is true (building never calls the API — only `llm_decide`
+does, so a run that escalates zero turns costs nothing extra). On
+escalation, if the handle exists, it now calls `llm_decide` with the turn's
+context and delexicalized candidates and uses the answer, instead of
+immediately raising. `_build_decision` gained a third shape — an ANSWERED
+escalation, populated entirely from the `LLMDecision`, never from the fast
+path's rejected `Selection` — alongside its existing "fast path answered" /
+"unanswered, everything withheld" shapes. Four new tests
+(`tests/test_arm_b_escalation.py`) target `_build_decision` directly (a pure
+function, testable without a corpus or checkpoint) rather than a live
+`_run_arm_b` run, since no trained checkpoint exists in this checkout — the
+core proof (an answered escalation traces every field to the `LLMDecision`,
+never the `Selection`), the take_action shape specifically, and two
+regression guards (`llm_decision=None` still withholds everything;
+byte-identical fast-path behavior). All four fail against the pre-fix
+signature. Full suite: all pass, no regressions.
+
+**Left open, flagged not fixed:** full `_run_arm_b` end-to-end exercise still
+needs a real checkpoint + compiled bank + calibration, none of which exist in
+this checkout (the same gap D25/D26 already note — the certified
+TF-IDF+logreg selector has never been wired to this runtime path at all).
+Whether `llm.enabled=True` together with `run.forced_reflex=True` should warn
+(this fix makes `llm.enabled` take priority, silently overriding
+`forced_reflex`'s zero-cost guarantee when both are set) is flagged as an
+open question, not resolved here.
+
+## D31. A real semantic-embedding retrieval baseline (Redis LangCache) lands at the same low ceiling D26 already found — better similarity scores, not better accuracy
+
+D26's TF-IDF 1-NN baseline used a weak, lexical-only similarity signal
+(median neighbor similarity 0.47). The open question: would a REAL dense
+embedding model find meaningfully better neighbors and close some of the gap
+to the cache's 27.7%? Tested directly against Redis's managed LangCache
+semantic-cache service (real REST API, real embeddings, real vector search)
+rather than guessing.
+
+**Scale, and why it's small.** LangCache has no batch-store endpoint (one
+HTTP POST per entry) and a live credential with unknown rate limits, so this
+is a directional probe, not a certified number: 500 train turns stored, 100
+test_seen turns queried (vs. D26's full 43,159/3,985).
+
+**A real constraint hit live, not worked around silently.** LangCache's
+`prompt` field has an effective cap far below its documented 1,024
+characters — requests around 500-700 characters already failed with "Prompt
+is too long," most likely a token-budget limit that our pipe-delimited
+`speaker|text` formatting hits harder than plain prose. Our context is the
+FULL conversation thread per D2's own decision, which routinely exceeds this
+on anything but the shortest conversations. Every query was therefore
+truncated to its last 400 characters (recent turns only) before being sent —
+a real, reported compromise: this measures LangCache on a recency-windowed
+context, not the full thread the cache's own selector conditions on.
+
+**Result**, same compose@1 predicate as every other baseline in this file:
+
+| method | conditional compose@1 |
+|---|---|
+| **learned cache (TF-IDF+logreg)** | **27.7%** (n=3,985) |
+| LangCache (real embeddings, n=500 stored / 100 queried, truncated context) | 5.0% (n=100) |
+| 1-NN TF-IDF (D26, full context, n=43,159 stored / 3,985 queried) | 5.2% (n=3,985) |
+
+Median match similarity was 0.90-0.94 — nearly double TF-IDF's 0.47, i.e.
+LangCache's embeddings found genuinely, semantically closer neighbors than
+TF-IDF ever did. **Accuracy did not follow: it landed at essentially the
+same ~5% as TF-IDF's full-context result, despite far less context to work
+with.** Decision: this is consistent with, not contradictory to, D26's
+retrieval-ceiling finding — the bottleneck was never embedding quality, it's
+that "find the nearest conversation and copy its answer" has a low ceiling
+on this task regardless of which similarity engine does the finding.
+**Caveat:** the context truncation is a real confound (LangCache was tested
+at a real disadvantage vs. TF-IDF's full-context run), so this is directional
+evidence, not a clean head-to-head; a fuller test would need either a
+shorter/summarized context representation or a self-hosted embedding search
+without LangCache's prompt-length ceiling.

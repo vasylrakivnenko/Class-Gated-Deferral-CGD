@@ -25,6 +25,26 @@ select.json, because per-turn predictions are not part of the certified
 summary -- see run_response_probe.py's `mode_select`, "compose FIRST: it
 reads the per-turn predictions that are stripped below").
 
+CORRECTED (previously a real bug): `_h7_arm`'s own `_pred_by_position` is
+keyed by (turn_id, position) but computed WITHIN EACH ROW'S OWN GOLD ACT'S
+per-act pool -- `_h7_arm` partitions both fit and eval rows by `r.act`, and
+for an H7Row that is the GOLD act at that position, never whatever act a
+mispredicted skeleton would actually imply. For a turn whose predicted
+skeleton is WRONG (skeleton_ok=False), the real deployed decoder
+(`select.py`'s `_score_templates`, which scores `(query, act_id)` using
+only the query and the act id, no gold dependency) would score candidates
+within the PREDICTED act's pool at each position, not the gold act's pool.
+Reusing `_h7_arm`'s gold-conditioned `_pred_by_position` for a wrong-skeleton
+row therefore showed an easier, non-deployable hypothetical text -- "what the
+selector would say if the act at this position were the correct one" -- not
+what the system actually outputs when it gets the skeleton wrong. Fixed here
+by fitting one classifier PER ACT (`_fit_per_act_h7`, mirroring `_h7_arm`'s
+own per-act fit loop) and, for a wrong-skeleton row, scoring each position
+against the act the PREDICTED skeleton assigns there (looked up via
+`spaces.skeleton_acts[pred_skeleton_id]`), not the row's own gold act. A
+skeleton_ok=True row is unaffected: predicted and gold acts coincide there by
+definition, so the old and new text are identical.
+
 SAMPLE
 ------
 Turns are drawn from the CONDITIONAL population (gold fully bank-coverable --
@@ -45,6 +65,52 @@ import os
 import random
 import sys
 from collections import defaultdict
+
+
+def _fit_per_act_h7(featurizer, train_h7_rows, spec, vspec):
+    """One (vectorizer, model) per act, mirroring `_h7_arm`'s own per-act fit
+    loop exactly (same skip condition: fewer than 2 gold classes -> unfit),
+    but the fitted objects are KEPT so any (row, act) pair can be scored --
+    not just a row against its own gold act's pool.
+    """
+    from probes.run_response_probe import _classifier
+
+    by_act_fit: dict = defaultdict(list)
+    for r in train_h7_rows:
+        if r.gold_template_id and r.act:
+            by_act_fit[r.act].append(r)
+
+    fitted: dict = {}
+    for act, fit_rows in by_act_fit.items():
+        golds = [r.gold_template_id for r in fit_rows]
+        if len(set(golds)) < 2:
+            fitted[act] = None
+            continue
+        texts = [featurizer.render_context(r.context, spec) for r in fit_rows]
+        vectorizer = featurizer.make_vectorizer(vspec)
+        X = vectorizer.fit_transform(texts)
+        model = _classifier(vspec, n_fit=len(texts))
+        model.fit(X, golds)
+        fitted[act] = (vectorizer, model)
+    return fitted
+
+
+def _predict_template_for_act(fitted: dict, act: str, context_text: str) -> str:
+    """What the real decoder would pick at one position, given the act the
+    PREDICTED skeleton assigns there (not necessarily the row's gold act).
+    Empty string means this act has fewer than 2 fit classes -- the same
+    'unsupported' condition `_h7_arm` itself skips, not a new failure mode.
+    """
+    import numpy as np
+
+    entry = fitted.get(act)
+    if not entry:
+        return ""
+    vectorizer, model = entry
+    X = vectorizer.transform([context_text])
+    proba = model.predict_proba(X)[0]
+    classes = list(model.classes_)
+    return classes[int(np.argmax(proba))]
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -110,6 +176,13 @@ def main(argv: list[str] | None = None) -> int:
     gold_sk = h5["_gold_by_turn"]
     pred_tp = h7["_pred_by_position"]
 
+    print("fitting one H7 classifier PER ACT (for wrong-skeleton rows, to score "
+          "the act the PREDICTED skeleton actually implies at each position, "
+          "not the row's gold act)...", file=sys.stderr)
+    spaces = rows_train["spaces"]
+    skeleton_acts = spaces.skeleton_acts
+    fitted_by_act = _fit_per_act_h7(featurizer, rows_train["h7"], spec, vs_h7)
+
     h5_by_turn = {r.turn_id: r for r in rows_test["h5"]}
     h7_by_turn: dict[str, list] = defaultdict(list)
     for r in rows_test["h7"]:
@@ -133,8 +206,22 @@ def main(argv: list[str] | None = None) -> int:
             hits += 1
             continue
 
+        if not skeleton_ok:
+            # The real decoder's own act at each position: what the PREDICTED
+            # skeleton implies, not the row's gold act (the D27-correction
+            # fix -- see module docstring "CORRECTED").
+            pred_skeleton_id = pred_sk.get(turn_id)
+            predicted_acts = skeleton_acts.get(pred_skeleton_id, ()) if pred_skeleton_id else ()
+            context_text = featurizer.render_context(h5row.context, spec)
+            real_pred_tids = [
+                _predict_template_for_act(fitted_by_act, act, context_text)
+                for act in predicted_acts
+            ]
+        else:
+            real_pred_tids = pred_tids
+
         gold_text = " ".join(bank_text.get(t, "") for t in gold_tids if t)
-        pred_text = " ".join(bank_text.get(t, "") for t in pred_tids if t) or "(no confident prediction)"
+        pred_text = " ".join(bank_text.get(t, "") for t in real_pred_tids if t) or "(no confident prediction)"
         misses.append({
             "turn_id": turn_id,
             "convo_id": h5row.convo_id,

@@ -107,16 +107,16 @@ def test_all_signals_pass_routes_to_reflex(cfg: dict) -> None:
     assert out.reason == "ok"
     assert out.missing_slots == []
     assert out.set_sizes == {
-        "nextstep": 1, "intent": 1, "action": 0, "skeleton": 1, "templates": [1],
+        "nextstep": 1, "intent": 1, "action": 0, "skeleton": 1, "templates": [1], "values": [],
     }
 
 
 @pytest.mark.parametrize(
     "nextstep,expected",
     [
-        ("retrieve_utterance", {"nextstep": 1, "intent": 1, "action": 0, "skeleton": 1, "templates": [1]}),
-        ("take_action", {"nextstep": 1, "intent": 1, "action": 1, "skeleton": 0, "templates": []}),
-        ("end_conversation", {"nextstep": 1, "intent": 1, "action": 0, "skeleton": 0, "templates": []}),
+        ("retrieve_utterance", {"nextstep": 1, "intent": 1, "action": 0, "skeleton": 1, "templates": [1], "values": []}),
+        ("take_action", {"nextstep": 1, "intent": 1, "action": 1, "skeleton": 0, "templates": [], "values": []}),
+        ("end_conversation", {"nextstep": 1, "intent": 1, "action": 0, "skeleton": 0, "templates": [], "values": []}),
     ],
 )
 def test_only_the_required_heads_are_consulted(cfg: dict, nextstep: str, expected: dict) -> None:
@@ -176,6 +176,77 @@ def test_an_act_position_with_no_candidate_escalates_rather_than_raising(cfg: di
     out = evaluate_gate(scores, selection, [], False, _calibration(), cfg)
     assert out.set_sizes["templates"] == [1, 0]
     assert out.reason == "low_confidence"
+
+
+# --------------------------------------------------------------------------- #
+# Signal 1c: H4 value confidence -- reviewer-confirmed gap, previously absent
+# entirely (an action call passed the gate regardless of its argument
+# confidence, including a 50/50 distribution or an empty argument list).
+# --------------------------------------------------------------------------- #
+
+
+def test_a_50_50_value_prediction_now_escalates(cfg: dict) -> None:
+    """The exact reproduction the review used: 50/50 argument probabilities
+    previously passed the gate unconditionally, because no check existed."""
+    probs = [0.5, 0.5]
+    scores = _scores("take_action", value_probs=[probs], value_candidates=[["a", "b"]])
+    # q=0.6 -> in the set at p >= 0.4, same pattern as test_set_larger_than_one_escalates.
+    out = evaluate_gate(scores, _selection("take_action"), [], False, _calibration(value=0.6), cfg)
+    assert out.set_sizes["values"] == [2]
+    assert out.reason == "low_confidence"
+
+
+def test_an_empty_value_prediction_now_escalates(cfg: dict) -> None:
+    """The review's other reproduction: an EMPTY argument list previously
+    passed. Mirrors the template "no candidate" rule exactly: size 0, never a
+    free pass, never patched with an invented value."""
+    scores = _scores("take_action", value_probs=[[]], value_candidates=[[]])
+    out = evaluate_gate(scores, _selection("take_action"), [], False, _calibration(value=_Q), cfg)
+    assert out.set_sizes["values"] == [0]
+    assert out.reason == "low_confidence"
+
+
+def test_a_confident_correct_value_prediction_still_routes_to_reflex(cfg: dict) -> None:
+    """The check must discriminate, not just reject everything: a genuinely
+    confident single-candidate value prediction still passes."""
+    scores = _scores("take_action", value_probs=[_confident(4)], value_candidates=[["a", "b", "c", "d"]])
+    out = evaluate_gate(scores, _selection("take_action"), [], False, _calibration(value=_Q), cfg)
+    assert out.set_sizes["values"] == [1]
+    assert out.route == "reflex"
+    assert out.reason == "ok"
+
+
+def test_one_bad_value_slot_escalates_the_whole_turn(cfg: dict) -> None:
+    """Two required slots, one confident and one not: the turn escalates on
+    the worse slot, exactly like the multi-position template check."""
+    scores = _scores(
+        "take_action",
+        value_probs=[_confident(4), _diffuse(4)],
+        value_candidates=[["a", "b", "c", "d"], ["e", "f", "g", "h"]],
+    )
+    out = evaluate_gate(scores, _selection("take_action"), [], False, _calibration(value=_Q), cfg)
+    assert out.set_sizes["values"] == [1, 0]
+    assert out.reason == "low_confidence"
+
+
+def test_a_turn_with_no_value_slots_reports_empty_and_is_not_penalized(cfg: dict) -> None:
+    """An action with no decodable value slots (or a non-take_action turn)
+    reports [] and is not treated as a low-confidence failure by itself."""
+    out = evaluate_gate(
+        _scores("retrieve_utterance"), _selection("retrieve_utterance"), [], False, _calibration(), cfg
+    )
+    assert out.set_sizes["values"] == []
+    assert out.route == "reflex"
+
+
+def test_value_confidence_without_a_calibrated_value_quantile_raises(cfg: dict) -> None:
+    """Same rule as every other head (test_missing_quantile_raises below): a
+    missing quantile is not a zero. A checkpoint calibrated before this fix
+    has no "value" key, and must be recalibrated before take_action turns
+    with real value predictions can be gated -- not silently skipped."""
+    scores = _scores("take_action", value_probs=[_confident(4)], value_candidates=[["a", "b", "c", "d"]])
+    with pytest.raises(ContractViolation, match="value"):
+        evaluate_gate(scores, _selection("take_action"), [], False, _calibration(), cfg)
 
 
 # --------------------------------------------------------------------------- #

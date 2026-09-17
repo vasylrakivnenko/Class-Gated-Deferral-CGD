@@ -493,6 +493,74 @@ def test_value_slots_give_the_buttons_arity(cfg, bank):
     assert len(candidates) == 2, "verify-identity keeps two supported slots in this bank"
 
 
+def test_value_slots_bank_then_union_no_longer_drops_ontology_only_slots(cfg, bank):
+    """Regression for the reviewer-confirmed bug: bank_then_union returned
+    bank_slots ALONE whenever non-empty, silently dropping any argument the
+    filler could not source but the ontology still lists (e.g. `username` for
+    `validate-purchase` in the real ontology; `order_id` for `verify-identity`
+    in this test bank, whose ActionPattern only records
+    `[customer_name, account_id]`). The fix unions bank slots (kept first,
+    since the filler-availability signal was tuned against that order) with
+    the full ontology slot list.
+    """
+    bundle = _selector(cfg, bank)
+    bundle.ontology = {
+        "actions": {
+            "account": {
+                "verify-identity": ["customer_name", "account_id", "order_id"],
+            }
+        }
+    }
+    assert bundle.required_slots["verify-identity"] == ["customer_name", "account_id"], (
+        "bank-derived required_slots must stay untouched -- it still drives "
+        "the availability/unavailable_slot gate signal, D-4"
+    )
+    slots = S._value_slots(bundle, "verify-identity")
+    assert slots == ["customer_name", "account_id", "order_id"], (
+        "bank_then_union must now union with the ontology, bank order first, "
+        "not return bank_slots alone"
+    )
+
+
+def test_value_slots_bank_then_union_falls_back_to_bank_when_ontology_is_empty(cfg, bank):
+    """No ontology (e.g. the test bundles elsewhere that pass ontology={})
+    must behave exactly as before: bank_slots, unchanged."""
+    bundle = _selector(cfg, bank)
+    assert bundle.ontology == {}
+    slots = S._value_slots(bundle, "verify-identity")
+    assert slots == ["customer_name", "account_id"]
+
+
+def test_score_values_now_attempts_a_slot_bank_alone_used_to_drop(cfg, bank):
+    """End-to-end: with the ontology wired, H4 now attempts order_id (via its
+    <order_id> copy marker) for verify-identity, which bank_slots alone
+    (customer_name, account_id) never asked for -- the actual behavioral
+    change the fix is meant to produce, not just a list-equality check."""
+    bundle = _selector(cfg, bank)
+    bundle.ontology = {
+        "actions": {"account": {"verify-identity": ["customer_name", "account_id", "order_id"]}}
+    }
+    turns = [
+        "agent|hello, how can i help you today?",
+        "customer|i need my order status please",
+        "action|pull-up-account (crystal minh)",
+        "customer|my account id is <account_id>",
+        "customer|my order id is <order_id>",
+    ]
+    state = "state|disclosed: order.order_id=3348917502 || actions: pull-up-account(crystal minh)"
+    context = ContextWindow(
+        convo_id=42, turn_index=4, text="\n".join(turns + [state]), turns=turns,
+        disclosed={"order.order_id": "3348917502"},
+        actions_so_far=[{"action": "pull-up-account", "values": ["crystal minh"]}],
+        context_hash="deadbeefdeadbeef",
+    )
+    _, candidates = S._score_values(bundle, context, context.text, "verify-identity")
+    assert len(candidates) == 3, (
+        "order_id's <order_id> copy marker is present in context -- H4 must now "
+        "attempt it, where bank_slots alone silently never would have"
+    )
+
+
 # --------------------------------------------------------------------------- #
 # select_from_scores
 # --------------------------------------------------------------------------- #
