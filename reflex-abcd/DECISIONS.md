@@ -1266,3 +1266,33 @@ at a real disadvantage vs. TF-IDF's full-context run), so this is directional
 evidence, not a clean head-to-head; a fuller test would need either a
 shorter/summarized context representation or a self-hosted embedding search
 without LangCache's prompt-length ceiling.
+
+**Attempted scale-up to the full 43,159/3,985, and what stopped it.** Storing
+past roughly 4,000-4,500 entries hit a hard capacity ceiling on this
+account's LangCache database: `{"detail":"out of memory","status":424,
+"title":"Database Out of Memory"}`. This is a live resource limit, not a bug
+in the script (0 store errors up to ~4,000 entries, then errors climbed
+fast) — confirmed by a direct diagnostic call still returning the same error
+after the run was stopped, and resolved only by flushing the cache. A true
+full-scale run is not possible on this account's current tier.
+
+**Scaled up instead to the largest size that fits under the ceiling** (3,800
+stored / 800 queried, 7.6x the first probe, still same 400-char truncation
+and 0.0 similarity threshold, 0 store/search errors):
+
+| method | conditional compose@1 |
+|---|---|
+| **learned cache (TF-IDF+logreg)** | **27.7%** (n=3,985) |
+| LangCache, 3,800 stored / 800 queried | 8.25% |
+| LangCache, 500 stored / 100 queried (first probe) | 5.0% (n=100) |
+| 1-NN TF-IDF (D26, full context, 43,159 stored / 3,985 queried) | 5.2% (n=3,985) |
+
+Median match similarity held at 0.95. The larger candidate pool raised the
+hit rate as expected (5.0% → 8.25%, now modestly above TF-IDF's full-scale
+5.2% despite working from ~9x fewer candidates and a truncated context) --
+confirming the pool-size effect already flagged as a caveat above, not a new
+finding. **Decision unchanged: still nowhere near the cache's 27.7%.** More
+candidates buys some accuracy, as any nearest-neighbor method would predict,
+but the gap to a trained selector remains large regardless of embedding
+quality or pool size — this scale-up strengthens D31's original conclusion,
+it does not revise it.

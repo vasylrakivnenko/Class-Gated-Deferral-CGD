@@ -178,12 +178,18 @@ def main(argv: list[str] | None = None) -> int:
             fut = ex.submit(_store_one, session, base, headers, row.turn_id,
                             prompt, composed, tids, acts)
             futs[fut] = row.turn_id
+        n_done = 0
         for fut in as_completed(futs):
+            n_done += 1
             try:
                 fut.result()
             except Exception as e:
                 n_store_err += 1
                 print(f"  store error {futs[fut]}: {e}", file=sys.stderr)
+            if n_done % 1000 == 0 or n_done == len(futs):
+                rate = n_done / (time.time() - t0)
+                print(f"  store progress: {n_done}/{len(futs)}  "
+                      f"errors={n_store_err}  {rate:.0f}/s", file=sys.stderr)
     print(f"  stored in {time.time()-t0:.1f}s, {n_store_err} errors", file=sys.stderr)
 
     print(f"searching {len(test_sample)} test_seen turns "
@@ -198,13 +204,19 @@ def main(argv: list[str] | None = None) -> int:
             fut = ex.submit(_search_one, session, base, headers,
                             prompt, args.similarity_threshold)
             futs[fut] = (row.turn_id, gold_tids, [p.act for p in positions])
+        n_done = 0
         for fut in as_completed(futs):
+            n_done += 1
             turn_id, gold_tids, gold_acts = futs[fut]
             try:
                 results[turn_id] = (fut.result(), gold_tids, gold_acts)
             except Exception as e:
                 n_search_err += 1
                 print(f"  search error {turn_id}: {e}", file=sys.stderr)
+            if n_done % 1000 == 0 or n_done == len(futs):
+                rate = n_done / (time.time() - t1)
+                print(f"  search progress: {n_done}/{len(futs)}  "
+                      f"errors={n_search_err}  {rate:.0f}/s", file=sys.stderr)
     print(f"  searched in {time.time()-t1:.1f}s, {n_search_err} errors", file=sys.stderr)
 
     n_scored = hit = hit_skel = 0
