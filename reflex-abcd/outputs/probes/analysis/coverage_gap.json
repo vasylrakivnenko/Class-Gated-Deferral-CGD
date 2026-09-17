@@ -1,0 +1,791 @@
+{
+  "bank_hash": "c270df0e249444bb",
+  "distinct_surface_forms": 16170,
+  "n_templates": 4489,
+  "novel_subflows": [
+    "manage_pay_bill",
+    "manage_upgrade",
+    "status_active",
+    "status_service_added",
+    "timing"
+  ],
+  "splits": {
+    "dev": {
+      "D_miss_reasons": {
+        "delexicalized_to_empty": 3,
+        "text_absent_from_bank": 5640,
+        "text_in_bank_under_another_act": 10
+      },
+      "by_intent": {
+        "bad_price_competitor": {
+          "A": 0.46411483253588515,
+          "D": 0.46411483253588515,
+          "turns": 209
+        },
+        "bad_price_yesterday": {
+          "A": 0.3509933774834437,
+          "D": 0.3509933774834437,
+          "turns": 151
+        },
+        "boots": {
+          "A": 0.45595854922279794,
+          "D": 0.45595854922279794,
+          "turns": 193
+        },
+        "cost": {
+          "A": 0.43205574912891986,
+          "D": 0.43205574912891986,
+          "turns": 287
+        },
+        "credit_card": {
+          "A": 0.4423076923076923,
+          "D": 0.4423076923076923,
+          "turns": 208
+        },
+        "jacket": {
+          "A": 0.4564102564102564,
+          "D": 0.4564102564102564,
+          "turns": 195
+        },
+        "jeans": {
+          "A": 0.4186046511627907,
+          "D": 0.4186046511627907,
+          "turns": 129
+        },
+        "manage": {
+          "A": 0.4939759036144578,
+          "D": 0.4939759036144578,
+          "turns": 249
+        },
+        "manage_cancel": {
+          "A": 0.42857142857142855,
+          "D": 0.4342857142857143,
+          "turns": 175
+        },
+        "manage_change_address": {
+          "A": 0.24615384615384617,
+          "D": 0.24615384615384617,
+          "turns": 65
+        },
+        "manage_change_name": {
+          "A": 0.3333333333333333,
+          "D": 0.3541666666666667,
+          "turns": 48
+        },
+        "manage_change_phone": {
+          "A": 0.38461538461538464,
+          "D": 0.38461538461538464,
+          "turns": 39
+        },
+        "manage_create": {
+          "A": 0.5034965034965035,
+          "D": 0.5034965034965035,
+          "turns": 143
+        },
+        "manage_dispute_bill": {
+          "A": 0.5018315018315018,
+          "D": 0.5018315018315018,
+          "turns": 273
+        },
+        "manage_downgrade": {
+          "A": 0.5130434782608696,
+          "D": 0.5130434782608696,
+          "turns": 115
+        },
+        "manage_extension": {
+          "A": 0.5782312925170068,
+          "D": 0.5782312925170068,
+          "turns": 147
+        },
+        "manage_payment_method": {
+          "A": 0.3870967741935484,
+          "D": 0.4032258064516129,
+          "turns": 62
+        },
+        "membership": {
+          "A": 0.3992248062015504,
+          "D": 0.3992248062015504,
+          "turns": 258
+        },
+        "missing": {
+          "A": 0.40728476821192056,
+          "D": 0.40728476821192056,
+          "turns": 302
+        },
+        "mistimed_billing_already_returned": {
+          "A": 0.5074626865671642,
+          "D": 0.5074626865671642,
+          "turns": 134
+        },
+        "mistimed_billing_never_bought": {
+          "A": 0.4807692307692308,
+          "D": 0.4807692307692308,
+          "turns": 104
+        },
+        "out_of_stock_general": {
+          "A": 0.35135135135135137,
+          "D": 0.35135135135135137,
+          "turns": 74
+        },
+        "out_of_stock_one_item": {
+          "A": 0.34814814814814815,
+          "D": 0.34814814814814815,
+          "turns": 135
+        },
+        "policy": {
+          "A": 0.48372093023255813,
+          "D": 0.48372093023255813,
+          "turns": 215
+        },
+        "pricing": {
+          "A": 0.5102040816326531,
+          "D": 0.5142857142857142,
+          "turns": 245
+        },
+        "promo_code_invalid": {
+          "A": 0.4298245614035088,
+          "D": 0.4298245614035088,
+          "turns": 114
+        },
+        "promo_code_out_of_date": {
+          "A": 0.4689655172413793,
+          "D": 0.4689655172413793,
+          "turns": 145
+        },
+        "recover_password": {
+          "A": 0.47987616099071206,
+          "D": 0.4891640866873065,
+          "turns": 323
+        },
+        "recover_username": {
+          "A": 0.5100671140939598,
+          "D": 0.5771812080536913,
+          "turns": 298
+        },
+        "refund_initiate": {
+          "A": 0.46408839779005523,
+          "D": 0.47513812154696133,
+          "turns": 181
+        },
+        "refund_status": {
+          "A": 0.4883720930232558,
+          "D": 0.4883720930232558,
+          "turns": 172
+        },
+        "refund_update": {
+          "A": 0.391025641025641,
+          "D": 0.3974358974358974,
+          "turns": 156
+        },
+        "reset_2fa": {
+          "A": 0.43804034582132567,
+          "D": 0.4438040345821326,
+          "turns": 347
+        },
+        "return_color": {
+          "A": 0.4618834080717489,
+          "D": 0.4618834080717489,
+          "turns": 223
+        },
+        "return_size": {
+          "A": 0.571969696969697,
+          "D": 0.571969696969697,
+          "turns": 264
+        },
+        "return_stain": {
+          "A": 0.36607142857142855,
+          "D": 0.36607142857142855,
+          "turns": 112
+        },
+        "search_results": {
+          "A": 0.41295546558704455,
+          "D": 0.41700404858299595,
+          "turns": 247
+        },
+        "shirt": {
+          "A": 0.5102040816326531,
+          "D": 0.5102040816326531,
+          "turns": 196
+        },
+        "shopping_cart": {
+          "A": 0.41935483870967744,
+          "D": 0.41935483870967744,
+          "turns": 217
+        },
+        "slow_speed": {
+          "A": 0.47924528301886793,
+          "D": 0.4830188679245283,
+          "turns": 265
+        },
+        "status": {
+          "A": 0.41784037558685444,
+          "D": 0.4225352112676056,
+          "turns": 213
+        },
+        "status_credit_missing": {
+          "A": 0.4330708661417323,
+          "D": 0.4409448818897638,
+          "turns": 127
+        },
+        "status_delivery_time": {
+          "A": 0.3917525773195876,
+          "D": 0.3917525773195876,
+          "turns": 194
+        },
+        "status_due_amount": {
+          "A": 0.4041095890410959,
+          "D": 0.4178082191780822,
+          "turns": 292
+        },
+        "status_due_date": {
+          "A": 0.4713375796178344,
+          "D": 0.49044585987261147,
+          "turns": 157
+        },
+        "status_mystery_fee": {
+          "A": 0.49206349206349204,
+          "D": 0.49206349206349204,
+          "turns": 63
+        },
+        "status_payment_method": {
+          "A": 0.41148325358851673,
+          "D": 0.41626794258373206,
+          "turns": 209
+        },
+        "status_quantity": {
+          "A": 0.5144927536231884,
+          "D": 0.5144927536231884,
+          "turns": 138
+        },
+        "status_service_removed": {
+          "A": 0.3717948717948718,
+          "D": 0.38461538461538464,
+          "turns": 78
+        },
+        "status_shipping_question": {
+          "A": 0.48148148148148145,
+          "D": 0.48148148148148145,
+          "turns": 135
+        }
+      },
+      "by_n_sentences": {
+        "1": {
+          "A": 0.48368080517613227,
+          "D": 0.489000718907261,
+          "turns": 6955
+        },
+        "2": {
+          "A": 0.3772357723577236,
+          "D": 0.3815718157181572,
+          "turns": 1845
+        },
+        "3": {
+          "A": 0.095,
+          "D": 0.095,
+          "turns": 200
+        },
+        "4": {
+          "A": 0.0,
+          "D": 0.0,
+          "turns": 20
+        },
+        "5": {
+          "A": 0.0,
+          "D": 0.0,
+          "turns": 1
+        }
+      },
+      "delex": {
+        "sentences_delexicalized_to_empty": 3,
+        "sentences_whose_act_flipped": 26,
+        "sentences_whose_text_changed": 151
+      },
+      "mean_turn_chars": 51.009755016073605,
+      "n_convos": 941,
+      "n_raw_sentences": 11330,
+      "n_retrieve_turns": 9021,
+      "position_flips_A_to_D": {
+        "A_hit_D_miss": 0,
+        "A_miss_D_hit": 48
+      },
+      "sentences_per_turn": 1.2559583194767765,
+      "variants": {
+        "A": {
+          "n_positions": 11330,
+          "n_positions_with_gold": 5629,
+          "n_turns": 9021,
+          "sentence_coverage": 0.4968225948808473,
+          "turn_coverage": 0.4521671655027159,
+          "turns_fully_covered": 4079
+        },
+        "B": {
+          "n_positions": 11330,
+          "n_positions_with_gold": 5671,
+          "n_turns": 9021,
+          "sentence_coverage": 0.5005295675198588,
+          "turn_coverage": 0.4563795588072276,
+          "turns_fully_covered": 4117
+        },
+        "C": {
+          "n_positions": 11330,
+          "n_positions_with_gold": 5677,
+          "n_turns": 9021,
+          "sentence_coverage": 0.5010591350397176,
+          "turn_coverage": 0.456933821084137,
+          "turns_fully_covered": 4122
+        },
+        "D": {
+          "n_positions": 11327,
+          "n_positions_with_gold": 5677,
+          "n_turns": 9021,
+          "sentence_coverage": 0.5011918425002208,
+          "turn_coverage": 0.4571555259949008,
+          "turns_fully_covered": 4124
+        }
+      }
+    },
+    "test_novel": {
+      "D_miss_reasons": {
+        "text_absent_from_bank": 425,
+        "text_in_bank_under_another_act": 1
+      },
+      "by_intent": {
+        "manage_pay_bill": {
+          "A": 0.43575418994413406,
+          "D": 0.43575418994413406,
+          "turns": 179
+        },
+        "manage_upgrade": {
+          "A": 0.5212765957446809,
+          "D": 0.5212765957446809,
+          "turns": 94
+        },
+        "status_active": {
+          "A": 0.34375,
+          "D": 0.34375,
+          "turns": 32
+        },
+        "status_service_added": {
+          "A": 0.41496598639455784,
+          "D": 0.41496598639455784,
+          "turns": 147
+        },
+        "timing": {
+          "A": 0.4482758620689655,
+          "D": 0.4482758620689655,
+          "turns": 203
+        }
+      },
+      "by_n_sentences": {
+        "1": {
+          "A": 0.4742063492063492,
+          "D": 0.4742063492063492,
+          "turns": 504
+        },
+        "2": {
+          "A": 0.3798449612403101,
+          "D": 0.3798449612403101,
+          "turns": 129
+        },
+        "3": {
+          "A": 0.1111111111111111,
+          "D": 0.1111111111111111,
+          "turns": 18
+        },
+        "4": {
+          "A": 0.0,
+          "D": 0.0,
+          "turns": 4
+        }
+      },
+      "delex": {
+        "sentences_delexicalized_to_empty": 0,
+        "sentences_whose_act_flipped": 0,
+        "sentences_whose_text_changed": 2
+      },
+      "mean_turn_chars": 48.587786259541986,
+      "n_convos": 72,
+      "n_raw_sentences": 832,
+      "n_retrieve_turns": 655,
+      "position_flips_A_to_D": {
+        "A_hit_D_miss": 0,
+        "A_miss_D_hit": 1
+      },
+      "sentences_per_turn": 1.2702290076335878,
+      "variants": {
+        "A": {
+          "n_positions": 832,
+          "n_positions_with_gold": 405,
+          "n_turns": 655,
+          "sentence_coverage": 0.48677884615384615,
+          "turn_coverage": 0.44274809160305345,
+          "turns_fully_covered": 290
+        },
+        "B": {
+          "n_positions": 832,
+          "n_positions_with_gold": 406,
+          "n_turns": 655,
+          "sentence_coverage": 0.4879807692307692,
+          "turn_coverage": 0.44274809160305345,
+          "turns_fully_covered": 290
+        },
+        "C": {
+          "n_positions": 832,
+          "n_positions_with_gold": 406,
+          "n_turns": 655,
+          "sentence_coverage": 0.4879807692307692,
+          "turn_coverage": 0.44274809160305345,
+          "turns_fully_covered": 290
+        },
+        "D": {
+          "n_positions": 832,
+          "n_positions_with_gold": 406,
+          "n_turns": 655,
+          "sentence_coverage": 0.4879807692307692,
+          "turn_coverage": 0.44274809160305345,
+          "turns_fully_covered": 290
+        }
+      }
+    },
+    "test_seen": {
+      "D_miss_reasons": {
+        "delexicalized_to_empty": 1,
+        "text_absent_from_bank": 5577,
+        "text_in_bank_under_another_act": 18
+      },
+      "by_intent": {
+        "bad_price_competitor": {
+          "A": 0.3466666666666667,
+          "D": 0.3466666666666667,
+          "turns": 150
+        },
+        "bad_price_yesterday": {
+          "A": 0.47023809523809523,
+          "D": 0.47023809523809523,
+          "turns": 168
+        },
+        "boots": {
+          "A": 0.5329341317365269,
+          "D": 0.5329341317365269,
+          "turns": 167
+        },
+        "cost": {
+          "A": 0.4689265536723164,
+          "D": 0.4689265536723164,
+          "turns": 177
+        },
+        "credit_card": {
+          "A": 0.4174757281553398,
+          "D": 0.4174757281553398,
+          "turns": 206
+        },
+        "jacket": {
+          "A": 0.47305389221556887,
+          "D": 0.47305389221556887,
+          "turns": 167
+        },
+        "jeans": {
+          "A": 0.3953488372093023,
+          "D": 0.3953488372093023,
+          "turns": 172
+        },
+        "manage": {
+          "A": 0.5170068027210885,
+          "D": 0.5170068027210885,
+          "turns": 294
+        },
+        "manage_cancel": {
+          "A": 0.46616541353383456,
+          "D": 0.47368421052631576,
+          "turns": 133
+        },
+        "manage_change_address": {
+          "A": 0.35,
+          "D": 0.35,
+          "turns": 40
+        },
+        "manage_change_name": {
+          "A": 0.38095238095238093,
+          "D": 0.38095238095238093,
+          "turns": 63
+        },
+        "manage_change_phone": {
+          "A": 0.3958333333333333,
+          "D": 0.3958333333333333,
+          "turns": 48
+        },
+        "manage_create": {
+          "A": 0.48484848484848486,
+          "D": 0.48484848484848486,
+          "turns": 198
+        },
+        "manage_dispute_bill": {
+          "A": 0.47738693467336685,
+          "D": 0.47738693467336685,
+          "turns": 199
+        },
+        "manage_downgrade": {
+          "A": 0.49645390070921985,
+          "D": 0.49645390070921985,
+          "turns": 141
+        },
+        "manage_extension": {
+          "A": 0.46938775510204084,
+          "D": 0.46938775510204084,
+          "turns": 245
+        },
+        "manage_payment_method": {
+          "A": 0.4838709677419355,
+          "D": 0.4838709677419355,
+          "turns": 31
+        },
+        "membership": {
+          "A": 0.42391304347826086,
+          "D": 0.42391304347826086,
+          "turns": 184
+        },
+        "missing": {
+          "A": 0.4343065693430657,
+          "D": 0.43795620437956206,
+          "turns": 274
+        },
+        "mistimed_billing_already_returned": {
+          "A": 0.3983739837398374,
+          "D": 0.3983739837398374,
+          "turns": 123
+        },
+        "mistimed_billing_never_bought": {
+          "A": 0.3942307692307692,
+          "D": 0.3942307692307692,
+          "turns": 104
+        },
+        "out_of_stock_general": {
+          "A": 0.44029850746268656,
+          "D": 0.44029850746268656,
+          "turns": 134
+        },
+        "out_of_stock_one_item": {
+          "A": 0.4092827004219409,
+          "D": 0.4092827004219409,
+          "turns": 237
+        },
+        "policy": {
+          "A": 0.4901185770750988,
+          "D": 0.4901185770750988,
+          "turns": 253
+        },
+        "pricing": {
+          "A": 0.49101796407185627,
+          "D": 0.49101796407185627,
+          "turns": 167
+        },
+        "promo_code_invalid": {
+          "A": 0.41904761904761906,
+          "D": 0.41904761904761906,
+          "turns": 105
+        },
+        "promo_code_out_of_date": {
+          "A": 0.4857142857142857,
+          "D": 0.4857142857142857,
+          "turns": 70
+        },
+        "recover_password": {
+          "A": 0.44717444717444715,
+          "D": 0.4692874692874693,
+          "turns": 407
+        },
+        "recover_username": {
+          "A": 0.5603448275862069,
+          "D": 0.6206896551724138,
+          "turns": 232
+        },
+        "refund_initiate": {
+          "A": 0.37872340425531914,
+          "D": 0.37872340425531914,
+          "turns": 235
+        },
+        "refund_status": {
+          "A": 0.5652173913043478,
+          "D": 0.5652173913043478,
+          "turns": 138
+        },
+        "refund_update": {
+          "A": 0.4840764331210191,
+          "D": 0.4968152866242038,
+          "turns": 157
+        },
+        "reset_2fa": {
+          "A": 0.4421768707482993,
+          "D": 0.445578231292517,
+          "turns": 294
+        },
+        "return_color": {
+          "A": 0.45955882352941174,
+          "D": 0.45955882352941174,
+          "turns": 272
+        },
+        "return_size": {
+          "A": 0.4652173913043478,
+          "D": 0.4652173913043478,
+          "turns": 230
+        },
+        "return_stain": {
+          "A": 0.37735849056603776,
+          "D": 0.37735849056603776,
+          "turns": 159
+        },
+        "search_results": {
+          "A": 0.4022346368715084,
+          "D": 0.40502793296089384,
+          "turns": 358
+        },
+        "shirt": {
+          "A": 0.46303501945525294,
+          "D": 0.46303501945525294,
+          "turns": 257
+        },
+        "shopping_cart": {
+          "A": 0.5126050420168067,
+          "D": 0.5126050420168067,
+          "turns": 119
+        },
+        "slow_speed": {
+          "A": 0.38866396761133604,
+          "D": 0.39271255060728744,
+          "turns": 247
+        },
+        "status": {
+          "A": 0.42679127725856697,
+          "D": 0.42679127725856697,
+          "turns": 321
+        },
+        "status_credit_missing": {
+          "A": 0.3584905660377358,
+          "D": 0.3584905660377358,
+          "turns": 106
+        },
+        "status_delivery_time": {
+          "A": 0.3924731182795699,
+          "D": 0.3924731182795699,
+          "turns": 186
+        },
+        "status_due_amount": {
+          "A": 0.5055555555555555,
+          "D": 0.5166666666666667,
+          "turns": 180
+        },
+        "status_due_date": {
+          "A": 0.4172661870503597,
+          "D": 0.4172661870503597,
+          "turns": 139
+        },
+        "status_mystery_fee": {
+          "A": 0.5072463768115942,
+          "D": 0.5072463768115942,
+          "turns": 138
+        },
+        "status_payment_method": {
+          "A": 0.5,
+          "D": 0.5,
+          "turns": 104
+        },
+        "status_quantity": {
+          "A": 0.49122807017543857,
+          "D": 0.49122807017543857,
+          "turns": 114
+        },
+        "status_service_removed": {
+          "A": 0.30864197530864196,
+          "D": 0.30864197530864196,
+          "turns": 162
+        },
+        "status_shipping_question": {
+          "A": 0.4523809523809524,
+          "D": 0.4523809523809524,
+          "turns": 84
+        }
+      },
+      "by_n_sentences": {
+        "1": {
+          "A": 0.47698080531101167,
+          "D": 0.4808774714966085,
+          "turns": 6929
+        },
+        "2": {
+          "A": 0.3790924755887421,
+          "D": 0.3819643882825962,
+          "turns": 1741
+        },
+        "3": {
+          "A": 0.1,
+          "D": 0.1,
+          "turns": 200
+        },
+        "4": {
+          "A": 0.0,
+          "D": 0.0,
+          "turns": 15
+        },
+        "5": {
+          "A": 0.0,
+          "D": 0.0,
+          "turns": 4
+        }
+      },
+      "delex": {
+        "sentences_delexicalized_to_empty": 1,
+        "sentences_whose_act_flipped": 22,
+        "sentences_whose_text_changed": 119
+      },
+      "mean_turn_chars": 50.89402632467094,
+      "n_convos": 932,
+      "n_raw_sentences": 11092,
+      "n_retrieve_turns": 8889,
+      "position_flips_A_to_D": {
+        "A_hit_D_miss": 0,
+        "A_miss_D_hit": 39
+      },
+      "sentences_per_turn": 1.247834402069974,
+      "variants": {
+        "A": {
+          "n_positions": 11092,
+          "n_positions_with_gold": 5457,
+          "n_turns": 8889,
+          "sentence_coverage": 0.4919761990623873,
+          "turn_coverage": 0.44830689616379793,
+          "turns_fully_covered": 3985
+        },
+        "B": {
+          "n_positions": 11092,
+          "n_positions_with_gold": 5487,
+          "n_turns": 8889,
+          "sentence_coverage": 0.4946808510638298,
+          "turn_coverage": 0.4511193610079874,
+          "turns_fully_covered": 4010
+        },
+        "C": {
+          "n_positions": 11092,
+          "n_positions_with_gold": 5496,
+          "n_turns": 8889,
+          "sentence_coverage": 0.49549224666426256,
+          "turn_coverage": 0.45190685116436047,
+          "turns_fully_covered": 4017
+        },
+        "D": {
+          "n_positions": 11091,
+          "n_positions_with_gold": 5496,
+          "n_turns": 8889,
+          "sentence_coverage": 0.4955369218285096,
+          "turn_coverage": 0.45190685116436047,
+          "turns_fully_covered": 4017
+        }
+      }
+    }
+  },
+  "variants": {
+    "A": "SHIPPED  act(raw) x norm(raw) x keep-all  == train._derive_turn_labels",
+    "B": "act(raw) x norm(delex) x keep-all",
+    "C": "act(delex) x norm(delex) x keep-all",
+    "D": "TRAIN-PROC act(delex) x norm(delex) x drop-empty-delex, denom = all retrieve turns"
+  }
+}

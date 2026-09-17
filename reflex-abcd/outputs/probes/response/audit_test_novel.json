@@ -1,0 +1,100 @@
+{
+  "audit": {
+    "WARNING_window_capped": null,
+    "bank_hash": "c270df0e249444bb",
+    "context_turns_observed_max": 42,
+    "h4": {
+      "denominator_note": "the copy tier is built from context.turns, so the scorable set is a FUNCTION OF THE WINDOW. Cross-window H4 comparisons must be taken on the intersection of the scorable sets; response_metrics does that.",
+      "index_width": 226,
+      "multi_value_share": 0.19375,
+      "multi_value_turns": 31,
+      "n_copy_columns": 100,
+      "n_enumerable_columns": 126,
+      "n_scorable": 0,
+      "n_take_action_turns_with_values": 160,
+      "position_ceiling_note": "train.value_position='first' supervises values[0] only (H4 has no position input; build_train_examples raises on any other setting). Positions b and c of verify-identity / validate-purchase are UNMEASURABLE by H4 as defined.",
+      "scorable_rate": 0.0,
+      "scorable_via_copy": 0,
+      "scorable_via_enumerable": 0,
+      "unscorable_note": "value_target_index returned -1: the gold is neither an enumerable value of one of the action's categories nor a <marker> present in the copy window. The official processor DROPS these for AST; they are unscorable, not wrong."
+    },
+    "h5": {
+      "ceiling_note": "H5's gold is produced by compile.act_labeler (rules_plus_embed), whose accuracy is UNMEASURED -- DECISIONS D15: delex_check.md and act_check.md both carry a blank human tally. Any H5 number is conditional on it.",
+      "gold_oov_rate": 0.004580152671755725,
+      "gold_present": 652,
+      "majority_class": "S0000",
+      "majority_share": 0.19325153374233128,
+      "n_classes": 570,
+      "n_turns": 655,
+      "oov_note": "an act tuple unseen in train. train._gold_index maps it to -1 and models.compute_losses masks it off SILENTLY: it is a ceiling, not an error."
+    },
+    "h7": {
+      "candidates_by_act": {
+        "ACK": 1020,
+        "ASK": 1066,
+        "CLOSE": 268,
+        "CONFIRM": 347,
+        "INFORM": 303,
+        "INSTRUCT": 208,
+        "OFFER": 649,
+        "OTHER": 306,
+        "VERIFY": 322
+      },
+      "gold_present_rate": 0.48677884615384615,
+      "label_space_note": "select._score_templates ranks a position only within templates_by_act[act]. The per-position label space is that act's pool, not the whole bank.",
+      "missing_gold_cause": "compile.min_template_count=2 dropped the sentence's template; TurnLabel.template_ids stores \"\" for it.",
+      "n_positions": 832,
+      "n_positions_with_gold": 405,
+      "n_turns": 655,
+      "positions_by_act": {
+        "ACK": 143,
+        "ASK": 111,
+        "CLOSE": 57,
+        "CONFIRM": 8,
+        "INFORM": 3,
+        "OFFER": 75,
+        "OTHER": 2,
+        "VERIFY": 6
+      },
+      "slot_bearing_templates": 71,
+      "turns_fully_covered": 290,
+      "turns_fully_covered_rate": 0.44274809160305345,
+      "turns_partly_covered": 55
+    },
+    "loader_context_turns_K": "full",
+    "split": "test_novel"
+  },
+  "dev_gold_provenance": {
+    "delexicalizes": false,
+    "documented_asymmetry": "train golds are delex-vs-delex; derived dev golds match a RAW sentence against DELEXICALIZED template text. Only slot-bearing templates can be affected; the harness reports how many of the bank's templates bear a slot so the bound is explicit rather than quoted from a stale comment.",
+    "extends_bank": false,
+    "function": "reflex.train._derive_turn_labels",
+    "unmatched_sentence_gold": "\"\" (empty string), i.e. no gold, not a wrong gold"
+  },
+  "label_provenance": "reflex.train._derive_turn_labels (NO delexicalization -- see probes.response_labels)",
+  "label_spaces": {
+    "bank_hash": "c270df0e249444bb",
+    "h4_n_enumerable": 126,
+    "h4_value_context_len": 100,
+    "h4_width": 226,
+    "h5_n_classes": 570,
+    "h7_n_candidates_by_act": {
+      "ACK": 1020,
+      "ASK": 1066,
+      "CLOSE": 268,
+      "CONFIRM": 347,
+      "INFORM": 303,
+      "INSTRUCT": 208,
+      "OFFER": 649,
+      "OTHER": 306,
+      "VERIFY": 322
+    },
+    "h7_n_templates_total": 4489
+  },
+  "normalizer_drift": {
+    "disagreements": [],
+    "n_probes": 14,
+    "note": "compile._normalize_for_dedup builds TRAIN golds; train._normalize_for_match builds DERIVED dev/test golds. Drift silently lowers dev H7 coverage only.",
+    "ok": true
+  }
+}

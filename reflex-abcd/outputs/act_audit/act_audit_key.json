@@ -1,0 +1,981 @@
+{
+ "bank_hash": "c270df0e249444bb",
+ "n_draws_per_stratum": 30,
+ "total_bank_occurrences": 58263,
+ "strata": {
+  "A": {
+   "name": "A  rule:30 catch-all  (sentence ends in \"?\" -> ASK)",
+   "weight": 0.2240015103925304,
+   "templates": 829,
+   "occurrences": 13051
+  },
+  "B": {
+   "name": "B  embedding tier     (no cue rule matched; nearest act centroid, floor 0.25)",
+   "weight": 0.16847742134802535,
+   "templates": 1926,
+   "occurrences": 9816
+  },
+  "C": {
+   "name": "C  ASK / VERIFY line  (identity-request and \\bverif rules 3-7, 28, 29)",
+   "weight": 0.1094691313526595,
+   "templates": 272,
+   "occurrences": 6378
+  },
+  "D": {
+   "name": "D  other cue rules    (ACK / CLOSE / OFFER / CONFIRM / INSTRUCT)",
+   "weight": 0.49805193690678473,
+   "templates": 1462,
+   "occurrences": 29018
+  }
+ },
+ "rows": [
+  {
+   "stratum": "C",
+   "tid": "T001729",
+   "act": "VERIFY",
+   "draws": 1,
+   "decoy": false,
+   "n": 1,
+   "text": "and you also want to cancel the order right?"
+  },
+  {
+   "stratum": "B",
+   "tid": "T000211",
+   "act": "CONFIRM",
+   "draws": 1,
+   "decoy": false,
+   "n": 2,
+   "text": "i was able to pull up your account."
+  },
+  {
+   "stratum": "C",
+   "tid": "T000029",
+   "act": "ASK",
+   "draws": 1,
+   "decoy": false,
+   "n": 3,
+   "text": "could i get your name or account id?"
+  },
+  {
+   "stratum": "B",
+   "tid": "T000268",
+   "act": "INFORM",
+   "draws": 1,
+   "decoy": false,
+   "n": 4,
+   "text": "by mail, in store or drop off center"
+  },
+  {
+   "stratum": "B",
+   "tid": "T000382",
+   "act": "VERIFY",
+   "draws": 1,
+   "decoy": false,
+   "n": 5,
+   "text": "i'll also need your account and order id."
+  },
+  {
+   "stratum": "B",
+   "tid": "T003485",
+   "act": "OTHER",
+   "draws": 1,
+   "decoy": false,
+   "n": 6,
+   "text": "it's actually attached to the collar with 5 buttons so you just unbutton it."
+  },
+  {
+   "stratum": "A",
+   "tid": "T000000",
+   "act": "ASK",
+   "draws": 5,
+   "decoy": false,
+   "n": 7,
+   "text": "hello, how can i help you today?"
+  },
+  {
+   "stratum": "A",
+   "tid": "T000060",
+   "act": "ASK",
+   "draws": 1,
+   "decoy": false,
+   "n": 8,
+   "text": "acmebrands, how may i help you?"
+  },
+  {
+   "stratum": "B",
+   "tid": "T001825",
+   "act": "INFORM",
+   "draws": 0,
+   "decoy": true,
+   "true_act": "OTHER",
+   "n": 9,
+   "text": "for example..."
+  },
+  {
+   "stratum": "A",
+   "tid": "T001358",
+   "act": "ASK",
+   "draws": 1,
+   "decoy": false,
+   "n": 10,
+   "text": "credit?"
+  },
+  {
+   "stratum": "C",
+   "tid": "T000081",
+   "act": "ASK",
+   "draws": 1,
+   "decoy": false,
+   "n": 11,
+   "text": "first i need your full name to pull up your account"
+  },
+  {
+   "stratum": "D",
+   "tid": "T000148",
+   "act": "ACK",
+   "draws": 1,
+   "decoy": false,
+   "n": 12,
+   "text": "i understand."
+  },
+  {
+   "stratum": "A",
+   "tid": "T000026",
+   "act": "ASK",
+   "draws": 1,
+   "decoy": false,
+   "n": 13,
+   "text": "how may i help you?"
+  },
+  {
+   "stratum": "B",
+   "tid": "T001065",
+   "act": "INSTRUCT",
+   "draws": 1,
+   "decoy": false,
+   "n": 14,
+   "text": "you should be able to log in now"
+  },
+  {
+   "stratum": "B",
+   "tid": "T003082",
+   "act": "VERIFY",
+   "draws": 1,
+   "decoy": false,
+   "n": 15,
+   "text": "i can certainly help you recover your username."
+  },
+  {
+   "stratum": "D",
+   "tid": "T000225",
+   "act": "OFFER",
+   "draws": 1,
+   "decoy": false,
+   "n": 16,
+   "text": "may i help you with anything else?"
+  },
+  {
+   "stratum": "C",
+   "tid": "T000079",
+   "act": "ASK",
+   "draws": 1,
+   "decoy": false,
+   "n": 17,
+   "text": "to generate a shipping label for you, may i get your full address, please?"
+  },
+  {
+   "stratum": "D",
+   "tid": "T002004",
+   "act": "ACK",
+   "draws": 1,
+   "decoy": false,
+   "n": 18,
+   "text": "if i understand correctly, you are asking about a mystery fee on your order?"
+  },
+  {
+   "stratum": "A",
+   "tid": "T000337",
+   "act": "VERIFY",
+   "draws": 0,
+   "decoy": true,
+   "true_act": "ASK",
+   "n": 19,
+   "text": "do you have any other questions?"
+  },
+  {
+   "stratum": "B",
+   "tid": "T000089",
+   "act": "CLOSE",
+   "draws": 1,
+   "decoy": false,
+   "n": 20,
+   "text": "you too!"
+  },
+  {
+   "stratum": "D",
+   "tid": "T000025",
+   "act": "CLOSE",
+   "draws": 1,
+   "decoy": false,
+   "n": 21,
+   "text": "you're welcome! have a great day"
+  },
+  {
+   "stratum": "B",
+   "tid": "T000111",
+   "act": "CLOSE",
+   "draws": 1,
+   "decoy": false,
+   "n": 22,
+   "text": "ok, i'll end this chat now"
+  },
+  {
+   "stratum": "C",
+   "tid": "T000046",
+   "act": "VERIFY",
+   "draws": 2,
+   "decoy": false,
+   "n": 23,
+   "text": "could i have your account id and order id to verify your identity?"
+  },
+  {
+   "stratum": "D",
+   "tid": "T000156",
+   "act": "OFFER",
+   "draws": 1,
+   "decoy": false,
+   "n": 24,
+   "text": "i can look into that for you."
+  },
+  {
+   "stratum": "B",
+   "tid": "T000229",
+   "act": "INFORM",
+   "draws": 1,
+   "decoy": false,
+   "n": 25,
+   "text": "gold members get unlimited refunds and will always be given the benefit of the doubt in transactions."
+  },
+  {
+   "stratum": "D",
+   "tid": "T000008",
+   "act": "ACK",
+   "draws": 1,
+   "decoy": false,
+   "n": 26,
+   "text": "you're welcome."
+  },
+  {
+   "stratum": "C",
+   "tid": "T003585",
+   "act": "ASK",
+   "draws": 1,
+   "decoy": false,
+   "n": 27,
+   "text": "may i ask your mother's maiden name?"
+  },
+  {
+   "stratum": "A",
+   "tid": "T000965",
+   "act": "ASK",
+   "draws": 1,
+   "decoy": false,
+   "n": 28,
+   "text": "hello, can i help you?"
+  },
+  {
+   "stratum": "D",
+   "tid": "T001125",
+   "act": "CONFIRM",
+   "draws": 0,
+   "decoy": true,
+   "true_act": "ACK",
+   "n": 29,
+   "text": "great! i'm glad that worked for you."
+  },
+  {
+   "stratum": "B",
+   "tid": "T000461",
+   "act": "ACK",
+   "draws": 0,
+   "decoy": true,
+   "true_act": "CONFIRM",
+   "n": 30,
+   "text": "i was able to validate your purchase."
+  },
+  {
+   "stratum": "D",
+   "tid": "T000227",
+   "act": "OFFER",
+   "draws": 1,
+   "decoy": false,
+   "n": 31,
+   "text": "ok. i can help."
+  },
+  {
+   "stratum": "D",
+   "tid": "T000001",
+   "act": "OFFER",
+   "draws": 3,
+   "decoy": false,
+   "n": 32,
+   "text": "is there anything else i can help you with today?"
+  },
+  {
+   "stratum": "D",
+   "tid": "T000024",
+   "act": "ACK",
+   "draws": 2,
+   "decoy": false,
+   "n": 33,
+   "text": "i'm sorry to hear that."
+  },
+  {
+   "stratum": "D",
+   "tid": "T000087",
+   "act": "ACK",
+   "draws": 1,
+   "decoy": false,
+   "n": 34,
+   "text": "alright."
+  },
+  {
+   "stratum": "B",
+   "tid": "T000464",
+   "act": "INFORM",
+   "draws": 1,
+   "decoy": false,
+   "n": 35,
+   "text": "i will go ahead and write up a report to let the purchasing department know about this issue so they can work to resolve it."
+  },
+  {
+   "stratum": "D",
+   "tid": "T000047",
+   "act": "ACK",
+   "draws": 1,
+   "decoy": false,
+   "n": 36,
+   "text": "welcome to acmebrands."
+  },
+  {
+   "stratum": "A",
+   "tid": "T000110",
+   "act": "ASK",
+   "draws": 2,
+   "decoy": false,
+   "n": 37,
+   "text": "hi, what can i do for you?"
+  },
+  {
+   "stratum": "D",
+   "tid": "T000142",
+   "act": "ACK",
+   "draws": 1,
+   "decoy": false,
+   "n": 38,
+   "text": "okay, let me look into that for you."
+  },
+  {
+   "stratum": "B",
+   "tid": "T001821",
+   "act": "OFFER",
+   "draws": 0,
+   "decoy": true,
+   "true_act": "INSTRUCT",
+   "n": 39,
+   "text": "first you will need to find the five buttons on the collar of your jacket."
+  },
+  {
+   "stratum": "D",
+   "tid": "T000108",
+   "act": "ACK",
+   "draws": 1,
+   "decoy": false,
+   "n": 40,
+   "text": "thanks joyce."
+  },
+  {
+   "stratum": "A",
+   "tid": "T000942",
+   "act": "ASK",
+   "draws": 1,
+   "decoy": false,
+   "n": 41,
+   "text": "can you close all extra tabs and shut down any programs running?"
+  },
+  {
+   "stratum": "A",
+   "tid": "T000074",
+   "act": "ASK",
+   "draws": 2,
+   "decoy": false,
+   "n": 42,
+   "text": "are you still there?"
+  },
+  {
+   "stratum": "B",
+   "tid": "T001182",
+   "act": "OTHER",
+   "draws": 1,
+   "decoy": false,
+   "n": 43,
+   "text": "it's normally easier to break our boots in than other brands."
+  },
+  {
+   "stratum": "C",
+   "tid": "T000009",
+   "act": "ASK",
+   "draws": 2,
+   "decoy": false,
+   "n": 44,
+   "text": "can i have your full name?"
+  },
+  {
+   "stratum": "D",
+   "tid": "T000538",
+   "act": "ACK",
+   "draws": 1,
+   "decoy": false,
+   "n": 45,
+   "text": "i apologize for that."
+  },
+  {
+   "stratum": "A",
+   "tid": "T000481",
+   "act": "ASK",
+   "draws": 1,
+   "decoy": false,
+   "n": 46,
+   "text": "and what is the status of the order?"
+  },
+  {
+   "stratum": "C",
+   "tid": "T002625",
+   "act": "ASK",
+   "draws": 1,
+   "decoy": false,
+   "n": 47,
+   "text": "can i please have your account pin?"
+  },
+  {
+   "stratum": "B",
+   "tid": "T001035",
+   "act": "INFORM",
+   "draws": 1,
+   "decoy": false,
+   "n": 48,
+   "text": "stiching costs 30 cents per character for the first 15 characters, 20 cents per character for the next 15 characters, and 10 cents per character for any additional characters."
+  },
+  {
+   "stratum": "C",
+   "tid": "T000023",
+   "act": "ASK",
+   "draws": 2,
+   "decoy": false,
+   "n": 49,
+   "text": "can i get your username, email address and order id?"
+  },
+  {
+   "stratum": "B",
+   "tid": "T000066",
+   "act": "OFFER",
+   "draws": 2,
+   "decoy": false,
+   "n": 50,
+   "text": "let me help you with that."
+  },
+  {
+   "stratum": "D",
+   "tid": "T000348",
+   "act": "ACK",
+   "draws": 1,
+   "decoy": false,
+   "n": 51,
+   "text": "thank you, one moment please."
+  },
+  {
+   "stratum": "A",
+   "tid": "T000057",
+   "act": "VERIFY",
+   "draws": 0,
+   "decoy": true,
+   "true_act": "ASK",
+   "n": 52,
+   "text": "how may i help?"
+  },
+  {
+   "stratum": "B",
+   "tid": "T003028",
+   "act": "VERIFY",
+   "draws": 1,
+   "decoy": false,
+   "n": 53,
+   "text": "i also need your email address please."
+  },
+  {
+   "stratum": "A",
+   "tid": "T000257",
+   "act": "ASK",
+   "draws": 1,
+   "decoy": false,
+   "n": 54,
+   "text": "what is your email address?"
+  },
+  {
+   "stratum": "B",
+   "tid": "T000157",
+   "act": "ACK",
+   "draws": 1,
+   "decoy": false,
+   "n": 55,
+   "text": "."
+  },
+  {
+   "stratum": "D",
+   "tid": "T000010",
+   "act": "CLOSE",
+   "draws": 2,
+   "decoy": false,
+   "n": 56,
+   "text": "have a nice day!"
+  },
+  {
+   "stratum": "A",
+   "tid": "T000174",
+   "act": "ASK",
+   "draws": 1,
+   "decoy": false,
+   "n": 57,
+   "text": "hello, how can i assist you?"
+  },
+  {
+   "stratum": "B",
+   "tid": "T001472",
+   "act": "INFORM",
+   "draws": 1,
+   "decoy": false,
+   "n": 58,
+   "text": "if you are late paying your subscription, then you will get a late fee of $2 per day past the monthly deadline."
+  },
+  {
+   "stratum": "B",
+   "tid": "T004477",
+   "act": "VERIFY",
+   "draws": 1,
+   "decoy": false,
+   "n": 59,
+   "text": "your username is"
+  },
+  {
+   "stratum": "D",
+   "tid": "T000020",
+   "act": "ACK",
+   "draws": 1,
+   "decoy": false,
+   "n": 60,
+   "text": "thank you for shopping with acmebrands! how may i help you?"
+  },
+  {
+   "stratum": "B",
+   "tid": "T000120",
+   "act": "INSTRUCT",
+   "draws": 1,
+   "decoy": false,
+   "n": 61,
+   "text": "although i cannot retreive your old password i can generate you a new one"
+  },
+  {
+   "stratum": "A",
+   "tid": "T000902",
+   "act": "VERIFY",
+   "draws": 0,
+   "decoy": true,
+   "true_act": "ASK",
+   "n": 62,
+   "text": "what can i do for you?"
+  },
+  {
+   "stratum": "B",
+   "tid": "T001680",
+   "act": "ACK",
+   "draws": 1,
+   "decoy": false,
+   "n": 63,
+   "text": "after a few minutes of inactivity, the chat will close."
+  },
+  {
+   "stratum": "A",
+   "tid": "T000004",
+   "act": "ASK",
+   "draws": 2,
+   "decoy": false,
+   "n": 64,
+   "text": "hello, how can i help you?"
+  },
+  {
+   "stratum": "C",
+   "tid": "T000013",
+   "act": "ASK",
+   "draws": 2,
+   "decoy": false,
+   "n": 65,
+   "text": "can i have your name please?"
+  },
+  {
+   "stratum": "A",
+   "tid": "T000452",
+   "act": "ASK",
+   "draws": 1,
+   "decoy": false,
+   "n": 66,
+   "text": "can i start by getting your name?"
+  },
+  {
+   "stratum": "B",
+   "tid": "T000036",
+   "act": "OFFER",
+   "draws": 2,
+   "decoy": false,
+   "n": 67,
+   "text": "hi how can i help you"
+  },
+  {
+   "stratum": "A",
+   "tid": "T000176",
+   "act": "ASK",
+   "draws": 1,
+   "decoy": false,
+   "n": 68,
+   "text": "has the order already shipped?"
+  },
+  {
+   "stratum": "A",
+   "tid": "T000035",
+   "act": "ASK",
+   "draws": 1,
+   "decoy": false,
+   "n": 69,
+   "text": "what is your order id?"
+  },
+  {
+   "stratum": "D",
+   "tid": "T000128",
+   "act": "ACK",
+   "draws": 1,
+   "decoy": false,
+   "n": 70,
+   "text": "awesome."
+  },
+  {
+   "stratum": "D",
+   "tid": "T000037",
+   "act": "INSTRUCT",
+   "draws": 1,
+   "decoy": false,
+   "n": 71,
+   "text": "can you please try logging out of your account and logging back in?"
+  },
+  {
+   "stratum": "B",
+   "tid": "T000451",
+   "act": "INFORM",
+   "draws": 1,
+   "decoy": false,
+   "n": 72,
+   "text": "and gold members get unlimited refunds"
+  },
+  {
+   "stratum": "C",
+   "tid": "T001952",
+   "act": "VERIFY",
+   "draws": 0,
+   "decoy": true,
+   "true_act": "ASK",
+   "n": 73,
+   "text": "i need your email address"
+  },
+  {
+   "stratum": "B",
+   "tid": "T000135",
+   "act": "CLOSE",
+   "draws": 1,
+   "decoy": false,
+   "n": 74,
+   "text": "great! enjoy the rest of your day"
+  },
+  {
+   "stratum": "D",
+   "tid": "T000002",
+   "act": "ACK",
+   "draws": 2,
+   "decoy": false,
+   "n": 75,
+   "text": "thank you."
+  },
+  {
+   "stratum": "A",
+   "tid": "T000075",
+   "act": "ASK",
+   "draws": 1,
+   "decoy": false,
+   "n": 76,
+   "text": "good afternoon, how can i help you?"
+  },
+  {
+   "stratum": "C",
+   "tid": "T000129",
+   "act": "ASK",
+   "draws": 1,
+   "decoy": false,
+   "n": 77,
+   "text": "can i get your zip code and phone number?"
+  },
+  {
+   "stratum": "C",
+   "tid": "T001093",
+   "act": "ASK",
+   "draws": 0,
+   "decoy": true,
+   "true_act": "VERIFY",
+   "n": 78,
+   "text": "before i can change your payment method, i need to verify your identity."
+  },
+  {
+   "stratum": "D",
+   "tid": "T001312",
+   "act": "ACK",
+   "draws": 0,
+   "decoy": true,
+   "true_act": "CLOSE",
+   "n": 79,
+   "text": "alright then, have a great day."
+  },
+  {
+   "stratum": "A",
+   "tid": "T000040",
+   "act": "ASK",
+   "draws": 1,
+   "decoy": false,
+   "n": 80,
+   "text": "can you try logging out and back in?"
+  },
+  {
+   "stratum": "C",
+   "tid": "T001725",
+   "act": "VERIFY",
+   "draws": 1,
+   "decoy": false,
+   "n": 81,
+   "text": "and to verify your purchase i will need your username and email address."
+  },
+  {
+   "stratum": "C",
+   "tid": "T000015",
+   "act": "ASK",
+   "draws": 5,
+   "decoy": false,
+   "n": 82,
+   "text": "can i have your account id and order id?"
+  },
+  {
+   "stratum": "A",
+   "tid": "T000014",
+   "act": "ASK",
+   "draws": 1,
+   "decoy": false,
+   "n": 83,
+   "text": "what is the shipping status?"
+  },
+  {
+   "stratum": "D",
+   "tid": "T000098",
+   "act": "OFFER",
+   "draws": 1,
+   "decoy": false,
+   "n": 84,
+   "text": "do you need anything else?"
+  },
+  {
+   "stratum": "A",
+   "tid": "T000122",
+   "act": "ASK",
+   "draws": 1,
+   "decoy": false,
+   "n": 85,
+   "text": "what is your name please?"
+  },
+  {
+   "stratum": "A",
+   "tid": "T000032",
+   "act": "ASK",
+   "draws": 2,
+   "decoy": false,
+   "n": 86,
+   "text": "and your username, email, and order id?"
+  },
+  {
+   "stratum": "C",
+   "tid": "T000005",
+   "act": "ASK",
+   "draws": 6,
+   "decoy": false,
+   "n": 87,
+   "text": "could i have your full name or account id?"
+  },
+  {
+   "stratum": "B",
+   "tid": "T004454",
+   "act": "CONFIRM",
+   "draws": 1,
+   "decoy": false,
+   "n": 88,
+   "text": "your account has been successfully updated."
+  },
+  {
+   "stratum": "D",
+   "tid": "T000704",
+   "act": "ACK",
+   "draws": 1,
+   "decoy": false,
+   "n": 89,
+   "text": "thanks for reaching out."
+  },
+  {
+   "stratum": "C",
+   "tid": "T000375",
+   "act": "ASK",
+   "draws": 1,
+   "decoy": false,
+   "n": 90,
+   "text": "can i have your username and email please?"
+  },
+  {
+   "stratum": "D",
+   "tid": "T000190",
+   "act": "ACK",
+   "draws": 1,
+   "decoy": false,
+   "n": 91,
+   "text": "hello and thank you for contacting us today! how can i help you?"
+  },
+  {
+   "stratum": "A",
+   "tid": "T002356",
+   "act": "ASK",
+   "draws": 1,
+   "decoy": false,
+   "n": 92,
+   "text": "you have not received your refund yet?"
+  },
+  {
+   "stratum": "D",
+   "tid": "T000228",
+   "act": "OFFER",
+   "draws": 1,
+   "decoy": false,
+   "n": 93,
+   "text": "sure, i can look into that for you."
+  },
+  {
+   "stratum": "B",
+   "tid": "T003953",
+   "act": "INFORM",
+   "draws": 1,
+   "decoy": false,
+   "n": 94,
+   "text": "so for gift wrapping, it is a fixed price of $4.{amount}."
+  },
+  {
+   "stratum": "D",
+   "tid": "T002243",
+   "act": "CONFIRM",
+   "draws": 0,
+   "decoy": true,
+   "true_act": "ACK",
+   "n": 95,
+   "text": "thank you, i'll also need your account and order id."
+  },
+  {
+   "stratum": "B",
+   "tid": "T003546",
+   "act": "ACK",
+   "draws": 1,
+   "decoy": false,
+   "n": 96,
+   "text": "let's find out."
+  },
+  {
+   "stratum": "C",
+   "tid": "T000061",
+   "act": "ASK",
+   "draws": 1,
+   "decoy": false,
+   "n": 97,
+   "text": "could i have your username, email address and order id to validate your purchase?"
+  },
+  {
+   "stratum": "B",
+   "tid": "T000364",
+   "act": "INFORM",
+   "draws": 1,
+   "decoy": false,
+   "n": 98,
+   "text": "silver members get all the previous perks, can have agents make purchases on their behalf and can cancel orders at any time."
+  },
+  {
+   "stratum": "B",
+   "tid": "T000617",
+   "act": "ACK",
+   "draws": 1,
+   "decoy": false,
+   "n": 99,
+   "text": "oh great."
+  },
+  {
+   "stratum": "C",
+   "tid": "T001618",
+   "act": "VERIFY",
+   "draws": 0,
+   "decoy": true,
+   "true_act": "ASK",
+   "n": 100,
+   "text": "then i need your membership level to proceed further, please."
+  },
+  {
+   "stratum": "C",
+   "tid": "T000336",
+   "act": "ASK",
+   "draws": 1,
+   "decoy": false,
+   "n": 101,
+   "text": "can i get a name please."
+  },
+  {
+   "stratum": "A",
+   "tid": "T000130",
+   "act": "ASK",
+   "draws": 1,
+   "decoy": false,
+   "n": 102,
+   "text": "by mail, in store or at a drop off center?"
+  },
+  {
+   "stratum": "B",
+   "tid": "T001015",
+   "act": "ASK",
+   "draws": 1,
+   "decoy": false,
+   "n": 103,
+   "text": "ok full name please"
+  },
+  {
+   "stratum": "D",
+   "tid": "T000031",
+   "act": "OFFER",
+   "draws": 1,
+   "decoy": false,
+   "n": 104,
+   "text": "is there anything else i can do for you?"
+  }
+ ]
+}

@@ -1,0 +1,1270 @@
+{
+  "all": [
+    {
+      "cells": [
+        {
+          "accuracy": 0.8337066905615292,
+          "cell": "nextstep tagged k6 MAXB=3 (THE headline cell)",
+          "ci": {
+            "half_width_points": 0.6903898289677635,
+            "hi": 0.8403159784263899,
+            "lo": 0.8265081818470347,
+            "n_boot": 1000,
+            "n_clusters": 941,
+            "n_rows": 13392,
+            "note": "clustered by conversation. row_level_binomial_half_width_points is what an independence assumption would have given -- reported so the difference is visible, never as the interval.",
+            "point": 0.8337066905615292,
+            "row_level_binomial_half_width_points": 0.6306340014646794
+          },
+          "in_band": false,
+          "n_eval": 13392,
+          "n_features": 217637,
+          "n_fit": 38795,
+          "spec": "k6/tag3/word",
+          "target_hi": 0.8351,
+          "target_lo": 0.8345
+        },
+        {
+          "accuracy": 0.806526284348865,
+          "cell": "nextstep plain k6",
+          "ci": {
+            "half_width_points": 0.7819939699827749,
+            "hi": 0.8141757592532636,
+            "lo": 0.7985358798536081,
+            "n_boot": 1000,
+            "n_clusters": 941,
+            "n_rows": 13392,
+            "note": "clustered by conversation. row_level_binomial_half_width_points is what an independence assumption would have given -- reported so the difference is visible, never as the interval.",
+            "point": 0.806526284348865,
+            "row_level_binomial_half_width_points": 0.6690423356466626
+          },
+          "in_band": true,
+          "n_eval": 13392,
+          "n_features": 86065,
+          "n_fit": 38795,
+          "spec": "k6/plain",
+          "target_hi": 0.8071,
+          "target_lo": 0.8062
+        },
+        {
+          "accuracy": 0.8297491039426523,
+          "cell": "nextstep tagged full MAXB=3",
+          "ci": {
+            "half_width_points": 0.7120263324640885,
+            "hi": 0.8368458591048445,
+            "lo": 0.8226053324555628,
+            "n_boot": 1000,
+            "n_clusters": 941,
+            "n_rows": 13392,
+            "note": "clustered by conversation. row_level_binomial_half_width_points is what an independence assumption would have given -- reported so the difference is visible, never as the interval.",
+            "point": 0.8297491039426523,
+            "row_level_binomial_half_width_points": 0.636577743237458
+          },
+          "in_band": false,
+          "n_eval": 13392,
+          "n_features": 218250,
+          "n_fit": 38795,
+          "spec": "full/tag3/word",
+          "target_hi": 0.8297,
+          "target_lo": 0.8281
+        },
+        {
+          "accuracy": 0.789799880525687,
+          "cell": "nextstep plain full",
+          "ci": {
+            "half_width_points": 0.9190129772507827,
+            "hi": 0.7989563104441626,
+            "lo": 0.780576050899147,
+            "n_boot": 1000,
+            "n_clusters": 941,
+            "n_rows": 13392,
+            "note": "clustered by conversation. row_level_binomial_half_width_points is what an independence assumption would have given -- reported so the difference is visible, never as the interval.",
+            "point": 0.789799880525687,
+            "row_level_binomial_half_width_points": 0.6900941758863841
+          },
+          "in_band": false,
+          "n_eval": 13392,
+          "n_features": 86091,
+          "n_fit": 38795,
+          "spec": "full/plain",
+          "target_hi": 0.7865,
+          "target_lo": 0.7845
+        },
+        {
+          "accuracy": 0.8262395459976105,
+          "cell": "nextstep tagged k6 MAXB=1",
+          "ci": {
+            "half_width_points": 0.7502496391562086,
+            "hi": 0.8338382347807275,
+            "lo": 0.8188332419976033,
+            "n_boot": 1000,
+            "n_clusters": 941,
+            "n_rows": 13392,
+            "note": "clustered by conversation. row_level_binomial_half_width_points is what an independence assumption would have given -- reported so the difference is visible, never as the interval.",
+            "point": 0.8262395459976105,
+            "row_level_binomial_half_width_points": 0.6417439914905292
+          },
+          "in_band": false,
+          "n_eval": 13392,
+          "n_features": 129395,
+          "n_fit": 38795,
+          "spec": "k6/tag1/word",
+          "target_hi": 0.8317,
+          "target_lo": 0.8297
+        },
+        {
+          "accuracy": 0.8344534050179212,
+          "cell": "nextstep tagged k6 MAXB=2",
+          "ci": {
+            "half_width_points": 0.7289855374834675,
+            "hi": 0.8414387389160823,
+            "lo": 0.826859028166413,
+            "n_boot": 1000,
+            "n_clusters": 941,
+            "n_rows": 13392,
+            "note": "clustered by conversation. row_level_binomial_half_width_points is what an independence assumption would have given -- reported so the difference is visible, never as the interval.",
+            "point": 0.8344534050179212,
+            "row_level_binomial_half_width_points": 0.6294982438129051
+          },
+          "in_band": true,
+          "n_eval": 13392,
+          "n_features": 174180,
+          "n_fit": 38795,
+          "spec": "k6/tag2/word",
+          "target_hi": 0.8355,
+          "target_lo": 0.8335
+        },
+        {
+          "accuracy": 0.8322879330943848,
+          "cell": "nextstep tagged k6 MAXB=4",
+          "ci": {
+            "half_width_points": 0.691076168716348,
+            "hi": 0.8388374255204962,
+            "lo": 0.8250159021461693,
+            "n_boot": 1000,
+            "n_clusters": 941,
+            "n_rows": 13392,
+            "note": "clustered by conversation. row_level_binomial_half_width_points is what an independence assumption would have given -- reported so the difference is visible, never as the interval.",
+            "point": 0.8322879330943848,
+            "row_level_binomial_half_width_points": 0.6327793611717718
+          },
+          "in_band": true,
+          "n_eval": 13392,
+          "n_features": 258531,
+          "n_fit": 38795,
+          "spec": "k6/tag4/word",
+          "target_hi": 0.8328,
+          "target_lo": 0.8308
+        }
+      ],
+      "cells_in_band": 3,
+      "headline_in_band": false,
+      "vectorizer": {
+        "C": 1.0,
+        "alpha": null,
+        "analyzer": "word",
+        "class_weight": null,
+        "classifier": "logreg",
+        "lowercase": true,
+        "max_df": 1.0,
+        "max_features": null,
+        "max_iter": 1000,
+        "min_df": 1,
+        "ngram_range": [
+          1,
+          2
+        ],
+        "sublinear_tf": false
+      }
+    },
+    {
+      "cells": [
+        {
+          "accuracy": 0.8330346475507766,
+          "cell": "nextstep tagged k6 MAXB=3 (THE headline cell)",
+          "ci": {
+            "half_width_points": 0.6961759668222767,
+            "hi": 0.8397660219976117,
+            "lo": 0.8258425026611662,
+            "n_boot": 1000,
+            "n_clusters": 941,
+            "n_rows": 13392,
+            "note": "clustered by conversation. row_level_binomial_half_width_points is what an independence assumption would have given -- reported so the difference is visible, never as the interval.",
+            "point": 0.8330346475507766,
+            "row_level_binomial_half_width_points": 0.6316522722726828
+          },
+          "in_band": false,
+          "n_eval": 13392,
+          "n_features": 125587,
+          "n_fit": 38795,
+          "spec": "k6/tag3/word",
+          "target_hi": 0.8351,
+          "target_lo": 0.8345
+        },
+        {
+          "accuracy": 0.8067502986857825,
+          "cell": "nextstep plain k6",
+          "ci": {
+            "half_width_points": 0.7696283949702731,
+            "hi": 0.8142930290193311,
+            "lo": 0.7989004611199256,
+            "n_boot": 1000,
+            "n_clusters": 941,
+            "n_rows": 13392,
+            "note": "clustered by conversation. row_level_binomial_half_width_points is what an independence assumption would have given -- reported so the difference is visible, never as the interval.",
+            "point": 0.8067502986857825,
+            "row_level_binomial_half_width_points": 0.6687477504459497
+          },
+          "in_band": true,
+          "n_eval": 13392,
+          "n_features": 83709,
+          "n_fit": 38795,
+          "spec": "k6/plain",
+          "target_hi": 0.8071,
+          "target_lo": 0.8062
+        },
+        {
+          "accuracy": 0.8281810035842294,
+          "cell": "nextstep tagged full MAXB=3",
+          "ci": {
+            "half_width_points": 0.7106384268668886,
+            "hi": 0.8352873630720811,
+            "lo": 0.8210745945347433,
+            "n_boot": 1000,
+            "n_clusters": 941,
+            "n_rows": 13392,
+            "note": "clustered by conversation. row_level_binomial_half_width_points is what an independence assumption would have given -- reported so the difference is visible, never as the interval.",
+            "point": 0.8281810035842294,
+            "row_level_binomial_half_width_points": 0.6388980643471049
+          },
+          "in_band": true,
+          "n_eval": 13392,
+          "n_features": 135010,
+          "n_fit": 38795,
+          "spec": "full/tag3/word",
+          "target_hi": 0.8297,
+          "target_lo": 0.8281
+        },
+        {
+          "accuracy": 0.7889038231780168,
+          "cell": "nextstep plain full",
+          "ci": {
+            "half_width_points": 0.9338312695718276,
+            "hi": 0.7981366345239724,
+            "lo": 0.7794600091325359,
+            "n_boot": 1000,
+            "n_clusters": 941,
+            "n_rows": 13392,
+            "note": "clustered by conversation. row_level_binomial_half_width_points is what an independence assumption would have given -- reported so the difference is visible, never as the interval.",
+            "point": 0.7889038231780168,
+            "row_level_binomial_half_width_points": 0.6911710915106968
+          },
+          "in_band": false,
+          "n_eval": 13392,
+          "n_features": 84179,
+          "n_fit": 38795,
+          "spec": "full/plain",
+          "target_hi": 0.7865,
+          "target_lo": 0.7845
+        },
+        {
+          "accuracy": 0.8261648745519713,
+          "cell": "nextstep tagged k6 MAXB=1",
+          "ci": {
+            "half_width_points": 0.7407182404611412,
+            "hi": 0.8336473065195696,
+            "lo": 0.8188329417103468,
+            "n_boot": 1000,
+            "n_clusters": 941,
+            "n_rows": 13392,
+            "note": "clustered by conversation. row_level_binomial_half_width_points is what an independence assumption would have given -- reported so the difference is visible, never as the interval.",
+            "point": 0.8261648745519713,
+            "row_level_binomial_half_width_points": 0.6418528618138577
+          },
+          "in_band": false,
+          "n_eval": 13392,
+          "n_features": 100788,
+          "n_fit": 38795,
+          "spec": "k6/tag1/word",
+          "target_hi": 0.8317,
+          "target_lo": 0.8297
+        },
+        {
+          "accuracy": 0.8353494623655914,
+          "cell": "nextstep tagged k6 MAXB=2",
+          "ci": {
+            "half_width_points": 0.7263463272434267,
+            "hi": 0.842462434058997,
+            "lo": 0.8279355075141285,
+            "n_boot": 1000,
+            "n_clusters": 941,
+            "n_rows": 13392,
+            "note": "clustered by conversation. row_level_binomial_half_width_points is what an independence assumption would have given -- reported so the difference is visible, never as the interval.",
+            "point": 0.8353494623655914,
+            "row_level_binomial_half_width_points": 0.6281292626184908
+          },
+          "in_band": true,
+          "n_eval": 13392,
+          "n_features": 115726,
+          "n_fit": 38795,
+          "spec": "k6/tag2/word",
+          "target_hi": 0.8355,
+          "target_lo": 0.8335
+        },
+        {
+          "accuracy": 0.8319145758661888,
+          "cell": "nextstep tagged k6 MAXB=4",
+          "ci": {
+            "half_width_points": 0.6842321600313117,
+            "hi": 0.8384270322420851,
+            "lo": 0.8247423890414589,
+            "n_boot": 1000,
+            "n_clusters": 941,
+            "n_rows": 13392,
+            "note": "clustered by conversation. row_level_binomial_half_width_points is what an independence assumption would have given -- reported so the difference is visible, never as the interval.",
+            "point": 0.8319145758661888,
+            "row_level_binomial_half_width_points": 0.6333412064220043
+          },
+          "in_band": true,
+          "n_eval": 13392,
+          "n_features": 128785,
+          "n_fit": 38795,
+          "spec": "k6/tag4/word",
+          "target_hi": 0.8328,
+          "target_lo": 0.8308
+        }
+      ],
+      "cells_in_band": 4,
+      "headline_in_band": false,
+      "vectorizer": {
+        "C": 1.0,
+        "alpha": null,
+        "analyzer": "word",
+        "class_weight": null,
+        "classifier": "logreg",
+        "lowercase": true,
+        "max_df": 1.0,
+        "max_features": null,
+        "max_iter": 1000,
+        "min_df": 2,
+        "ngram_range": [
+          1,
+          2
+        ],
+        "sublinear_tf": false
+      }
+    },
+    {
+      "cells": [
+        {
+          "accuracy": 0.8349761051373955,
+          "cell": "nextstep tagged k6 MAXB=3 (THE headline cell)",
+          "ci": {
+            "half_width_points": 0.6934022473820967,
+            "hi": 0.8417757876486327,
+            "lo": 0.8279077427009908,
+            "n_boot": 1000,
+            "n_clusters": 941,
+            "n_rows": 13392,
+            "note": "clustered by conversation. row_level_binomial_half_width_points is what an independence assumption would have given -- reported so the difference is visible, never as the interval.",
+            "point": 0.8349761051373955,
+            "row_level_binomial_half_width_points": 0.6287004789306073
+          },
+          "in_band": true,
+          "n_eval": 13392,
+          "n_features": 217637,
+          "n_fit": 38795,
+          "spec": "k6/tag3/word",
+          "target_hi": 0.8351,
+          "target_lo": 0.8345
+        },
+        {
+          "accuracy": 0.8117532855436081,
+          "cell": "nextstep plain k6",
+          "ci": {
+            "half_width_points": 0.7645090292642542,
+            "hi": 0.8191065158941293,
+            "lo": 0.8038163353088442,
+            "n_boot": 1000,
+            "n_clusters": 941,
+            "n_rows": 13392,
+            "note": "clustered by conversation. row_level_binomial_half_width_points is what an independence assumption would have given -- reported so the difference is visible, never as the interval.",
+            "point": 0.8117532855436081,
+            "row_level_binomial_half_width_points": 0.6620778841662204
+          },
+          "in_band": false,
+          "n_eval": 13392,
+          "n_features": 86065,
+          "n_fit": 38795,
+          "spec": "k6/plain",
+          "target_hi": 0.8071,
+          "target_lo": 0.8062
+        },
+        {
+          "accuracy": 0.8301971326164874,
+          "cell": "nextstep tagged full MAXB=3",
+          "ci": {
+            "half_width_points": 0.7197725537782473,
+            "hi": 0.8373750868362453,
+            "lo": 0.8229796357606803,
+            "n_boot": 1000,
+            "n_clusters": 941,
+            "n_rows": 13392,
+            "note": "clustered by conversation. row_level_binomial_half_width_points is what an independence assumption would have given -- reported so the difference is visible, never as the interval.",
+            "point": 0.8301971326164874,
+            "row_level_binomial_half_width_points": 0.6359112019587675
+          },
+          "in_band": false,
+          "n_eval": 13392,
+          "n_features": 218250,
+          "n_fit": 38795,
+          "spec": "full/tag3/word",
+          "target_hi": 0.8297,
+          "target_lo": 0.8281
+        },
+        {
+          "accuracy": 0.7974910394265233,
+          "cell": "nextstep plain full",
+          "ci": {
+            "half_width_points": 0.8813266580044832,
+            "hi": 0.806209288551103,
+            "lo": 0.7885827553910133,
+            "n_boot": 1000,
+            "n_clusters": 941,
+            "n_rows": 13392,
+            "note": "clustered by conversation. row_level_binomial_half_width_points is what an independence assumption would have given -- reported so the difference is visible, never as the interval.",
+            "point": 0.7974910394265233,
+            "row_level_binomial_half_width_points": 0.6806414279121604
+          },
+          "in_band": false,
+          "n_eval": 13392,
+          "n_features": 86091,
+          "n_fit": 38795,
+          "spec": "full/plain",
+          "target_hi": 0.7865,
+          "target_lo": 0.7845
+        },
+        {
+          "accuracy": 0.8289277180406213,
+          "cell": "nextstep tagged k6 MAXB=1",
+          "ci": {
+            "half_width_points": 0.724187425938666,
+            "hi": 0.8361071299743471,
+            "lo": 0.8216233814555738,
+            "n_boot": 1000,
+            "n_clusters": 941,
+            "n_rows": 13392,
+            "note": "clustered by conversation. row_level_binomial_half_width_points is what an independence assumption would have given -- reported so the difference is visible, never as the interval.",
+            "point": 0.8289277180406213,
+            "row_level_binomial_half_width_points": 0.6377955816149109
+          },
+          "in_band": false,
+          "n_eval": 13392,
+          "n_features": 129395,
+          "n_fit": 38795,
+          "spec": "k6/tag1/word",
+          "target_hi": 0.8317,
+          "target_lo": 0.8297
+        },
+        {
+          "accuracy": 0.836768219832736,
+          "cell": "nextstep tagged k6 MAXB=2",
+          "ci": {
+            "half_width_points": 0.707538508926997,
+            "hi": 0.843820205326616,
+            "lo": 0.829669435148076,
+            "n_boot": 1000,
+            "n_clusters": 941,
+            "n_rows": 13392,
+            "note": "clustered by conversation. row_level_binomial_half_width_points is what an independence assumption would have given -- reported so the difference is visible, never as the interval.",
+            "point": 0.836768219832736,
+            "row_level_binomial_half_width_points": 0.6259480607122276
+          },
+          "in_band": false,
+          "n_eval": 13392,
+          "n_features": 174180,
+          "n_fit": 38795,
+          "spec": "k6/tag2/word",
+          "target_hi": 0.8355,
+          "target_lo": 0.8335
+        },
+        {
+          "accuracy": 0.834378733572282,
+          "cell": "nextstep tagged k6 MAXB=4",
+          "ci": {
+            "half_width_points": 0.6489272692285275,
+            "hi": 0.8407884248098162,
+            "lo": 0.8278098794252456,
+            "n_boot": 1000,
+            "n_clusters": 941,
+            "n_rows": 13392,
+            "note": "clustered by conversation. row_level_binomial_half_width_points is what an independence assumption would have given -- reported so the difference is visible, never as the interval.",
+            "point": 0.834378733572282,
+            "row_level_binomial_half_width_points": 0.6296120260920384
+          },
+          "in_band": false,
+          "n_eval": 13392,
+          "n_features": 258531,
+          "n_fit": 38795,
+          "spec": "k6/tag4/word",
+          "target_hi": 0.8328,
+          "target_lo": 0.8308
+        }
+      ],
+      "cells_in_band": 1,
+      "headline_in_band": true,
+      "vectorizer": {
+        "C": 1.0,
+        "alpha": null,
+        "analyzer": "word",
+        "class_weight": null,
+        "classifier": "logreg",
+        "lowercase": true,
+        "max_df": 1.0,
+        "max_features": null,
+        "max_iter": 1000,
+        "min_df": 1,
+        "ngram_range": [
+          1,
+          2
+        ],
+        "sublinear_tf": true
+      }
+    },
+    {
+      "cells": [
+        {
+          "accuracy": 0.8329599761051374,
+          "cell": "nextstep tagged k6 MAXB=3 (THE headline cell)",
+          "ci": {
+            "half_width_points": 0.7346022261407459,
+            "hi": 0.8402042343176233,
+            "lo": 0.8255121897948083,
+            "n_boot": 1000,
+            "n_clusters": 941,
+            "n_rows": 13392,
+            "note": "clustered by conversation. row_level_binomial_half_width_points is what an independence assumption would have given -- reported so the difference is visible, never as the interval.",
+            "point": 0.8329599761051374,
+            "row_level_binomial_half_width_points": 0.6317651855754814
+          },
+          "in_band": false,
+          "n_eval": 13392,
+          "n_features": 217637,
+          "n_fit": 38795,
+          "spec": "k6/tag3/word",
+          "target_hi": 0.8351,
+          "target_lo": 0.8345
+        },
+        {
+          "accuracy": 0.7999551971326165,
+          "cell": "nextstep plain k6",
+          "ci": {
+            "half_width_points": 0.865675240392777,
+            "hi": 0.8085154638529021,
+            "lo": 0.7912019590450465,
+            "n_boot": 1000,
+            "n_clusters": 941,
+            "n_rows": 13392,
+            "note": "clustered by conversation. row_level_binomial_half_width_points is what an independence assumption would have given -- reported so the difference is visible, never as the interval.",
+            "point": 0.7999551971326165,
+            "row_level_binomial_half_width_points": 0.6775320121356756
+          },
+          "in_band": false,
+          "n_eval": 13392,
+          "n_features": 86065,
+          "n_fit": 38795,
+          "spec": "k6/plain",
+          "target_hi": 0.8071,
+          "target_lo": 0.8062
+        },
+        {
+          "accuracy": 0.8219832735961768,
+          "cell": "nextstep tagged full MAXB=3",
+          "ci": {
+            "half_width_points": 0.8215894351532749,
+            "hi": 0.8302140227423014,
+            "lo": 0.8137822340392359,
+            "n_boot": 1000,
+            "n_clusters": 941,
+            "n_rows": 13392,
+            "note": "clustered by conversation. row_level_binomial_half_width_points is what an independence assumption would have given -- reported so the difference is visible, never as the interval.",
+            "point": 0.8219832735961768,
+            "row_level_binomial_half_width_points": 0.647881003748146
+          },
+          "in_band": false,
+          "n_eval": 13392,
+          "n_features": 218250,
+          "n_fit": 38795,
+          "spec": "full/tag3/word",
+          "target_hi": 0.8297,
+          "target_lo": 0.8281
+        },
+        {
+          "accuracy": 0.7761350059737157,
+          "cell": "nextstep plain full",
+          "ci": {
+            "half_width_points": 1.0482261508139468,
+            "hi": 0.7868411317820146,
+            "lo": 0.7658766087657357,
+            "n_boot": 1000,
+            "n_clusters": 941,
+            "n_rows": 13392,
+            "note": "clustered by conversation. row_level_binomial_half_width_points is what an independence assumption would have given -- reported so the difference is visible, never as the interval.",
+            "point": 0.7761350059737157,
+            "row_level_binomial_half_width_points": 0.7059843613843488
+          },
+          "in_band": false,
+          "n_eval": 13392,
+          "n_features": 86091,
+          "n_fit": 38795,
+          "spec": "full/plain",
+          "target_hi": 0.7865,
+          "target_lo": 0.7845
+        },
+        {
+          "accuracy": 0.8223566308243727,
+          "cell": "nextstep tagged k6 MAXB=1",
+          "ci": {
+            "half_width_points": 0.7804582708445695,
+            "hi": 0.8299725273133463,
+            "lo": 0.8143633618964549,
+            "n_boot": 1000,
+            "n_clusters": 941,
+            "n_rows": 13392,
+            "note": "clustered by conversation. row_level_binomial_half_width_points is what an independence assumption would have given -- reported so the difference is visible, never as the interval.",
+            "point": 0.8223566308243727,
+            "row_level_binomial_half_width_points": 0.6473482093340209
+          },
+          "in_band": false,
+          "n_eval": 13392,
+          "n_features": 129395,
+          "n_fit": 38795,
+          "spec": "k6/tag1/word",
+          "target_hi": 0.8317,
+          "target_lo": 0.8297
+        },
+        {
+          "accuracy": 0.8344534050179212,
+          "cell": "nextstep tagged k6 MAXB=2",
+          "ci": {
+            "half_width_points": 0.743872503839349,
+            "hi": 0.8419960373571616,
+            "lo": 0.8271185872803746,
+            "n_boot": 1000,
+            "n_clusters": 941,
+            "n_rows": 13392,
+            "note": "clustered by conversation. row_level_binomial_half_width_points is what an independence assumption would have given -- reported so the difference is visible, never as the interval.",
+            "point": 0.8344534050179212,
+            "row_level_binomial_half_width_points": 0.6294982438129051
+          },
+          "in_band": true,
+          "n_eval": 13392,
+          "n_features": 174180,
+          "n_fit": 38795,
+          "spec": "k6/tag2/word",
+          "target_hi": 0.8355,
+          "target_lo": 0.8335
+        },
+        {
+          "accuracy": 0.8322879330943848,
+          "cell": "nextstep tagged k6 MAXB=4",
+          "ci": {
+            "half_width_points": 0.7386414376541972,
+            "hi": 0.8395195622748836,
+            "lo": 0.8247467335217996,
+            "n_boot": 1000,
+            "n_clusters": 941,
+            "n_rows": 13392,
+            "note": "clustered by conversation. row_level_binomial_half_width_points is what an independence assumption would have given -- reported so the difference is visible, never as the interval.",
+            "point": 0.8322879330943848,
+            "row_level_binomial_half_width_points": 0.6327793611717718
+          },
+          "in_band": true,
+          "n_eval": 13392,
+          "n_features": 258531,
+          "n_fit": 38795,
+          "spec": "k6/tag4/word",
+          "target_hi": 0.8328,
+          "target_lo": 0.8308
+        }
+      ],
+      "cells_in_band": 2,
+      "headline_in_band": false,
+      "vectorizer": {
+        "C": 4.0,
+        "alpha": null,
+        "analyzer": "word",
+        "class_weight": null,
+        "classifier": "logreg",
+        "lowercase": true,
+        "max_df": 1.0,
+        "max_features": null,
+        "max_iter": 1000,
+        "min_df": 1,
+        "ngram_range": [
+          1,
+          2
+        ],
+        "sublinear_tf": false
+      }
+    },
+    {
+      "cells": [
+        {
+          "accuracy": 0.8340800477897252,
+          "cell": "nextstep tagged k6 MAXB=3 (THE headline cell)",
+          "ci": {
+            "half_width_points": 0.6905199154909669,
+            "hi": 0.8408902612875413,
+            "lo": 0.827079862977722,
+            "n_boot": 1000,
+            "n_clusters": 941,
+            "n_rows": 13392,
+            "note": "clustered by conversation. row_level_binomial_half_width_points is what an independence assumption would have given -- reported so the difference is visible, never as the interval.",
+            "point": 0.8340800477897252,
+            "row_level_binomial_half_width_points": 0.6300666958748784
+          },
+          "in_band": false,
+          "n_eval": 13392,
+          "n_features": 125587,
+          "n_fit": 38795,
+          "spec": "k6/tag3/word",
+          "target_hi": 0.8351,
+          "target_lo": 0.8345
+        },
+        {
+          "accuracy": 0.8125,
+          "cell": "nextstep plain k6",
+          "ci": {
+            "half_width_points": 0.7535999674548599,
+            "hi": 0.8199388943458988,
+            "lo": 0.8048668949968016,
+            "n_boot": 1000,
+            "n_clusters": 941,
+            "n_rows": 13392,
+            "note": "clustered by conversation. row_level_binomial_half_width_points is what an independence assumption would have given -- reported so the difference is visible, never as the interval.",
+            "point": 0.8125,
+            "row_level_binomial_half_width_points": 0.6610672950902902
+          },
+          "in_band": false,
+          "n_eval": 13392,
+          "n_features": 83709,
+          "n_fit": 38795,
+          "spec": "k6/plain",
+          "target_hi": 0.8071,
+          "target_lo": 0.8062
+        },
+        {
+          "accuracy": 0.8310931899641577,
+          "cell": "nextstep tagged full MAXB=3",
+          "ci": {
+            "half_width_points": 0.7163269651520865,
+            "hi": 0.8380692509862007,
+            "lo": 0.8237427116831589,
+            "n_boot": 1000,
+            "n_clusters": 941,
+            "n_rows": 13392,
+            "note": "clustered by conversation. row_level_binomial_half_width_points is what an independence assumption would have given -- reported so the difference is visible, never as the interval.",
+            "point": 0.8310931899641577,
+            "row_level_binomial_half_width_points": 0.6345732968746438
+          },
+          "in_band": false,
+          "n_eval": 13392,
+          "n_features": 135010,
+          "n_fit": 38795,
+          "spec": "full/tag3/word",
+          "target_hi": 0.8297,
+          "target_lo": 0.8281
+        },
+        {
+          "accuracy": 0.7987604540023895,
+          "cell": "nextstep plain full",
+          "ci": {
+            "half_width_points": 0.8778602741514208,
+            "hi": 0.8075358080852341,
+            "lo": 0.7899786026022056,
+            "n_boot": 1000,
+            "n_clusters": 941,
+            "n_rows": 13392,
+            "note": "clustered by conversation. row_level_binomial_half_width_points is what an independence assumption would have given -- reported so the difference is visible, never as the interval.",
+            "point": 0.7987604540023895,
+            "row_level_binomial_half_width_points": 0.6790445892787064
+          },
+          "in_band": false,
+          "n_eval": 13392,
+          "n_features": 84179,
+          "n_fit": 38795,
+          "spec": "full/plain",
+          "target_hi": 0.7865,
+          "target_lo": 0.7845
+        },
+        {
+          "accuracy": 0.8267622461170848,
+          "cell": "nextstep tagged k6 MAXB=1",
+          "ci": {
+            "half_width_points": 0.7522796229558315,
+            "hi": 0.8344846393424694,
+            "lo": 0.8194390468833528,
+            "n_boot": 1000,
+            "n_clusters": 941,
+            "n_rows": 13392,
+            "note": "clustered by conversation. row_level_binomial_half_width_points is what an independence assumption would have given -- reported so the difference is visible, never as the interval.",
+            "point": 0.8267622461170848,
+            "row_level_binomial_half_width_points": 0.6409806827670175
+          },
+          "in_band": false,
+          "n_eval": 13392,
+          "n_features": 100788,
+          "n_fit": 38795,
+          "spec": "k6/tag1/word",
+          "target_hi": 0.8317,
+          "target_lo": 0.8297
+        },
+        {
+          "accuracy": 0.835200119474313,
+          "cell": "nextstep tagged k6 MAXB=2",
+          "ci": {
+            "half_width_points": 0.6899398449803917,
+            "hi": 0.8420070203800692,
+            "lo": 0.8282082234804614,
+            "n_boot": 1000,
+            "n_clusters": 941,
+            "n_rows": 13392,
+            "note": "clustered by conversation. row_level_binomial_half_width_points is what an independence assumption would have given -- reported so the difference is visible, never as the interval.",
+            "point": 0.835200119474313,
+            "row_level_binomial_half_width_points": 0.6283578878201165
+          },
+          "in_band": true,
+          "n_eval": 13392,
+          "n_features": 115726,
+          "n_fit": 38795,
+          "spec": "k6/tag2/word",
+          "target_hi": 0.8355,
+          "target_lo": 0.8335
+        },
+        {
+          "accuracy": 0.8326612903225806,
+          "cell": "nextstep tagged k6 MAXB=4",
+          "ci": {
+            "half_width_points": 0.6758043236070876,
+            "hi": 0.8393830258815127,
+            "lo": 0.825866939409371,
+            "n_boot": 1000,
+            "n_clusters": 941,
+            "n_rows": 13392,
+            "note": "clustered by conversation. row_level_binomial_half_width_points is what an independence assumption would have given -- reported so the difference is visible, never as the interval.",
+            "point": 0.8326612903225806,
+            "row_level_binomial_half_width_points": 0.6322163841307371
+          },
+          "in_band": true,
+          "n_eval": 13392,
+          "n_features": 128785,
+          "n_fit": 38795,
+          "spec": "k6/tag4/word",
+          "target_hi": 0.8328,
+          "target_lo": 0.8308
+        }
+      ],
+      "cells_in_band": 2,
+      "headline_in_band": false,
+      "vectorizer": {
+        "C": 1.0,
+        "alpha": null,
+        "analyzer": "word",
+        "class_weight": null,
+        "classifier": "logreg",
+        "lowercase": true,
+        "max_df": 1.0,
+        "max_features": null,
+        "max_iter": 1000,
+        "min_df": 2,
+        "ngram_range": [
+          1,
+          2
+        ],
+        "sublinear_tf": true
+      }
+    },
+    {
+      "cells": [
+        {
+          "accuracy": 0.8342293906810035,
+          "cell": "nextstep tagged k6 MAXB=3 (THE headline cell)",
+          "ci": {
+            "half_width_points": 0.713082043774993,
+            "hi": 0.8411042940095107,
+            "lo": 0.8268426531340108,
+            "n_boot": 1000,
+            "n_clusters": 941,
+            "n_rows": 13392,
+            "note": "clustered by conversation. row_level_binomial_half_width_points is what an independence assumption would have given -- reported so the difference is visible, never as the interval.",
+            "point": 0.8342293906810035,
+            "row_level_binomial_half_width_points": 0.6298394528004444
+          },
+          "in_band": false,
+          "n_eval": 13392,
+          "n_features": 217637,
+          "n_fit": 38795,
+          "spec": "k6/tag3/word",
+          "target_hi": 0.8351,
+          "target_lo": 0.8345
+        },
+        {
+          "accuracy": 0.8074223416965353,
+          "cell": "nextstep plain k6",
+          "ci": {
+            "half_width_points": 0.8145418099814394,
+            "hi": 0.8153452476913209,
+            "lo": 0.7990544114916921,
+            "n_boot": 1000,
+            "n_clusters": 941,
+            "n_rows": 13392,
+            "note": "clustered by conversation. row_level_binomial_half_width_points is what an independence assumption would have given -- reported so the difference is visible, never as the interval.",
+            "point": 0.8074223416965353,
+            "row_level_binomial_half_width_points": 0.6678619219696197
+          },
+          "in_band": false,
+          "n_eval": 13392,
+          "n_features": 86065,
+          "n_fit": 38795,
+          "spec": "k6/plain",
+          "target_hi": 0.8071,
+          "target_lo": 0.8062
+        },
+        {
+          "accuracy": 0.8257915173237754,
+          "cell": "nextstep tagged full MAXB=3",
+          "ci": {
+            "half_width_points": 0.7697181063992697,
+            "hi": 0.8333248314896793,
+            "lo": 0.8179304693616939,
+            "n_boot": 1000,
+            "n_clusters": 941,
+            "n_rows": 13392,
+            "note": "clustered by conversation. row_level_binomial_half_width_points is what an independence assumption would have given -- reported so the difference is visible, never as the interval.",
+            "point": 0.8257915173237754,
+            "row_level_binomial_half_width_points": 0.6423965631914285
+          },
+          "in_band": false,
+          "n_eval": 13392,
+          "n_features": 218250,
+          "n_fit": 38795,
+          "spec": "full/tag3/word",
+          "target_hi": 0.8297,
+          "target_lo": 0.8281
+        },
+        {
+          "accuracy": 0.785394265232975,
+          "cell": "nextstep plain full",
+          "ci": {
+            "half_width_points": 0.9867230336068455,
+            "hi": 0.7953679167143224,
+            "lo": 0.7756334560421855,
+            "n_boot": 1000,
+            "n_clusters": 941,
+            "n_rows": 13392,
+            "note": "clustered by conversation. row_level_binomial_half_width_points is what an independence assumption would have given -- reported so the difference is visible, never as the interval.",
+            "point": 0.785394265232975,
+            "row_level_binomial_half_width_points": 0.6953410603515761
+          },
+          "in_band": true,
+          "n_eval": 13392,
+          "n_features": 86091,
+          "n_fit": 38795,
+          "spec": "full/plain",
+          "target_hi": 0.7865,
+          "target_lo": 0.7845
+        },
+        {
+          "accuracy": 0.8272102747909199,
+          "cell": "nextstep tagged k6 MAXB=1",
+          "ci": {
+            "half_width_points": 0.7700002035052778,
+            "hi": 0.8346334326588616,
+            "lo": 0.819233428588756,
+            "n_boot": 1000,
+            "n_clusters": 941,
+            "n_rows": 13392,
+            "note": "clustered by conversation. row_level_binomial_half_width_points is what an independence assumption would have given -- reported so the difference is visible, never as the interval.",
+            "point": 0.8272102747909199,
+            "row_level_binomial_half_width_points": 0.6403247197499927
+          },
+          "in_band": false,
+          "n_eval": 13392,
+          "n_features": 129395,
+          "n_fit": 38795,
+          "spec": "k6/tag1/word",
+          "target_hi": 0.8317,
+          "target_lo": 0.8297
+        },
+        {
+          "accuracy": 0.8364695340501792,
+          "cell": "nextstep tagged k6 MAXB=2",
+          "ci": {
+            "half_width_points": 0.7601888856053285,
+            "hi": 0.8439610899737409,
+            "lo": 0.8287573122616343,
+            "n_boot": 1000,
+            "n_clusters": 941,
+            "n_rows": 13392,
+            "note": "clustered by conversation. row_level_binomial_half_width_points is what an independence assumption would have given -- reported so the difference is visible, never as the interval.",
+            "point": 0.8364695340501792,
+            "row_level_binomial_half_width_points": 0.6264086583061751
+          },
+          "in_band": false,
+          "n_eval": 13392,
+          "n_features": 174180,
+          "n_fit": 38795,
+          "spec": "k6/tag2/word",
+          "target_hi": 0.8355,
+          "target_lo": 0.8335
+        },
+        {
+          "accuracy": 0.8347520908004779,
+          "cell": "nextstep tagged k6 MAXB=4",
+          "ci": {
+            "half_width_points": 0.7156979943797215,
+            "hi": 0.8417757151026497,
+            "lo": 0.8274617552150553,
+            "n_boot": 1000,
+            "n_clusters": 941,
+            "n_rows": 13392,
+            "note": "clustered by conversation. row_level_binomial_half_width_points is what an independence assumption would have given -- reported so the difference is visible, never as the interval.",
+            "point": 0.8347520908004779,
+            "row_level_binomial_half_width_points": 0.6290426546149128
+          },
+          "in_band": false,
+          "n_eval": 13392,
+          "n_features": 258531,
+          "n_fit": 38795,
+          "spec": "k6/tag4/word",
+          "target_hi": 0.8328,
+          "target_lo": 0.8308
+        }
+      ],
+      "cells_in_band": 1,
+      "headline_in_band": false,
+      "vectorizer": {
+        "C": 4.0,
+        "alpha": null,
+        "analyzer": "word",
+        "class_weight": null,
+        "classifier": "logreg",
+        "lowercase": true,
+        "max_df": 1.0,
+        "max_features": null,
+        "max_iter": 1000,
+        "min_df": 1,
+        "ngram_range": [
+          1,
+          2
+        ],
+        "sublinear_tf": true
+      }
+    }
+  ],
+  "best": {
+    "cells": [
+      {
+        "accuracy": 0.8349761051373955,
+        "cell": "nextstep tagged k6 MAXB=3 (THE headline cell)",
+        "ci": {
+          "half_width_points": 0.6934022473820967,
+          "hi": 0.8417757876486327,
+          "lo": 0.8279077427009908,
+          "n_boot": 1000,
+          "n_clusters": 941,
+          "n_rows": 13392,
+          "note": "clustered by conversation. row_level_binomial_half_width_points is what an independence assumption would have given -- reported so the difference is visible, never as the interval.",
+          "point": 0.8349761051373955,
+          "row_level_binomial_half_width_points": 0.6287004789306073
+        },
+        "in_band": true,
+        "n_eval": 13392,
+        "n_features": 217637,
+        "n_fit": 38795,
+        "spec": "k6/tag3/word",
+        "target_hi": 0.8351,
+        "target_lo": 0.8345
+      },
+      {
+        "accuracy": 0.8117532855436081,
+        "cell": "nextstep plain k6",
+        "ci": {
+          "half_width_points": 0.7645090292642542,
+          "hi": 0.8191065158941293,
+          "lo": 0.8038163353088442,
+          "n_boot": 1000,
+          "n_clusters": 941,
+          "n_rows": 13392,
+          "note": "clustered by conversation. row_level_binomial_half_width_points is what an independence assumption would have given -- reported so the difference is visible, never as the interval.",
+          "point": 0.8117532855436081,
+          "row_level_binomial_half_width_points": 0.6620778841662204
+        },
+        "in_band": false,
+        "n_eval": 13392,
+        "n_features": 86065,
+        "n_fit": 38795,
+        "spec": "k6/plain",
+        "target_hi": 0.8071,
+        "target_lo": 0.8062
+      },
+      {
+        "accuracy": 0.8301971326164874,
+        "cell": "nextstep tagged full MAXB=3",
+        "ci": {
+          "half_width_points": 0.7197725537782473,
+          "hi": 0.8373750868362453,
+          "lo": 0.8229796357606803,
+          "n_boot": 1000,
+          "n_clusters": 941,
+          "n_rows": 13392,
+          "note": "clustered by conversation. row_level_binomial_half_width_points is what an independence assumption would have given -- reported so the difference is visible, never as the interval.",
+          "point": 0.8301971326164874,
+          "row_level_binomial_half_width_points": 0.6359112019587675
+        },
+        "in_band": false,
+        "n_eval": 13392,
+        "n_features": 218250,
+        "n_fit": 38795,
+        "spec": "full/tag3/word",
+        "target_hi": 0.8297,
+        "target_lo": 0.8281
+      },
+      {
+        "accuracy": 0.7974910394265233,
+        "cell": "nextstep plain full",
+        "ci": {
+          "half_width_points": 0.8813266580044832,
+          "hi": 0.806209288551103,
+          "lo": 0.7885827553910133,
+          "n_boot": 1000,
+          "n_clusters": 941,
+          "n_rows": 13392,
+          "note": "clustered by conversation. row_level_binomial_half_width_points is what an independence assumption would have given -- reported so the difference is visible, never as the interval.",
+          "point": 0.7974910394265233,
+          "row_level_binomial_half_width_points": 0.6806414279121604
+        },
+        "in_band": false,
+        "n_eval": 13392,
+        "n_features": 86091,
+        "n_fit": 38795,
+        "spec": "full/plain",
+        "target_hi": 0.7865,
+        "target_lo": 0.7845
+      },
+      {
+        "accuracy": 0.8289277180406213,
+        "cell": "nextstep tagged k6 MAXB=1",
+        "ci": {
+          "half_width_points": 0.724187425938666,
+          "hi": 0.8361071299743471,
+          "lo": 0.8216233814555738,
+          "n_boot": 1000,
+          "n_clusters": 941,
+          "n_rows": 13392,
+          "note": "clustered by conversation. row_level_binomial_half_width_points is what an independence assumption would have given -- reported so the difference is visible, never as the interval.",
+          "point": 0.8289277180406213,
+          "row_level_binomial_half_width_points": 0.6377955816149109
+        },
+        "in_band": false,
+        "n_eval": 13392,
+        "n_features": 129395,
+        "n_fit": 38795,
+        "spec": "k6/tag1/word",
+        "target_hi": 0.8317,
+        "target_lo": 0.8297
+      },
+      {
+        "accuracy": 0.836768219832736,
+        "cell": "nextstep tagged k6 MAXB=2",
+        "ci": {
+          "half_width_points": 0.707538508926997,
+          "hi": 0.843820205326616,
+          "lo": 0.829669435148076,
+          "n_boot": 1000,
+          "n_clusters": 941,
+          "n_rows": 13392,
+          "note": "clustered by conversation. row_level_binomial_half_width_points is what an independence assumption would have given -- reported so the difference is visible, never as the interval.",
+          "point": 0.836768219832736,
+          "row_level_binomial_half_width_points": 0.6259480607122276
+        },
+        "in_band": false,
+        "n_eval": 13392,
+        "n_features": 174180,
+        "n_fit": 38795,
+        "spec": "k6/tag2/word",
+        "target_hi": 0.8355,
+        "target_lo": 0.8335
+      },
+      {
+        "accuracy": 0.834378733572282,
+        "cell": "nextstep tagged k6 MAXB=4",
+        "ci": {
+          "half_width_points": 0.6489272692285275,
+          "hi": 0.8407884248098162,
+          "lo": 0.8278098794252456,
+          "n_boot": 1000,
+          "n_clusters": 941,
+          "n_rows": 13392,
+          "note": "clustered by conversation. row_level_binomial_half_width_points is what an independence assumption would have given -- reported so the difference is visible, never as the interval.",
+          "point": 0.834378733572282,
+          "row_level_binomial_half_width_points": 0.6296120260920384
+        },
+        "in_band": false,
+        "n_eval": 13392,
+        "n_features": 258531,
+        "n_fit": 38795,
+        "spec": "k6/tag4/word",
+        "target_hi": 0.8328,
+        "target_lo": 0.8308
+      }
+    ],
+    "cells_in_band": 1,
+    "headline_in_band": true,
+    "vectorizer": {
+      "C": 1.0,
+      "alpha": null,
+      "analyzer": "word",
+      "class_weight": null,
+      "classifier": "logreg",
+      "lowercase": true,
+      "max_df": 1.0,
+      "max_features": null,
+      "max_iter": 1000,
+      "min_df": 1,
+      "ngram_range": [
+        1,
+        2
+      ],
+      "sublinear_tf": true
+    }
+  },
+  "certified": true,
+  "conformance": {
+    "checks_run": 60,
+    "failures": [],
+    "featurizer_fingerprint": {
+      "featurizer": "reflex.featurize.ProbeFeaturizer",
+      "reflex_version": "1.0.0.dev0",
+      "render_contract": "reflex.select._render_variant (shuffle=None), bucket=min(n-1-i, MAXB)",
+      "shuffle_seed_rule": "sha256(seed:convo_id:turn_index) -- unsalted, stable across processes",
+      "speaker_token": "emitted once per line, untagged",
+      "tag_separator": "|",
+      "token_pattern": "(?u)\\b\\w\\w+\\b",
+      "tokenizer": "reflex.featurize.tokenize_rendered"
+    },
+    "n_failures": 0,
+    "notes": [],
+    "ok": true
+  },
+  "d7_recorded_row_counts": {
+    "dev": 13284,
+    "train": 38795
+  },
+  "identity_check_k6_maxb_6_8_12": true,
+  "interpretation": "CERTIFIED. The reproduction cell landed in band and the MAXB 6/8/12 identity holds. Quote the row set and vectorizer settings with every number (D6).",
+  "n_dev_rows": 13392,
+  "n_train_rows": 38795,
+  "stage": "validate"
+}

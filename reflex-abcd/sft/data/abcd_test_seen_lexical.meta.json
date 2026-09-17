@@ -1,0 +1,18 @@
+{
+  "file": "sft/data/abcd_test_seen_lexical.jsonl",
+  "n_examples": 8889,
+  "split": "test_seen",
+  "target": "lexical",
+  "include_actions": false,
+  "content_sha256": "f1a5172c73c4efa1",
+  "system_prompt": "You are a customer service agent. Given the conversation so far and the facts the customer has already disclosed, write the agent's next message. Reply with that message only -- no preamble, no explanation, no quotes.",
+  "prompt_source": "reflex.data.build_context(...).text  (spec 6.9 step 1)",
+  "gold_source": "utterances[turn.utt_id]",
+  "config": {
+    "data.abcd_dir": "/Users/vasyl/zadumai/data/abcd",
+    "data.context_turns_K": "full",
+    "data.synthesize_end_conversation": true
+  },
+  "skipped_no_gold": 0,
+  "compare_against": "bank template coverage on the same split: dev 45.22%, test_seen 44.83%, test_novel 44.27% (turns fully reconstructible). Score a generation by delexicalizing + normalizing BOTH sides with reflex.compile's own functions -- raw exact match holds the model to a harsher standard than the bank and is not comparable."
+}

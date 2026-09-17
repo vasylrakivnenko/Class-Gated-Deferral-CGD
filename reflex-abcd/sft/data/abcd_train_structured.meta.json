@@ -1,0 +1,14 @@
+{
+  "file": "sft/data/abcd_train_structured.jsonl",
+  "n_examples": 43159,
+  "split": "train",
+  "content_sha256": "f7fc3b42297dfcf1",
+  "system_prompt": "You are a customer service agent's response planner. Given the conversation so far and the facts the customer has already disclosed, output the plan for the agent's next message: one line per dialogue act, each line formatted as 'ACT | sentence'. Use only the acts ACK, ASK, CLOSE, CONFIRM, INFORM, INSTRUCT, OFFER, OTHER, VERIFY. Reply with the plan only -- no preamble, no explanation.",
+  "prompt_source": "reflex.data.build_context(...).text  (same as the unconstrained arm)",
+  "target_format": "one 'ACT | delexicalized sentence' line per skeleton position",
+  "gold_source": "outputs/compile/labels/train.jsonl (skeleton_id, template_ids) joined against outputs/compile/bank/templates.jsonl for text",
+  "caveat": "Gold is compile.act_labeler's output (DECISIONS D15) -- a score here is agreement with the labeller, not correctness against the human agent. Ships with every reported number from this dataset, same as any H5/H7 number.",
+  "skipped_no_labels": 0,
+  "skipped_no_template_text": 27974,
+  "compare_against": "probes H5 (skeleton top-1), H7 (per-act template top-1/recall@k), compose@1 -- same label space, same population (retrieve_utterance turns), directly comparable."
+}

@@ -719,3 +719,195 @@ A config-gated implementation exists and is OFF (`fill.require_slot_support_meta
 `fill.slot_support_path`, `fill.min_required_slot_support: 0.50`), with four tests
 covering both states, so the intent is documented for whoever picks it up. Closing
 it properly needs compile to write `{button: {slot: support}}` beside the bank.
+
+## D23. Template coverage is ~45% on held-out chat, not 61% — and 61% was never a ceiling to begin with
+
+Measured for the first time on dev/test_seen/test_novel after the OOM recovery
+(`bank_hash c270df0e249444bb`, corpus `dataset_hash 40ce6eaa5279aeeb`, exact
+match to every pre-crash measurement).
+
+| split | turns fully covered | vs. 60.67% train figure |
+|---|---|---|
+| train (in-sample) | 60.67% | — |
+| dev | 45.22% ±1.03 | -15.5 pts |
+| test_seen | 44.83% ±1.03 | -15.8 pts |
+| test_novel (5 subflows held out entirely) | 44.27% ±3.80 | -16.4 pts |
+
+**Decomposed, not just observed:**
+- **≥4.8 points of the 60.67% is resubstitution bias.** Leave-one-out corrected,
+  train coverage is ≤55.89%, not 60.67%. A count-2 template covers its own two
+  train occurrences by construction; templates seen exactly twice carry 7.2% of
+  train's covered sentences but only 2.6% of dev's.
+- **The raw-vs-delex gold-derivation asymmetry (dev/test golds skip
+  delexicalization; train golds don't) is 0.50 points, not the ≤1.6 assumed.**
+  48 dev positions are rescued by matching the procedure, 0 are lost. The bound
+  was right in direction, conservative in size.
+- **`min_template_count: 2` is the entire train/pre-dedup gap, exactly:**
+  48,716 pre-dedup phrasings - 17,356 surviving surface forms = 31,360, and
+  89,623 sentences - 58,263 bank occurrences = 31,360. Identical. Every dropped
+  phrasing occurred exactly once.
+- **`test_novel` ≈ `test_seen` (44.27% vs 44.83%, inside noise), and this is the
+  most useful finding of the three.** All 655 test_novel turns carry an intent
+  absent from train (verified), so the holdout is genuine. Coverage does not
+  depend on having seen the conversation's subflow — it depends on the agent
+  having used a phrasing two or more humans used in train. The cache degrades
+  gracefully on genuinely new flows.
+
+**Decision.** Stop quoting 60.67% as "the coverage of the technique" anywhere in
+this repo. Quote **45.22% (dev) / 44.83% (test_seen) / 44.27% (test_novel)**, and
+if the train figure appears, it ships with "in-sample, count>=2 vocabulary,
+>=4.8 pts of which is resubstitution" attached, per D6. Per D16 this is still a
+FIDELITY number, not a ceiling on reflex rate — assignment stays 1.0 by
+construction.
+
+`compile._write_compile_stats`'s own sidecar (`compile_summary.md`) called this
+number "the ceiling on the reflex rate" until tonight; that wording is now
+corrected in `compile.py` with a regression test proven to fail on the pre-fix
+module (`tests/test_report_inputs.py::test_compile_summary_does_not_call_fidelity_a_ceiling`).
+
+---
+
+## D24. The act labeller has never been checked by a human, and three concrete failure modes are now quantified
+
+D15 said this was unmeasured. It still is — but the size and shape of the risk
+is no longer a guess.
+
+**The two existing check artifacts (`act_check.md`, `delex_check.md`) establish
+nothing about correctness**, on top of DEFECTS D-6's sampling-with-replacement
+bug: their population is the BANK (4,489 templates), but H5's gold spans all
+71,133 retrieve turns, and **39.3% of those turns contain a sentence that never
+reached the bank at all** (dropped by `min_template_count`). Bank-sampled
+accuracy is at best an upper bound on H5's actual gold accuracy.
+
+**Three failure modes, all measured directly from the bank (58,263 occurrences),
+no model required:**
+
+1. **22.4% of the bank's labels come from one catch-all rule** (`ends in "?"` ->
+   ASK; 13,051 occurrences). 45.85% of all occurrences are question-final, and
+   96.5% of ASK is question-final — ASK is close to a synonym for "ends in ?" in
+   this labeller.
+2. **8,364 question-final occurrences (31.3%) are labelled something OTHER than
+   ASK** because an earlier, unanchored rule fires first — `thank you for
+   shopping with acmebrands! how may i help you?` -> ACK (373 occ), while
+   `hello, how can i help you today?` -> ASK (2,704 occ). Same speech act,
+   different label, decided by which greeting word came first.
+3. **VERIFY is the weakest act in the inventory.** 67% of its occurrences come
+   from the unvalidated MiniLM embedding tier (median cosine to its seed
+   centroid: 0.425); the main rule fires on the bare substring "verif", so
+   `could i have your account id to verify your identity?` -> VERIFY while
+   `can i have your account id and order id?` -> ASK, on functionally identical
+   requests.
+
+**Formal consequence for any H5 number.** If H5 agrees with the labeller's
+output at rate `a` and the labeller is correct at rate `c`, H5's TRUE accuracy
+lies in `[a + c - 1, min(a, c)]` and nowhere else. Until `c` is measured, `a`
+alone is uninterpretable. This ships beside every H5 number from here on.
+
+**A usable human-check protocol now exists**, replacing the broken artifacts:
+`outputs/act_audit/act_audit_sample.md` (+ `act_audit_key.json`,
+`score_act_audit.py`). Stratified by decision mechanism (the ASK catch-all, the
+embedding tier, the ASK/VERIFY boundary, everything else), 104 rows, ~26 minutes,
+with 12 decoy rows as an acquiescence control — the scorer refuses to report an
+accuracy if fewer than 9/12 decoys are caught. Not yet run.
+
+**Decision.** No H5 (or downstream compose@1) number ships without the D24
+caveat attached until the audit sheet is filled in and `c` is measured for real.
+
+---
+
+## D25. Skeleton, template and values are measured for the first time — and TF-IDF+logreg beats both LLM arms tried
+
+**No selector head that decides WHAT TO SAY (as opposed to what to DO) had ever
+been measured, by anything, in this project's history**, until tonight.
+`report.probe_cheap_bars.skeleton` was literally `null`.
+
+The D7 probe harness that produced the project's other numbers was lost with
+`/tmp` in the OOM crash. Rebuilt from scratch, and **certified before trusting
+any new number**: `validate --train-rows 38795` reproduces D7's twice-verified
+headline cell (nextstep, recency-tagged, k6, MAXB=3) at **0.834976** against the
+recorded 0.8345-0.8351 band, using D7's actual row count (the harness had
+initially been run on the full 105,672-row train set, which systematically
+inflated every cell 0.6-2.6 points high and revealed the missing row-count
+config as the cause, not a reproduction failure).
+
+**Headline, on `test_seen`, selected on a train-internal conversation-grouped
+split and refit on all of train (never selected on dev or test — see the
+protocol note below):**
+
+| head | metric | measured | label-blind constant | margin |
+|---|---|---|---|---|
+| skeleton (H5) | top-1 | **43.2%** | 26.3% | +16.9 pts |
+| template (H7) | conditional top-1 (per-act pools, 208-1,066 candidates) | **39.2%** | 17.8% | +21.4 pts |
+| values (H4) | top-1, index space | **66.2%** | 3.5% | +62.7 pts |
+| **compose@1** (skeleton AND every position, THE response-path headline) | conditional | **27.7%** | 6.4% | +21.3 pts |
+| compose@1 | unconditional (uncovered turns counted as misses) | **12.4%** | 2.9% | +9.6 pts |
+
+Every number above clears D5 (a metric a constant wins is dropped, not
+caveated) with wide margin.
+
+**A memory bug blocked this measurement for hours and is worth recording
+directly: `measure --heads h5,h7,h4` SIGBUS'd (exit 138) with no traceback.**
+Cause: the harness hardcoded `solver="lbfgs"` (multinomial), which holds a dense
+`n_classes x n_features` coefficient array plus ~21 L-BFGS history vectors. H7's
+ASK pool (1,066 classes x up to 218k features) projected to ~39 GB on a 24 GB
+machine. Fixed with a per-head estimator (`sgd_log`, one-vs-all SGD-optimised
+logistic loss) plus a pre-fit dense-state guard that now raises a named Python
+error (head, class count, feature count, projected GiB) instead of dying in
+native code. nextstep's certified lbfgs path was left untouched. **The
+decision function for H5/H7 is therefore approximate (SGD, not exact lbfgs),
+and every number above ships with that estimator recorded, per D6** (see
+`vectorizer_by_head` in `outputs/probes/response/select.json`).
+
+**A second bug, quantified rather than just fixed: dev cannot rank the
+vectorizer grid `validate`/the old `measure` selected on.** Grid spread across
+all 6 candidate settings on dev: 0.2016 points. Dev's own conversation-clustered
+CI half-width: ±0.6934 points — 3.4x wider than the whole grid. Changing only
+the selection RULE (not the data) flips the winner: "headline cell in band"
+picks one config, "most of D7's curve in band" picks a different one, and the
+tuple-ordering default that shipped was the one that reproduces D7's curve
+WORST. This is D6 in a new costume and is why `select` (a new mode, additive,
+`conformance | audit | validate | measure | select`) exists: split train by
+conversation, sweep on train-select only, refit on all of train, score
+`test_seen` ONCE. `dev` is reported beside it as a free consistency check,
+explicitly labelled not-a-headline.
+
+**Three-way comparison against Fireworks-hosted `qwen3-0p6b` (the smallest
+tunable model on the platform), same `test_seen` population, same scoring
+predicate** (generation -> `reflex.compile.split_sentences` + `label_acts` +
+`reflex.train._normalize_for_match` -> bank lookup, i.e. the identical path
+`_derive_turn_labels` uses to derive gold, so both arms are scored the same way
+gold itself is derived):
+
+| arm | conditional compose@1 (n=3,985) | unconditional (n=8,889) |
+|---|---|---|
+| **learned cache (TF-IDF+logreg)** | **27.7%** | **12.4%** |
+| qwen3-0.6B, structured (skeleton+template plan, SFT on 43,159 train examples) | 24.2% | 10.9% |
+| qwen3-0.6B, unconstrained (free-text utterance, SFT on 71,133 train examples) | 21.8% | 9.8% |
+
+The cache beats both LLM arms outright. **Caveat that ships with this result:**
+0.6B is the SMALLEST tunable model on the platform, not a representative LLM —
+this shows the cache beats a tiny undertrained model, not that it beats what an
+LLM can do at this task size. `qwen3-4b-instruct-2507` is scoped (dataset built,
+not yet run) as the real test of that question. The structured arm beating the
+unconstrained arm (24.2 vs 21.8, and 59.7% vs 56.8% on skeleton alone) is a
+real, separate finding: selecting from a fixed vocabulary is an easier task to
+learn than free generation, which is evidence FOR the cache's architecture
+(pick-from-menu), not just its cost.
+
+**What this compose@1 number is NOT: the system's accuracy.** It is an
+"always-answer" figure with no abstention. `select -> gate -> fill` has never
+executed end to end on a real turn (no checkpoint has ever existed; `calibrate`
+has never been fit against real score distributions). The number the spec's
+verdict actually grades — reflex rate at quality parity — requires that full
+chain, not this measurement alone. H5's 90.2% recall@10 against 43.2% top-1
+suggests the right answer is often within the gate's reach even when it isn't
+the top pick, which is the shape a working conformal gate exploits — but this
+is unverified and is the next open item, not a conclusion.
+
+Deployment note, unrelated to the numbers but worth recording: a fine-tuned
+LoRA on Fireworks has no serverless / per-token path (platform limitation, not
+a missed setting) — it requires an on-demand GPU deployment, billed hourly
+regardless of the shape's fit to the model. On-demand B200 is $13/hr, H200
+$8/hr; the eval above ran on B200 by default when H200 would have sufficed for
+a 0.6B model. Both scoring deployments were torn down immediately after use;
+the fine-tuned adapters themselves are free to store and redeployable at need.

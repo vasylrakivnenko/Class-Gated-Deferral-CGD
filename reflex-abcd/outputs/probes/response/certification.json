@@ -1,0 +1,23 @@
+{
+  "best": {
+    "C": 1.0,
+    "alpha": null,
+    "analyzer": "word",
+    "class_weight": null,
+    "classifier": "logreg",
+    "lowercase": true,
+    "max_df": 1.0,
+    "max_features": null,
+    "max_iter": 1000,
+    "min_df": 1,
+    "ngram_range": [
+      1,
+      2
+    ],
+    "sublinear_tf": true
+  },
+  "certified": true,
+  "n_dev_rows": 13392,
+  "n_train_rows": 38795,
+  "when": "2026-09-16T23:17:58"
+}
