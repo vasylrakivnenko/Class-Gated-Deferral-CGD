@@ -219,15 +219,21 @@ def main(argv: list[str] | None = None) -> int:
                       f"errors={n_search_err}  {rate:.0f}/s", file=sys.stderr)
     print(f"  searched in {time.time()-t1:.1f}s, {n_search_err} errors", file=sys.stderr)
 
+    test_context_by_turn = {row.turn_id: row.context.text for row, _, _ in test_sample}
+    test_gold_tids_by_turn = {row.turn_id: gold_tids for row, _, gold_tids in test_sample}
+
     n_scored = hit = hit_skel = 0
     sims = []
     n_no_match = 0
     per_row = []
     for turn_id, (best, gold_tids, gold_acts) in results.items():
         n_scored += 1
+        gold_text = " ".join(bank_text.get(t, "") for t in test_gold_tids_by_turn.get(turn_id, []))
         if best is None:
             n_no_match += 1
-            per_row.append({"turn_id": turn_id, "matched": False})
+            per_row.append({"turn_id": turn_id, "matched": False,
+                            "context": test_context_by_turn.get(turn_id, ""),
+                            "gold_text": gold_text, "predicted_text": "(no match found)"})
             continue
         sims.append(best["similarity"])
         payload = json.loads(best["response"])
@@ -241,7 +247,10 @@ def main(argv: list[str] | None = None) -> int:
             hit_skel += 1
         per_row.append({"turn_id": turn_id, "matched": True,
                         "similarity": best["similarity"],
-                        "skeleton_hit": skel_hit, "full_hit": full_hit})
+                        "skeleton_hit": skel_hit, "full_hit": full_hit,
+                        "context": test_context_by_turn.get(turn_id, ""),
+                        "gold_text": gold_text,
+                        "predicted_text": payload.get("composed_text", "")})
 
     result = {
         "method": "LangCache managed semantic cache (real dense embedding + vector "

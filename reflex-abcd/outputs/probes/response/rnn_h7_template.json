@@ -1,0 +1,24 @@
+{
+  "method": "RNN (GRU) skeleton prediction + RNN (GRU) per-act template classifiers (fully RNN-based pipeline, not the TF-IDF/RNN hybrid)",
+  "conditional": {
+    "n": 3985,
+    "compose@1": 0.19347553324968633,
+    "skeleton_only": 0.522961104140527
+  },
+  "unconditional": {
+    "n": 8889,
+    "compose@1": 0.08673641579480257,
+    "skeleton_only": 0.3677579030262122
+  },
+  "compare_against": {
+    "learned_cache_TFIDF_logreg_D25": {
+      "conditional": 0.2765370138017566,
+      "unconditional": 0.12397345033187085
+    },
+    "rnn_skeleton_plus_certified_h7": {
+      "conditional": 0.2506900878293601,
+      "unconditional": 0.11238609517381033
+    }
+  },
+  "elapsed_s": 451.8
+}
