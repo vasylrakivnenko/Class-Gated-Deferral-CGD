@@ -1,7 +1,7 @@
 import React from 'react';
-import { BarChart3, FlaskConical, DollarSign, BookOpen, Scale, Github, Sparkles } from 'lucide-react';
+import { BarChart3, Layers, DollarSign, Scale, Github, Sparkles } from 'lucide-react';
 
-export type TabType = 'chart' | 'playground' | 'pricing' | 'findings' | 'methodology';
+export type TabType = 'cascade' | 'chart' | 'playground' | 'pricing' | 'methodology';
 
 interface HeaderProps {
   currentTab: TabType;
@@ -17,17 +17,17 @@ export const Header: React.FC<HeaderProps> = ({ currentTab, onTabChange, selecte
           <div>
             <div className="flex items-center gap-2.5">
               <span className="inline-flex items-center justify-center p-1.5 rounded-lg bg-emerald-600/10 text-emerald-600 dark:text-emerald-400 border border-emerald-600/20 font-mono font-bold text-sm tracking-wider">
-                ↓DOWNSHIFT
+                ZADUM AI
               </span>
               <h1 className="text-xl font-bold tracking-tight text-neutral-900 dark:text-white">
-                Model Pricing & Pareto Frontier
+                Gemini-Optimized Class-Gated Cascade
               </h1>
               <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 border border-neutral-200 dark:border-neutral-700">
-                Task: {selectedTaskLabel}
+                Active Benchmark: {selectedTaskLabel}
               </span>
             </div>
             <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 mt-1">
-              Port classification from expensive frontier models to the cheapest model, prompt, or encoder that clears your accuracy bar.
+              Optimizing high-volume tasks like contract clause review and legal intake: class-gated deferral cuts Gemini costs by up to 90% and delivers sub-5ms latency without sacrificing accuracy.
             </p>
           </div>
 
@@ -46,6 +46,21 @@ export const Header: React.FC<HeaderProps> = ({ currentTab, onTabChange, selecte
 
         {/* Tab Navigation */}
         <nav className="flex items-center gap-1 sm:gap-2 mt-4 overflow-x-auto pb-1 text-sm border-t border-neutral-100 dark:border-neutral-800/80 pt-3">
+          <button
+            onClick={() => onTabChange('cascade')}
+            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg font-medium text-xs sm:text-sm whitespace-nowrap transition-all ${
+              currentTab === 'cascade'
+                ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-950 shadow-sm'
+                : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800/60'
+            }`}
+          >
+            <Layers className="w-4 h-4 text-emerald-500" />
+            <span>Zadum Cascade Optimizer</span>
+            <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-mono font-semibold">
+              90% Cut
+            </span>
+          </button>
+
           <button
             onClick={() => onTabChange('chart')}
             className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg font-medium text-xs sm:text-sm whitespace-nowrap transition-all ${
@@ -69,7 +84,7 @@ export const Header: React.FC<HeaderProps> = ({ currentTab, onTabChange, selecte
             <Sparkles className="w-4 h-4 text-emerald-300" />
             <span>Live Gemini Downshift</span>
             <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-500/30 text-emerald-100 uppercase tracking-wider font-mono">
-              Live
+              Live API
             </span>
           </button>
 
@@ -82,19 +97,7 @@ export const Header: React.FC<HeaderProps> = ({ currentTab, onTabChange, selecte
             }`}
           >
             <DollarSign className="w-4 h-4" />
-            <span>Rate Cards & Cost Simulator</span>
-          </button>
-
-          <button
-            onClick={() => onTabChange('findings')}
-            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg font-medium text-xs sm:text-sm whitespace-nowrap transition-all ${
-              currentTab === 'findings'
-                ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-950 shadow-sm'
-                : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800/60'
-            }`}
-          >
-            <BookOpen className="w-4 h-4" />
-            <span>Empirical Findings</span>
+            <span>Rate Cards & ROI Simulator</span>
           </button>
 
           <button

@@ -46,7 +46,7 @@ export const ParetoChart: React.FC<ParetoChartProps> = ({
   const [accuracyBar, setAccuracyBar] = useState<number>(task.bar || 0.90);
   const [showML, setShowML] = useState<boolean>(true);
   const [showPareto, setShowPareto] = useState<boolean>(true);
-  const [labelMode, setLabelMode] = useState<'story' | 'all' | 'none'>('story');
+  const [labelMode, setLabelMode] = useState<'story' | 'all' | 'none'>('all');
   const [selectedPoint, setSelectedPoint] = useState<BenchmarkRow | null>(null);
   const [hoveredPoint, setHoveredPoint] = useState<BenchmarkRow | null>(null);
 
@@ -237,7 +237,7 @@ export const ParetoChart: React.FC<ParetoChartProps> = ({
                 onChange={(e) => setShowML(e.target.checked)}
                 className="rounded border-neutral-300 text-emerald-600 focus:ring-emerald-500"
               />
-              <span>Show ML / Encoders</span>
+              <span>Show Zadum-Gemini Gates (TF / E)</span>
             </label>
 
             <label className="flex items-center gap-1.5 cursor-pointer">
@@ -271,13 +271,13 @@ export const ParetoChart: React.FC<ParetoChartProps> = ({
 
           <div className="flex items-center gap-3 text-xs">
             <span className="flex items-center gap-1.5 text-neutral-600 dark:text-neutral-400">
-              <span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block"></span> Prompted LLM
+              <span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block"></span> Prompted LLM (Gemini)
             </span>
             <span className="flex items-center gap-1.5 text-neutral-600 dark:text-neutral-400">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span> Classical ML
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span> Zadum-Gemini TF Gate ($0 Cost)
             </span>
             <span className="flex items-center gap-1.5 text-neutral-600 dark:text-neutral-400">
-              <span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block"></span> Fine-Tuned Encoder
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block"></span> Zadum-Gemini E Gate ($0 Cost)
             </span>
             <span className="flex items-center gap-1.5 text-neutral-400">
               <span className="w-2.5 h-2.5 rounded-full border border-neutral-400 inline-block"></span> Disqualified (&lt;Bar)

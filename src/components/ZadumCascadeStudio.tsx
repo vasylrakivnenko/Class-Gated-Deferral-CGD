@@ -226,7 +226,7 @@ export const ZadumCascadeStudio: React.FC<ZadumCascadeStudioProps> = ({
               </h2>
             </div>
             <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-300 max-w-3xl leading-relaxed">
-              Unlike per-item cascading (FrugalGPT) which tests uncertain confidence on every call, the <b>Zadum algorithm</b> partitions entire categories. Self-contained classes resolve through the <b>Zadum Local Zero-Cost Gate</b>, while nuanced classes defer to Staged LLM tiers.
+              Unlike per-item cascading which tests uncertain confidence on every call, the <b>Zadum algorithm</b> partitions entire categories. Self-contained classes resolve through the <b>Zadum-Gemini Zero-Cost Local Gate</b> (Zadum-Gemini TF / E), while nuanced classes defer to Gemini Flash or Pro tiers.
             </p>
           </div>
 
@@ -236,7 +236,7 @@ export const ZadumCascadeStudio: React.FC<ZadumCascadeStudioProps> = ({
               className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white text-xs font-semibold hover:bg-neutral-50 dark:hover:bg-neutral-750 shadow-xs transition-colors"
             >
               <UploadCloud className="w-4 h-4 text-emerald-600" />
-              <span>Upload Custom JSONL (≤10MB)</span>
+              <span>Upload Custom JSONL (≤1MB)</span>
             </button>
 
             <button

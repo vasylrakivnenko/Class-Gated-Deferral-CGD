@@ -1,11 +1,11 @@
 import { JsonlValidationResult } from './types';
 
-export const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10MB
+export const MAX_FILE_SIZE_BYTES = 1 * 1024 * 1024; // 1MB
 export const MAX_ROW_COUNT = 10000; // 10,000 rows
 
 /**
  * Validates an uploaded JSONL file string according to Zadum algorithm requirements.
- * - Max size: 10MB
+ * - Max size: 1MB
  * - Max rows: 10,000
  * - Must be valid JSON on each line
  * - Each row must contain 'text' (non-empty string) and 'label' (non-empty string)
@@ -14,7 +14,7 @@ export function validateJsonlContent(content: string, fileSize: number): JsonlVa
   if (fileSize > MAX_FILE_SIZE_BYTES) {
     return {
       valid: false,
-      error: `File size exceeds the 10MB limit (uploaded: ${(fileSize / (1024 * 1024)).toFixed(2)} MB). Please upload a smaller file.`,
+      error: `File size exceeds the 1MB limit (uploaded: ${(fileSize / (1024 * 1024)).toFixed(2)} MB). Please upload a file up to 1MB.`,
       fileSizeBytes: fileSize,
     };
   }

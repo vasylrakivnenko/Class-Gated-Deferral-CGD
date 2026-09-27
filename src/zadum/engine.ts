@@ -5,7 +5,7 @@ export const TIER_COSTS: Record<CascadeTier, { costPer1k: number; avgLatencyMs: 
   tier0_local: {
     costPer1k: 0.0000, // Zero cloud token marginal cost
     avgLatencyMs: 4,    // ~4ms local inference
-    label: 'Zadum Local Gate (TF-IDF / 68M Encoder)',
+    label: 'Zadum-Gemini Local Gate (Zadum-Gemini TF / Zadum-Gemini E)',
   },
   tier1_direct: {
     costPer1k: 0.0045, // Gemini 3.1 Flash-Lite Direct (~5-15 tokens)

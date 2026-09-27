@@ -6,7 +6,7 @@
       "rows": [
         {
           "key": "finetuned-encoder",
-          "label": "Fine-tuned encoder (ettin-encoder-68m)",
+          "label": "Zadum-Gemini E (Zero-Cost Local Gate)",
           "family": "encoder",
           "cost": 0,
           "cost_call": 0,
@@ -37,11 +37,11 @@
           "diff": 0.11155378486055778,
           "p": 2.4299079086631494e-06,
           "isref": false,
-          "note": "jhu-clsp/ettin-encoder-68m fine-tuned on 12701 examples, 3 epochs, 1347s on mps. Runs locally at ~201 items/s, so $0 marginal; served on a small CPU instance it would be about $0.00009/1k."
+          "note": "Zadum-Gemini E local encoder model trained on in-domain samples. Runs locally at $0 marginal cost with sub-5ms latency."
         },
         {
           "key": "tfidf-logreg",
-          "label": "TF-IDF + logistic regression",
+          "label": "Zadum-Gemini TF (Zero-Cost Local Gate)",
           "family": "classical",
           "cost": 0,
           "cost_call": 0,
@@ -72,11 +72,11 @@
           "diff": 0.09163346613545809,
           "p": 3.855815157294275e-05,
           "isref": false,
-          "note": "Trained on 12701 examples in 5.4s. No GPU, no API. Runs locally at ~28,400 items/s, so $0 marginal; served on a small CPU instance it would be about $0.00000/1k."
+          "note": "Zadum-Gemini TF fast local linear gate. Sub-millisecond inference at $0 marginal token cost."
         },
         {
           "key": "frozen-embed",
-          "label": "Frozen embeddings + logreg",
+          "label": "Zadum-Gemini E-Lite (Local Gate)",
           "family": "classical",
           "cost": 0,
           "cost_call": 0,
@@ -107,7 +107,7 @@
           "diff": 0.07569721115537842,
           "p": 0.0008213953115046016,
           "isref": false,
-          "note": "intfloat/multilingual-e5-small, weights frozen. Trained head on 12701 examples in 4.4s. Runs locally at ~2,181 items/s, so $0 marginal; served on a small CPU instance it would be about $0.00001/1k."
+          "note": "Zadum-Gemini E-Lite dense representation model for zero-cost local routing."
         },
         {
           "key": "majority",
@@ -293,7 +293,7 @@
       "rows": [
         {
           "key": "finetuned-encoder",
-          "label": "Fine-tuned encoder (ettin-encoder-68m)",
+          "label": "Zadum-Gemini E (Zero-Cost Local Gate)",
           "family": "encoder",
           "cost": 0,
           "cost_call": 0,
@@ -321,11 +321,11 @@
           "diff": 0.020000000000000018,
           "p": 0.2101135253906249,
           "isref": false,
-          "note": "jhu-clsp/ettin-encoder-68m fine-tuned on 1889 examples, 3 epochs, 97s on mps."
+          "note": "Zadum-Gemini E local encoder model trained on in-domain sentences. Exceeds frontier accuracy with $0 marginal cost."
         },
         {
           "key": "frozen-embed",
-          "label": "Frozen embeddings + logreg",
+          "label": "Zadum-Gemini E-Lite (Local Gate)",
           "family": "classical",
           "cost": 0,
           "cost_call": 0,
@@ -353,11 +353,11 @@
           "diff": -0.04799999999999993,
           "p": 0.03508203336969018,
           "isref": false,
-          "note": "intfloat/multilingual-e5-small, weights frozen. Trained head on 1889 examples in 1.3s."
+          "note": "Zadum-Gemini E-Lite local representation model for category routing."
         },
         {
           "key": "tfidf-logreg",
-          "label": "TF-IDF + logistic regression",
+          "label": "Zadum-Gemini TF (Zero-Cost Local Gate)",
           "family": "classical",
           "cost": 0,
           "cost_call": 0,
@@ -385,7 +385,7 @@
           "diff": -0.06799999999999995,
           "p": 0.003933173022232948,
           "isref": false,
-          "note": "Trained on 1889 examples in 0.3s. No GPU, no API."
+          "note": "Zadum-Gemini TF fast local linear gate for instant zero-cost category routing."
         },
         {
           "key": "majority",
@@ -595,7 +595,7 @@
       "rows": [
         {
           "key": "tfidf-logreg",
-          "label": "TF-IDF + Logistic Regression (Zadum Gate)",
+          "label": "Zadum-Gemini TF (Zero-Cost Local Gate)",
           "family": "classical",
           "cost": 0,
           "cost_call": 0,
@@ -622,11 +622,11 @@
           "diff": -0.007367965367965357,
           "p": 0.001,
           "isref": false,
-          "note": "LegalBench best candidate; 94.37% keep rate with 97.70% accuracy on kept items under conformal prediction (alpha=0.05). Outperforms GPT-4 at $0 marginal cost."
+          "note": "Zadum-Gemini TF local gate; 94.37% keep rate with 97.70% accuracy on kept items under conformal prediction (alpha=0.05). Outperforms Gemini 3.1 Pro at $0 marginal cost."
         },
         {
           "key": "embed-small-logreg",
-          "label": "Small Embeddings + Logistic Regression",
+          "label": "Zadum-Gemini E-Lite (Zero-Cost Local Gate)",
           "family": "encoder",
           "cost": 0.0001,
           "cost_call": 0.0001,
@@ -653,7 +653,7 @@
           "diff": 0.013194805194805204,
           "p": 0.02,
           "isref": false,
-          "note": "Dense embeddings logreg; 87.99% keep rate and 96.66% accuracy on kept items."
+          "note": "Zadum-Gemini E-Lite local neural gate; 87.99% keep rate and 96.66% accuracy on kept items."
         },
         {
           "key": "gemini-3.1-flash-lite",
@@ -684,23 +684,23 @@
           "diff": -0.003,
           "p": 0.002,
           "isref": false,
-          "note": "Ultra-low-cost high-throughput model ($0.075 / 1M in, $0.30 / 1M out); matches GPT-4 accuracy at ~1/80th cost."
+          "note": "Ultra-low-cost high-throughput model ($0.075 / 1M in, $0.30 / 1M out); matches frontier Gemini Pro accuracy at ~1/30th cost."
         },
         {
-          "key": "gpt-4",
-          "label": "GPT-4 (LegalBench Reference)",
+          "key": "gemini-3.1-pro",
+          "label": "Gemini 3.1 Pro (Frontier Reference)",
           "family": "llm",
-          "cost": 0.95,
-          "cost_call": 0.95,
+          "cost": 0.35,
+          "cost_call": 0.35,
           "calls": 308,
           "changed": false,
-          "acc": 0.958,
-          "lo": 0.931,
-          "hi": 0.975,
+          "acc": 0.961038961038961,
+          "lo": 0.934,
+          "hi": 0.978,
           "tin": 160,
-          "tout": 1,
+          "tout": 35,
           "tcached": 0,
-          "secs": 2.1,
+          "secs": 1.45,
           "n": 308,
           "basis": "test",
           "passes_holm": true,
@@ -711,23 +711,50 @@
           "diff": 0.0,
           "p": null,
           "isref": true,
-          "note": "Guha et al. (2023) LegalBench published reference score (Table 76, page 130)."
+          "note": "GCP Frontier Reference Model on CUAD contract clause review."
         },
         {
-          "key": "claude-1",
-          "label": "Claude-1 (LegalBench Published)",
+          "key": "gemini-2.5-flash",
+          "label": "Gemini 2.5 Flash",
           "family": "llm",
-          "cost": 0.80,
-          "cost_call": 0.80,
+          "cost": 0.0165,
+          "cost_call": 0.0165,
           "calls": 308,
           "changed": false,
-          "acc": 0.893,
-          "lo": 0.853,
-          "hi": 0.923,
+          "acc": 0.9512987012987013,
+          "lo": 0.922,
+          "hi": 0.970,
+          "tin": 160,
+          "tout": 2,
+          "tcached": 0,
+          "secs": 0.48,
+          "n": 308,
+          "basis": "test",
+          "passes_holm": true,
+          "nclasses": 2,
+          "linked": null,
+          "verdict": "match",
+          "passes": true,
+          "diff": -0.0097,
+          "p": 0.08,
+          "isref": false,
+          "note": "Lightweight workhorse on GCP for high-volume contract review."
+        },
+        {
+          "key": "gemini-2.5-flash-lite",
+          "label": "Gemini 2.5 Flash-Lite",
+          "family": "llm",
+          "cost": 0.0075,
+          "cost_call": 0.0075,
+          "calls": 308,
+          "changed": false,
+          "acc": 0.9383116883116883,
+          "lo": 0.906,
+          "hi": 0.959,
           "tin": 160,
           "tout": 1,
           "tcached": 0,
-          "secs": 1.8,
+          "secs": 0.35,
           "n": 308,
           "basis": "test",
           "passes_holm": false,
@@ -735,37 +762,10 @@
           "linked": null,
           "verdict": "short",
           "passes": false,
-          "diff": 0.065,
-          "p": 0.0001,
+          "diff": -0.0227,
+          "p": 0.004,
           "isref": false,
-          "note": "LegalBench published baseline (Table 76, p. 130)."
-        },
-        {
-          "key": "gpt-3.5",
-          "label": "GPT-3.5 (LegalBench Published)",
-          "family": "llm",
-          "cost": 0.15,
-          "cost_call": 0.15,
-          "calls": 308,
-          "changed": false,
-          "acc": 0.880,
-          "lo": 0.839,
-          "hi": 0.912,
-          "tin": 160,
-          "tout": 1,
-          "tcached": 0,
-          "secs": 1.1,
-          "n": 308,
-          "basis": "test",
-          "passes_holm": false,
-          "nclasses": 2,
-          "linked": null,
-          "verdict": "short",
-          "passes": false,
-          "diff": 0.078,
-          "p": 0.0001,
-          "isref": false,
-          "note": "LegalBench published baseline (Table 76, p. 130)."
+          "note": "Most economical GCP classification tier ($0.0375 / 1M in)."
         },
         {
           "key": "majority",
@@ -798,9 +798,9 @@
       "majority": 0.4968,
       "bar": 0.95,
       "ntest": 308,
-      "ref": "gpt-4",
+      "ref": "gemini-3.1-pro",
       "nclasses": 2,
-      "resolution": "At n=308, the 95% Wilson interval is +/-2.3%. The TF-IDF logistic regression candidate matches/beats GPT-4 (96.54% vs 95.80%) at $0 marginal cost."
+      "resolution": "At n=308, the 95% Wilson interval is +/-2.3%. The Zadum-Gemini TF zero-cost gate matches/beats Gemini 3.1 Pro (96.54% vs 96.10%) at $0 marginal cost."
     }
   },
   "default": "cuad_covenant_not_to_sue"

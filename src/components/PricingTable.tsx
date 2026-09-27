@@ -74,7 +74,7 @@ export const PricingTable: React.FC = () => {
   }, [inputTokens, outputTokens, monthlyVolume, cacheHitRate]);
 
   const cheapest = calculatedBills[0];
-  const reference = calculatedBills.find((r) => r.model.includes('Claude Sonnet 4.6')) || calculatedBills[calculatedBills.length - 1];
+  const reference = calculatedBills.find((r) => r.model.includes('Gemini 3.1 Pro')) || calculatedBills[calculatedBills.length - 1];
 
   return (
     <div className="space-y-6">

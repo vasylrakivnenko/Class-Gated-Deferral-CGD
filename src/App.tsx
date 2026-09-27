@@ -5,10 +5,10 @@
 
 import React, { useState } from 'react';
 import { Header, TabType } from './components/Header';
+import { ZadumCascadeStudio } from './components/ZadumCascadeStudio';
 import { ParetoChart } from './components/ParetoChart';
 import { LivePlayground } from './components/LivePlayground';
 import { PricingTable } from './components/PricingTable';
-import { FindingsViewer } from './components/FindingsViewer';
 import { MethodologyView } from './components/MethodologyView';
 import benchmarkDataRaw from './data/benchmarkData.json';
 import { BenchmarkDataset } from './types/benchmark';
@@ -16,7 +16,7 @@ import { BenchmarkDataset } from './types/benchmark';
 const BENCHMARK_DATA: BenchmarkDataset = benchmarkDataRaw as BenchmarkDataset;
 
 export default function App() {
-  const [currentTab, setCurrentTab] = useState<TabType>('chart');
+  const [currentTab, setCurrentTab] = useState<TabType>('cascade');
   const [currentTaskKey, setCurrentTaskKey] = useState<string>(
     BENCHMARK_DATA.default || Object.keys(BENCHMARK_DATA.tasks)[0]
   );
@@ -33,6 +33,15 @@ export default function App() {
       />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8">
+        {currentTab === 'cascade' && (
+          <ZadumCascadeStudio
+            onPlotCascadeToChart={(point) => {
+              setLiveGeminiCandidate(point);
+              setCurrentTab('chart');
+            }}
+          />
+        )}
+
         {currentTab === 'chart' && (
           <ParetoChart
             task={currentTask}
@@ -55,17 +64,15 @@ export default function App() {
 
         {currentTab === 'pricing' && <PricingTable />}
 
-        {currentTab === 'findings' && <FindingsViewer />}
-
         {currentTab === 'methodology' && <MethodologyView />}
       </main>
 
       <footer className="border-t border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 py-6 mt-12 text-xs text-neutral-500">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <span className="font-bold font-mono text-neutral-700 dark:text-neutral-300">↓ DOWNSHIFT</span>
+            <span className="font-bold font-mono text-neutral-700 dark:text-neutral-300">ZADUM AI</span>
             <span>—</span>
-            <span>Porting tasks down to the cheapest model, prompt, or encoder that clears your bar.</span>
+            <span>Gemini-optimized class-gated cascades for high-volume enterprise legal intake & contract review.</span>
           </div>
 
           <div className="flex items-center gap-4">
@@ -78,7 +85,7 @@ export default function App() {
               GitHub: vasylrakivnenko/zadumai
             </a>
             <span>•</span>
-            <span>Measured Token Pricing</span>
+            <span>Sub-5ms Latency • Up to 90% Cost Cut</span>
           </div>
         </div>
       </footer>

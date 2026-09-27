@@ -28,7 +28,7 @@ export const JsonlUploadModal: React.FC<JsonlUploadModalProps> = ({ isOpen, onCl
 
     if (file.size > MAX_FILE_SIZE_BYTES) {
       setErrorMessage(
-        `File size ${(file.size / (1024 * 1024)).toFixed(2)} MB exceeds the maximum 10MB limit. Please upload a smaller file.`
+        `File size ${(file.size / (1024 * 1024)).toFixed(2)} MB exceeds the maximum 1MB limit. Please upload a file up to 1MB (up to 10,000 rows).`
       );
       return;
     }
@@ -77,6 +77,28 @@ export const JsonlUploadModal: React.FC<JsonlUploadModalProps> = ({ isOpen, onCl
     }
   };
 
+  const handleLoadLegalSampleDataset = () => {
+    const sampleRows = [
+      { text: "Developer agrees that it will not at any time do or cause to be done any act or thing contesting or impairing any part of such right, title and interest in licensor's patents.", label: "covenant_not_to_sue" },
+      { text: "Neither party shall disclose, publish, or otherwise disseminate any Confidential Information of the other party to any third party without prior written consent.", label: "confidentiality" },
+      { text: "Licensor reserves the right, upon 10 days advance written notice, to audit and inspect licensee's records and premises to verify compliance with royalty obligations.", label: "audit_rights" },
+      { text: "Either party may terminate this Agreement immediately upon written notice if the other party breaches any material term and fails to cure within 30 days.", label: "termination" },
+      { text: "To the maximum extent permitted by applicable law, in no event shall either party's aggregate liability exceed the total amounts paid under this Agreement in the preceding 12 months.", label: "limitation_of_liability" },
+      { text: "Supplier agrees to defend, indemnify and hold harmless Customer against any third-party claims alleging infringement of any copyright, trademark, or patent.", label: "indemnification" },
+      { text: "This Agreement shall be governed by, and construed in accordance with, the laws of the State of Delaware, without giving effect to conflict of laws principles.", label: "governing_law" },
+      { text: "Neither party may assign or transfer any rights or obligations under this Agreement without the express written consent of the other party.", label: "assignment" },
+      { text: "Neither party shall be liable for delays or failures in performance resulting from acts beyond its reasonable control, including natural disasters or civil unrest.", label: "force_majeure" },
+      { text: "All notices, requests, demands, and other communications shall be in writing and shall be deemed to have been duly given when delivered personally or by certified mail.", label: "notices" },
+    ];
+
+    const lines = sampleRows.map((r) => JSON.stringify(r)).join('\n');
+    const res = validateJsonlContent(lines, lines.length);
+    setFileName('legal_contract_clauses_sample.jsonl');
+    setFileSize(lines.length);
+    setValidationResult(res);
+    setErrorMessage(null);
+  };
+
   const handleLoadSampleDataset = () => {
     const sampleRows = [
       { text: "How do I activate my new credit card?", label: "activate_my_card" },
@@ -119,7 +141,7 @@ export const JsonlUploadModal: React.FC<JsonlUploadModalProps> = ({ isOpen, onCl
                 Upload Dataset for Zadum Class-Gating
               </h3>
               <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                Calibrate category tiers on your JSONL data (≤10MB, ≤10k rows).
+                Calibrate class tiers and test deferral on your JSONL sample (≤1MB, ≤10,000 rows).
               </p>
             </div>
           </div>
@@ -138,7 +160,7 @@ export const JsonlUploadModal: React.FC<JsonlUploadModalProps> = ({ isOpen, onCl
           </div>
           <div className="grid grid-cols-2 gap-2 text-[11px] text-neutral-600 dark:text-neutral-400 font-mono">
             <div>• Format: Line-delimited JSON (.jsonl)</div>
-            <div>• Max File Size: 10 MB</div>
+            <div>• Max File Size: 1 MB</div>
             <div>• Max Records: 10,000 rows</div>
             <div>• Required keys: "text", "label"</div>
           </div>
@@ -170,18 +192,26 @@ export const JsonlUploadModal: React.FC<JsonlUploadModalProps> = ({ isOpen, onCl
             Click to browse or drag and drop your .jsonl file
           </p>
           <p className="text-[11px] text-neutral-400 mt-1">
-            Up to 10MB · Max 10,000 rows
+            Up to 1MB · Max 10,000 rows
           </p>
         </div>
 
-        <div className="flex items-center justify-between text-xs pt-1">
-          <span className="text-neutral-500">Don't have a dataset ready?</span>
-          <button
-            onClick={handleLoadSampleDataset}
-            className="text-emerald-600 dark:text-emerald-400 font-medium hover:underline"
-          >
-            Load Sample Banking Dataset (.jsonl)
-          </button>
+        <div className="space-y-1.5 pt-1 text-xs">
+          <div className="text-neutral-500 text-[11px]">Quick load a benchmark sample:</div>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={handleLoadLegalSampleDataset}
+              className="px-2.5 py-1 rounded-md bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 font-medium hover:bg-emerald-100 transition-colors"
+            >
+              📄 Legal Contract Clauses (.jsonl)
+            </button>
+            <button
+              onClick={handleLoadSampleDataset}
+              className="px-2.5 py-1 rounded-md bg-neutral-100 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 font-medium hover:bg-neutral-200 transition-colors"
+            >
+              🏦 Customer Banking Intake (.jsonl)
+            </button>
+          </div>
         </div>
 
         {errorMessage && (
