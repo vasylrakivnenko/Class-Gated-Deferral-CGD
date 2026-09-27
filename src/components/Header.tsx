@@ -50,13 +50,17 @@ export const Header: React.FC<HeaderProps> = ({ currentTab, onTabChange, selecte
             onClick={() => onTabChange('cascade')}
             className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg font-medium text-xs sm:text-sm whitespace-nowrap transition-all ${
               currentTab === 'cascade'
-                ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-950 shadow-sm'
+                ? 'bg-neutral-900 text-white dark:bg-emerald-600 dark:text-white shadow-sm ring-1 ring-neutral-800 dark:ring-emerald-500'
                 : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800/60'
             }`}
           >
-            <Layers className="w-4 h-4 text-emerald-500" />
-            <span>Zadum Cascade Optimizer</span>
-            <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-mono font-semibold">
+            <Layers className={`w-4 h-4 ${currentTab === 'cascade' ? 'text-emerald-400 dark:text-emerald-200' : 'text-emerald-500'}`} />
+            <span className="font-semibold">Zadum Cascade Optimizer</span>
+            <span className={`text-[10px] px-2 py-0.5 rounded font-mono font-bold tracking-wide ${
+              currentTab === 'cascade'
+                ? 'bg-emerald-500/30 text-emerald-300 dark:bg-black/30 dark:text-emerald-100 border border-emerald-400/30'
+                : 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20'
+            }`}>
               90% Cut
             </span>
           </button>
