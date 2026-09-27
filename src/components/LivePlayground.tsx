@@ -299,7 +299,7 @@ export const LivePlayground: React.FC<LivePlaygroundProps> = ({ onPlotCandidate,
                   <Zap className="w-3.5 h-3.5 text-blue-500" /> DIRECT
                 </div>
                 <div className="text-[10px] text-neutral-500 mt-1">
-                  dspy.Predict (~5-15 output tokens). Lowest cost per call.
+                  Direct Predict (~5-15 output tokens). Lowest cost per call.
                 </div>
               </button>
 
@@ -315,7 +315,7 @@ export const LivePlayground: React.FC<LivePlaygroundProps> = ({ onPlotCandidate,
                   <Layers className="w-3.5 h-3.5 text-amber-500" /> REASONING
                 </div>
                 <div className="text-[10px] text-neutral-500 mt-1">
-                  dspy.ChainOfThought (~150-300 output tokens). Unsolicited thinking tax.
+                  Chain-of-Thought (~150-300 output tokens). Multi-step thinking.
                 </div>
               </button>
             </div>
