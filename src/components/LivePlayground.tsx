@@ -460,12 +460,12 @@ export const LivePlayground: React.FC<LivePlaygroundProps> = ({ onPlotCandidate,
                 </div>
 
                 <div className="p-3 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-850">
-                  <span className="text-neutral-500 block">Claude Sonnet 4.6 Baseline</span>
+                  <span className="text-neutral-500 block">Gemini 3.1 Pro Baseline</span>
                   <span className="text-sm font-bold font-mono text-neutral-900 dark:text-white">
-                    $1.14 / 1k
+                    $0.35 / 1k
                   </span>
                   <span className="text-[10px] text-emerald-600 font-semibold block mt-0.5">
-                    {((1 - singleResult.costPer1k / 1.14) * 100).toFixed(0)}% cheaper
+                    {Math.max(0, (1 - singleResult.costPer1k / 0.35) * 100).toFixed(0)}% cheaper
                   </span>
                 </div>
               </div>

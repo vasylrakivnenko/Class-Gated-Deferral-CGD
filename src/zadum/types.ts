@@ -29,7 +29,7 @@ export interface ZadumMetrics {
   tier2Ratio: number;
   blendedAccuracy: number;
   blendedCostPer1k: number;
-  baselineCostPer1k: number; // e.g. Claude Sonnet 4.6 or Frontier
+  baselineCostPer1k: number; // e.g. Gemini 3.1 Pro Frontier ($0.35/1k)
   savingsPercent: number;
   estimatedLatencyMs: number;
 }

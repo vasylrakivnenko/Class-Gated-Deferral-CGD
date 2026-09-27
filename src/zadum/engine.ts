@@ -95,7 +95,7 @@ export function calculateZadumMetrics(config: ZadumCascadeConfig): ZadumMetrics 
       tier2Ratio: 0,
       blendedAccuracy: 0,
       blendedCostPer1k: 0,
-      baselineCostPer1k: 1.1437,
+      baselineCostPer1k: 0.3500,
       savingsPercent: 0,
       estimatedLatencyMs: 0,
     };
