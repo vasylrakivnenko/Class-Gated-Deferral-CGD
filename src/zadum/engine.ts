@@ -13,9 +13,9 @@ export const TIER_COSTS: Record<CascadeTier, { costPer1k: number; avgLatencyMs: 
     label: 'Staged Flash LLM (Direct Predict)',
   },
   tier2_reasoning: {
-    costPer1k: 0.3500, // Gemini Pro / Claude Sonnet with reasoning tokens
+    costPer1k: 0.3500, // Gemini 3.1 Pro with reasoning tokens
     avgLatencyMs: 1450,
-    label: 'Frontier Reasoning LLM (CoT Deferral)',
+    label: 'GCP Frontier Reasoning LLM (Gemini 3.1 Pro Deferral)',
   },
 };
 
@@ -129,8 +129,8 @@ export function calculateZadumMetrics(config: ZadumCascadeConfig): ZadumMetrics 
     else t2Count += c.count;
   }
 
-  // Frontier Reference Baseline: Claude Sonnet 4.6 measured at $1.1437 / 1k items
-  const baselineCost = 1.1437;
+  // Frontier Reference Baseline: Gemini 3.1 Pro measured at $0.3500 / 1k items
+  const baselineCost = 0.3500;
   const savingsPercent = Math.max(0, (1 - weightedCost / baselineCost) * 100);
 
   return {

@@ -1,4 +1,7 @@
+node_modules/
+dist/
 .env
+.env.*
 .venv/
 __pycache__/
 *.pyc
@@ -6,5 +9,5 @@ runs/
 .cache/
 data/cache/
 *.png.bak
-.env
 .pytest_cache/
+.DS_Store

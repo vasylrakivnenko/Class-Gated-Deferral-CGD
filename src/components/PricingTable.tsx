@@ -6,7 +6,7 @@ import pricingDataRaw from '../data/pricingData.json';
 const PRICING_DATA: PricingRow[] = pricingDataRaw as PricingRow[];
 
 export const PricingTable: React.FC = () => {
-  const [filterProvider, setFilterProvider] = useState<'all' | 'azure' | 'fireworks' | 'google'>('all');
+  const [filterProvider, setFilterProvider] = useState<'all' | 'google'>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [sortKey, setSortKey] = useState<keyof PricingRow | 'blend'>('blend');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
@@ -226,12 +226,9 @@ export const PricingTable: React.FC = () => {
         {/* Table Filters & Search */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-1.5 overflow-x-auto text-xs">
-            <span className="text-neutral-500 font-semibold mr-1">Provider:</span>
+            <span className="text-neutral-500 font-semibold mr-1">Platform:</span>
             {[
-              { id: 'all', label: `All (${PRICING_DATA.length})` },
-              { id: 'google', label: 'Google Gemini (3)' },
-              { id: 'azure', label: 'MS Azure AI (9)' },
-              { id: 'fireworks', label: 'Fireworks Serverless (16)' },
+              { id: 'all', label: `All GCP Models (${PRICING_DATA.length})` },
             ].map((p) => (
               <button
                 key={p.id}

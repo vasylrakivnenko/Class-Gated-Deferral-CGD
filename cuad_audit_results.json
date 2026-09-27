@@ -1,0 +1,63 @@
+{
+  "gemini-3.1-flash-lite": {
+    "model_id": "gemini-3.1-flash-lite",
+    "model_name": "Gemini 3.1 Flash-Lite",
+    "accuracy": 1.0,
+    "correct": 4,
+    "total": 4,
+    "avg_latency": 3.3358404636383057,
+    "avg_in_tokens": 165.25,
+    "avg_out_tokens": 1.0,
+    "cost_per_1k": 0.01269375,
+    "items": [
+      {
+        "id": "AR-1",
+        "gold": "yes",
+        "pred": "yes",
+        "correct": true,
+        "latency": 0.8713233470916748,
+        "in_tok": 177,
+        "out_tok": 1
+      },
+      {
+        "id": "AR-2",
+        "gold": "yes",
+        "pred": "yes",
+        "correct": true,
+        "latency": 3.5494585037231445,
+        "in_tok": 177,
+        "out_tok": 1
+      },
+      {
+        "id": "AR-5",
+        "gold": "no",
+        "pred": "no",
+        "correct": true,
+        "latency": 4.479705333709717,
+        "in_tok": 223,
+        "out_tok": 1
+      },
+      {
+        "id": "AR-6",
+        "gold": "no",
+        "pred": "no",
+        "correct": true,
+        "latency": 4.4428746700286865,
+        "in_tok": 84,
+        "out_tok": 1
+      }
+    ]
+  },
+  "gemini-2.5-flash": {
+    "model_id": "gemini-2.5-flash",
+    "model_name": "Gemini 2.5 Flash",
+    "accuracy": 0,
+    "correct": 0,
+    "total": 0,
+    "avg_latency": 0,
+    "avg_in_tokens": 0,
+    "avg_out_tokens": 0,
+    "cost_per_1k": 0.0,
+    "items": []
+  }
+}

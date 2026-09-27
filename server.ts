@@ -15,11 +15,13 @@ const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
 app.use(express.json());
 
-// Initialize GoogleGenAI client (will pick up process.env.GEMINI_API_KEY)
-const ai = new GoogleGenAI();
+// Initialize GoogleGenAI client (will pick up process.env.GCP_API_2 or process.env.GEMINI_API_KEY)
+const apiKey = process.env.GCP_API_2 || process.env.GEMINI_API_KEY;
+const ai = new GoogleGenAI(apiKey ? { apiKey } : undefined);
 
 // Rates per 1M tokens ($)
 const GEMINI_RATES: Record<string, { in: number; out: number; label: string }> = {
+  'gemini-2.5-flash': { in: 0.075, out: 0.30, label: 'Gemini 2.5 Flash' },
   'gemini-3.1-flash-lite': { in: 0.075, out: 0.30, label: 'Gemini 3.1 Flash-Lite' },
   'gemini-3.8-flash': { in: 0.15, out: 0.60, label: 'Gemini 3.8 Flash' },
   'gemini-3.1-pro-preview': { in: 1.25, out: 5.00, label: 'Gemini 3.1 Pro' },
@@ -41,8 +43,8 @@ app.post('/api/evaluate-live', async (req: Request, res: Response) => {
       return;
     }
 
-    const validModels = ['gemini-3.1-flash-lite', 'gemini-3.8-flash', 'gemini-3.1-pro-preview'];
-    const selectedModel = validModels.includes(model) ? model : 'gemini-3.1-flash-lite';
+    const validModels = ['gemini-2.5-flash', 'gemini-3.1-flash-lite', 'gemini-3.8-flash', 'gemini-3.1-pro-preview'];
+    const selectedModel = validModels.includes(model) ? model : 'gemini-2.5-flash';
 
     let systemInstruction = '';
     if (customInstruction) {
@@ -62,6 +64,14 @@ app.post('/api/evaluate-live', async (req: Request, res: Response) => {
       } else {
         systemInstruction =
           'You are a banking customer support intent classifier. Analyze the query carefully, reason about the user requirement, and output your reasoning followed by the final intent on the last line: Intent: <intent_label>.';
+      }
+    } else if (task === 'cuad_audit_rights') {
+      if (promptType === 'direct') {
+        systemInstruction =
+          'You are a legal contract analyzer. Determine whether the contract clause contains an audit rights provision (i.e., gives a party the right to audit, examine, or inspect books, records, accounts, or facilities of the counterparty). Output ONLY "yes" or "no".';
+      } else {
+        systemInstruction =
+          'You are a legal contract analyzer. Analyze whether the clause grants audit or inspection rights over books, records, or facilities. Provide your legal reasoning followed by the final decision on the last line: Answer: <yes|no>.';
       }
     } else {
       systemInstruction =
@@ -146,8 +156,8 @@ app.post('/api/benchmark-batch', async (req: Request, res: Response) => {
       return;
     }
 
-    const validModels = ['gemini-3.1-flash-lite', 'gemini-3.8-flash', 'gemini-3.1-pro-preview'];
-    const selectedModel = validModels.includes(model) ? model : 'gemini-3.1-flash-lite';
+    const validModels = ['gemini-2.5-flash', 'gemini-3.1-flash-lite', 'gemini-3.8-flash', 'gemini-3.1-pro-preview'];
+    const selectedModel = validModels.includes(model) ? model : 'gemini-2.5-flash';
     const rates = GEMINI_RATES[selectedModel] || { in: 0.15, out: 0.60, label: selectedModel };
 
     const results = [];
@@ -165,6 +175,8 @@ app.post('/api/benchmark-batch', async (req: Request, res: Response) => {
           systemInstruction:
             task === 'financial_phrasebank'
               ? 'Output ONLY one label: positive, neutral, or negative.'
+              : task === 'cuad_audit_rights'
+              ? 'Determine if this contract clause contains an audit or inspection rights provision. Output ONLY "yes" or "no".'
               : 'Output ONLY the single banking intent label from standard Banking77 classes.',
           temperature: 0.0,
           maxOutputTokens: 64,

@@ -248,7 +248,7 @@ export const ZadumCascadeStudio: React.FC<ZadumCascadeStudioProps> = ({
             {formatCost(metrics.blendedCostPer1k)}
           </div>
           <span className="text-[10px] text-neutral-400 mt-0.5 block">
-            vs. {formatCost(metrics.baselineCostPer1k)} Sonnet 4.6
+            vs. {formatCost(metrics.baselineCostPer1k)} Gemini 3.1 Pro
           </span>
         </div>
 

@@ -19,6 +19,14 @@ interface LivePlaygroundProps {
 
 const AVAILABLE_MODELS = [
   {
+    id: 'gemini-2.5-flash',
+    name: 'Gemini 2.5 Flash',
+    tag: 'Lightweight / Fast',
+    inPrice: 0.075,
+    outPrice: 0.30,
+    desc: 'Lightweight high-efficiency workhorse model on GCP.',
+  },
+  {
     id: 'gemini-3.1-flash-lite',
     name: 'Gemini 3.1 Flash-Lite',
     tag: 'Ultra-budget / Fast',

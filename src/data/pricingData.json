@@ -1,5 +1,15 @@
 [
   {
+    "model": "Gemini 2.5 Flash-Lite",
+    "params": null,
+    "provider": "google",
+    "ctx": 1048576,
+    "cache": true,
+    "in": 0.0375,
+    "out": 0.15,
+    "note": "Most lightweight GCP tier; $0.009375 cached input; sub-millisecond dispatch"
+  },
+  {
     "model": "Gemini 3.1 Flash-Lite",
     "params": null,
     "provider": "google",
@@ -7,7 +17,17 @@
     "cache": true,
     "in": 0.075,
     "out": 0.3,
-    "note": "Ultra-budget high-speed tier; $0.01875 cached input"
+    "note": "Ultra-budget high-speed tier; optimal for high-throughput classification cascades"
+  },
+  {
+    "model": "Gemini 2.5 Flash",
+    "params": null,
+    "provider": "google",
+    "ctx": 1048576,
+    "cache": true,
+    "in": 0.075,
+    "out": 0.3,
+    "note": "Fast, high-efficiency multimodal workhorse on GCP Vertex / AI Studio"
   },
   {
     "model": "Gemini 3.8 Flash",
@@ -17,7 +37,17 @@
     "cache": true,
     "in": 0.15,
     "out": 0.6,
-    "note": "General-purpose multimodal & high-throughput model"
+    "note": "Balanced general-purpose frontier model; low latency"
+  },
+  {
+    "model": "Gemini 2.5 Pro",
+    "params": null,
+    "provider": "google",
+    "ctx": 2097152,
+    "cache": true,
+    "in": 1.25,
+    "out": 5.0,
+    "note": "Frontier analytical reasoning and complex logic; 2M token context"
   },
   {
     "model": "Gemini 3.1 Pro",
@@ -26,251 +56,27 @@
     "ctx": 2097152,
     "cache": true,
     "in": 1.25,
-    "out": 5,
-    "note": "High-reasoning frontier model; 2M context window"
+    "out": 5.0,
+    "note": "Flagship frontier reasoning on GCP; 2M context window"
   },
   {
-    "model": "GPT-5.4-nano",
-    "params": null,
-    "provider": "azure",
-    "ctx": 400000,
-    "cache": true,
-    "in": 0.2,
-    "out": 1.25,
-    "note": "reasoning: 0 tokens measured"
-  },
-  {
-    "model": "GPT-5-nano",
-    "params": null,
-    "provider": "azure",
-    "ctx": 400000,
-    "cache": true,
-    "in": 0.05,
-    "out": 0.4,
-    "note": "272K max input / 128K max output; reasoning: 64 tokens measured on 1-word answer"
-  },
-  {
-    "model": "GPT-5.4-mini",
-    "params": null,
-    "provider": "azure",
-    "ctx": 400000,
-    "cache": true,
-    "in": 0.75,
-    "out": 4.5
-  },
-  {
-    "model": "GPT-4.1-mini",
-    "params": null,
-    "provider": "azure",
-    "ctx": 1000000,
-    "cache": true,
-    "in": 0.4,
-    "out": 1.6,
-    "note": "32,768 max output"
-  },
-  {
-    "model": "GPT-5.2",
-    "params": null,
-    "provider": "azure",
-    "ctx": 400000,
-    "cache": true,
-    "in": 1.75,
-    "out": 14,
-    "note": "128K max output"
-  },
-  {
-    "model": "DeepSeek-V4-Flash",
-    "params": null,
-    "provider": "azure",
-    "ctx": 1000000,
-    "cache": true,
-    "in": 0.15,
-    "out": 0.31,
-    "note": "Data Zone rate (via Fireworks-on-Azure); no Global meter found",
-    "dup": "deepseek"
-  },
-  {
-    "model": "Kimi K2.6",
-    "params": "1T total / 32B active (MoE, K2-family arch)",
-    "provider": "azure",
+    "model": "Gemma 4 26B (GCP Vertex)",
+    "params": "26B",
+    "provider": "google",
     "ctx": 262144,
-    "cache": true,
-    "in": 0.95,
-    "out": 4,
-    "note": "meter literally named 'K2.6 Thinking'; 126 tokens measured on 1-word answer",
-    "dup": "kimi26"
-  },
-  {
-    "model": "Claude Sonnet 4.6",
-    "params": null,
-    "provider": "azure",
-    "ctx": 1000000,
-    "cache": true,
-    "in": 3,
-    "out": 15,
-    "note": "1M ctx confirmed for Foundry specifically (200K on other platforms); CCU billing = same per-token rate, repackaged"
-  },
-  {
-    "model": "Claude Opus 4.8",
-    "params": null,
-    "provider": "azure",
-    "ctx": 1000000,
-    "cache": true,
-    "in": 5,
-    "out": 25,
-    "note": "1M ctx confirmed for Foundry specifically; CCU billing = same per-token rate, repackaged"
-  },
-  {
-    "model": "DeepSeek V4 Flash (0731)",
-    "params": null,
-    "provider": "fireworks",
-    "ctx": 1000000,
-    "cache": true,
-    "in": 0.22,
-    "out": 0.66,
-    "dup": "deepseek"
-  },
-  {
-    "model": "DeepSeek V4 Pro (0813)",
-    "params": null,
-    "provider": "fireworks",
-    "ctx": 1000000,
-    "cache": true,
-    "in": 1.32,
-    "out": 3.96,
-    "note": "131K max output"
-  },
-  {
-    "model": "GLM 5.3 Flash",
-    "params": null,
-    "provider": "fireworks",
-    "ctx": 1310720,
-    "cache": true,
-    "in": 0.15,
-    "out": 0.5
-  },
-  {
-    "model": "GLM 5.3",
-    "params": null,
-    "provider": "fireworks",
-    "ctx": 1000000,
-    "cache": true,
-    "in": 1.4,
-    "out": 4.4,
-    "note": "128K max output"
-  },
-  {
-    "model": "GLM 5.2",
-    "params": null,
-    "provider": "fireworks",
-    "ctx": 1000000,
-    "cache": true,
-    "in": 1.4,
-    "out": 4.4
-  },
-  {
-    "model": "GLM 5.2 Fast",
-    "params": null,
-    "provider": "fireworks",
-    "ctx": 1000000,
-    "cache": true,
-    "in": 2.1,
-    "out": 6.6,
-    "inferred": "ctx inferred = same as GLM 5.2 (Fast is a serving tier, not a distinct model)"
-  },
-  {
-    "model": "Kimi K3",
-    "params": "2.8T total / 104B active (MoE, Kimi Delta Attention)",
-    "provider": "fireworks",
-    "ctx": 1000000,
-    "cache": true,
-    "in": 3,
-    "out": 15
-  },
-  {
-    "model": "Kimi K3 Fast",
-    "params": "2.8T total / 104B active (MoE)",
-    "provider": "fireworks",
-    "ctx": 1000000,
-    "cache": true,
-    "in": 4.5,
-    "out": 22.5,
-    "inferred": "ctx inferred = same as Kimi K3 (Fast is a serving tier, not a distinct model)"
-  },
-  {
-    "model": "Kimi K2.6",
-    "params": "1T total / 32B active (MoE, K2-family arch)",
-    "provider": "fireworks",
-    "ctx": 262144,
-    "cache": true,
-    "in": 0.95,
-    "out": 4,
-    "dup": "kimi26"
-  },
-  {
-    "model": "Qwen 3.7 Plus",
-    "params": null,
-    "provider": "fireworks",
-    "ctx": 1000000,
-    "cache": true,
-    "in": 0.4,
-    "out": 1.6,
-    "note": "131,072 max output"
-  },
-  {
-    "model": "Qwen 3.8 Max",
-    "params": "2.4T total / 95B active (MoE, multimodal)",
-    "provider": "fireworks",
-    "ctx": 1000000,
-    "cache": true,
-    "in": 2,
-    "out": 6,
-    "note": "128K max output"
-  },
-  {
-    "model": "MiniMax M3",
-    "params": null,
-    "provider": "fireworks",
-    "ctx": 1000000,
-    "cache": true,
-    "in": 0.3,
-    "out": 1.2
-  },
-  {
-    "model": "GPT-OSS-120B",
-    "params": "117B total / 5.1B active (MoE, OpenAI open-weight)",
-    "provider": "fireworks",
-    "ctx": 128000,
-    "cache": true,
-    "in": 0.15,
-    "out": 0.6
-  },
-  {
-    "model": "Nemotron 3.5 Lightning 30B-A3B",
-    "params": "30B total / ~3B active (MoE, name-implied)",
-    "provider": "fireworks",
-    "ctx": 1000000,
-    "cache": true,
+    "cache": false,
     "in": 0.05,
-    "out": 0.2,
-    "note": "has a working thinking-off switch: extra_body chat_template_kwargs enable_thinking=false (verified: 328 tok → 2 tok)"
+    "out": 0.15,
+    "note": "Lightweight open-weights architecture hosted on GCP Vertex Model Garden"
   },
   {
-    "model": "Nemotron 3 Ultra (Preview)",
-    "params": null,
-    "provider": "fireworks",
-    "ctx": 1000000,
-    "cache": true,
-    "in": 0.6,
-    "out": 2.4
-  },
-  {
-    "model": "Muse Glimmer 30B",
-    "params": "~30B (Meta, dense/MoE not confirmed)",
-    "provider": "fireworks",
-    "ctx": 131072,
-    "cache": true,
-    "in": 0.35,
-    "out": 1.5
+    "model": "Gemma 4 31B (GCP Vertex)",
+    "params": "31B",
+    "provider": "google",
+    "ctx": 262144,
+    "cache": false,
+    "in": 0.08,
+    "out": 0.24,
+    "note": "Advanced high-efficiency open model on GCP infrastructure"
   }
 ]

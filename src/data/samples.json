@@ -122,5 +122,47 @@
       "text": "My card was declined at a store checkout despite having sufficient funds.",
       "label": "declined_card_payment"
     }
+  ],
+  "cuad_audit_rights": [
+    {
+      "id": "ar-1",
+      "text": "The Publishers and/or their respective independent auditors, at no expense to HealthGate, and upon twenty (20) Business Days' written notice to HealthGate, shall have the right to conduct an operational audit pertaining to the fees and the Services rendered pursuant to this Agreement.",
+      "label": "yes"
+    },
+    {
+      "id": "ar-2",
+      "text": "Upon the written request of a Party (\"Requesting Party\") with reasonable advance notice and not more than once in each Calendar Year, the other Party shall permit an independent certified public accounting firm to have access during normal business hours to such of the records as may be reasonably necessary to verify the accuracy of reports.",
+      "label": "yes"
+    },
+    {
+      "id": "ar-3",
+      "text": "Each Party to this Agreement, at its own expense, shall have the right to inspect from time to time the operation and maintenance of any portion of the facility and to obtain copies of the maintenance records.",
+      "label": "yes"
+    },
+    {
+      "id": "ar-4",
+      "text": "Such inspections and audits may be made no more than once each calendar year, at reasonable times and on reasonable notice.",
+      "label": "yes"
+    },
+    {
+      "id": "ar-5",
+      "text": "During the term hereof and for a period of two years thereafter, each party agrees that it will refrain from making any representation or communication reflecting negatively on the other party.",
+      "label": "no"
+    },
+    {
+      "id": "ar-6",
+      "text": "Distributor shall procure the Products solely from the Company or its authorized affiliates during the entire appointment term.",
+      "label": "no"
+    },
+    {
+      "id": "ar-7",
+      "text": "Subject to the terms and conditions of this Agreement, Licensor hereby grants to Licensee a non-transferable, non-exclusive, worldwide license to use the Licensed Technology.",
+      "label": "no"
+    },
+    {
+      "id": "ar-8",
+      "text": "The term of this Agreement will begin on the Effective Date and will end three (3) years from the date the Application becomes accessible to Members.",
+      "label": "no"
+    }
   ]
 }
