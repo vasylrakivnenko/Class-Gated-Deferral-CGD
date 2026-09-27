@@ -54,7 +54,11 @@ const AVAILABLE_MODELS = [
 
 export const LivePlayground: React.FC<LivePlaygroundProps> = ({ onPlotCandidate, currentTaskKey }) => {
   const [selectedModel, setSelectedModel] = useState<string>('gemini-3.1-flash-lite');
-  const [task, setTask] = useState<'financial_phrasebank' | 'banking77'>('financial_phrasebank');
+  const [task, setTask] = useState<'financial_phrasebank' | 'banking77' | 'cuad_covenant_not_to_sue'>(
+    (currentTaskKey === 'cuad_covenant_not_to_sue' || currentTaskKey === 'banking77' || currentTaskKey === 'financial_phrasebank')
+      ? currentTaskKey
+      : 'cuad_covenant_not_to_sue'
+  );
   const [promptType, setPromptType] = useState<'direct' | 'reasoning'>('direct');
   const [inputText, setInputText] = useState<string>('');
   const [expectedLabel, setExpectedLabel] = useState<string>('');
@@ -70,7 +74,7 @@ export const LivePlayground: React.FC<LivePlaygroundProps> = ({ onPlotCandidate,
 
   // Load sample on mount or task change
   React.useEffect(() => {
-    const list = samplesData[task] || [];
+    const list = (samplesData as Record<string, any[]>)[task] || [];
     if (list.length > 0) {
       setInputText(list[0].text);
       setExpectedLabel(list[0].label);
@@ -78,7 +82,7 @@ export const LivePlayground: React.FC<LivePlaygroundProps> = ({ onPlotCandidate,
   }, [task]);
 
   const loadSample = (index: number) => {
-    const list = samplesData[task] || [];
+    const list = (samplesData as Record<string, any[]>)[task] || [];
     if (list[index]) {
       setInputText(list[index].text);
       setExpectedLabel(list[index].label);
@@ -119,7 +123,7 @@ export const LivePlayground: React.FC<LivePlaygroundProps> = ({ onPlotCandidate,
   };
 
   const handleRunBatch = async () => {
-    const list = samplesData[task] || [];
+    const list = (samplesData as Record<string, any[]>)[task] || [];
     if (list.length === 0) return;
     setBatchLoading(true);
     setError(null);
@@ -236,7 +240,19 @@ export const LivePlayground: React.FC<LivePlaygroundProps> = ({ onPlotCandidate,
             <label className="text-xs font-medium text-neutral-600 dark:text-neutral-400 block">
               Benchmark Dataset Task:
             </label>
-            <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+              <button
+                onClick={() => setTask('cuad_covenant_not_to_sue')}
+                className={`p-2.5 rounded-lg border text-left font-medium transition-all ${
+                  task === 'cuad_covenant_not_to_sue'
+                    ? 'border-emerald-500 bg-emerald-50/60 dark:bg-emerald-950/20 text-emerald-900 dark:text-emerald-200'
+                    : 'border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400'
+                }`}
+              >
+                <div className="truncate font-semibold">CUAD Covenant Not To Sue</div>
+                <span className="text-[10px] opacity-70">LegalBench • 2 classes (yes/no)</span>
+              </button>
+
               <button
                 onClick={() => setTask('financial_phrasebank')}
                 className={`p-2.5 rounded-lg border text-left font-medium transition-all ${
@@ -245,7 +261,7 @@ export const LivePlayground: React.FC<LivePlaygroundProps> = ({ onPlotCandidate,
                     : 'border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400'
                 }`}
               >
-                <div>Financial PhraseBank</div>
+                <div className="font-semibold">Financial PhraseBank</div>
                 <span className="text-[10px] opacity-70">3 classes (sentiments)</span>
               </button>
 
@@ -257,7 +273,7 @@ export const LivePlayground: React.FC<LivePlaygroundProps> = ({ onPlotCandidate,
                     : 'border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400'
                 }`}
               >
-                <div>Banking77</div>
+                <div className="font-semibold">Banking77</div>
                 <span className="text-[10px] opacity-70">77 customer intents</span>
               </button>
             </div>

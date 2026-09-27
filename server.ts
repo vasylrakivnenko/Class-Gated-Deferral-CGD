@@ -73,6 +73,14 @@ app.post('/api/evaluate-live', async (req: Request, res: Response) => {
         systemInstruction =
           'You are a legal contract analyzer. Analyze whether the clause grants audit or inspection rights over books, records, or facilities. Provide your legal reasoning followed by the final decision on the last line: Answer: <yes|no>.';
       }
+    } else if (task === 'cuad_covenant_not_to_sue') {
+      if (promptType === 'direct') {
+        systemInstruction =
+          'You are a specialized legal AI contract analyzer. Determine whether the contractual clause contains a "Covenant Not To Sue" / no-contest obligation (i.e. restricts a party from contesting the validity of the counterparty\'s intellectual property ownership or bringing claims against the counterparty). Output ONLY "yes" or "no".';
+      } else {
+        systemInstruction =
+          'You are a legal contract analyzer. Determine whether a party is restricted from contesting the validity of the counterparty’s ownership of intellectual property or otherwise bringing a claim against the counterparty for matters unrelated to the contract. Provide your legal reasoning followed by the final decision on the last line: Answer: <yes|no>.';
+      }
     } else {
       systemInstruction =
         promptType === 'direct'
@@ -177,6 +185,8 @@ app.post('/api/benchmark-batch', async (req: Request, res: Response) => {
               ? 'Output ONLY one label: positive, neutral, or negative.'
               : task === 'cuad_audit_rights'
               ? 'Determine if this contract clause contains an audit or inspection rights provision. Output ONLY "yes" or "no".'
+              : task === 'cuad_covenant_not_to_sue'
+              ? 'Determine whether the contractual clause contains a Covenant Not To Sue or no-contest obligation. Output ONLY "yes" or "no".'
               : 'Output ONLY the single banking intent label from standard Banking77 classes.',
           temperature: 0.0,
           maxOutputTokens: 64,

@@ -41,7 +41,7 @@ export const ZadumCascadeStudio: React.FC<ZadumCascadeStudioProps> = ({
   onPlotCascadeToChart,
 }) => {
   const [accuracyBar, setAccuracyBar] = useState<number>(0.90);
-  const [selectedTaskKey, setSelectedTaskKey] = useState<'banking77' | 'financial_phrasebank' | 'custom'>('banking77');
+  const [selectedTaskKey, setSelectedTaskKey] = useState<'banking77' | 'financial_phrasebank' | 'cuad_covenant_not_to_sue' | 'custom'>('cuad_covenant_not_to_sue');
   const [isUploadModalOpen, setIsUploadModalOpen] = useState<boolean>(false);
   const [customDatasetInfo, setCustomDatasetInfo] = useState<{
     name: string;
@@ -54,13 +54,13 @@ export const ZadumCascadeStudio: React.FC<ZadumCascadeStudioProps> = ({
   const [activeTierFilter, setActiveTierFilter] = useState<string>('all');
 
   const [testQuery, setTestQuery] = useState<string>(
-    'Why is the transfer still not showing up in my account?'
+    'Developer agrees that it will not at any time do or cause to be done any act or thing contesting or impairing any part of such right, title and interest.'
   );
   const [liveRoutingTrace, setLiveRoutingTrace] = useState<any>(null);
   const [isRouting, setIsRouting] = useState<boolean>(false);
 
   const rawData: any = benchmarkDataRaw;
-  const benchmarkTask = rawData.tasks[selectedTaskKey === 'custom' ? 'banking77' : selectedTaskKey];
+  const benchmarkTask = rawData.tasks[selectedTaskKey === 'custom' ? 'cuad_covenant_not_to_sue' : selectedTaskKey];
 
   const cascadeConfig: ZadumCascadeConfig = useMemo(() => {
     let counts: Record<string, number> = {};
@@ -70,6 +70,10 @@ export const ZadumCascadeStudio: React.FC<ZadumCascadeStudioProps> = ({
     if (selectedTaskKey === 'custom' && customDatasetInfo) {
       counts = customDatasetInfo.classCounts;
       total = customDatasetInfo.rowCount;
+    } else if (selectedTaskKey === 'cuad_covenant_not_to_sue') {
+      counts = { no: 154, yes: 154 };
+      total = 308;
+      knownAccuracies = { no: 0.976, yes: 0.955 };
     } else if (benchmarkTask) {
       const sampleRow = benchmarkTask.rows.find((r: any) => r.perclass);
       if (sampleRow && sampleRow.perclass) {
@@ -133,7 +137,15 @@ export const ZadumCascadeStudio: React.FC<ZadumCascadeStudioProps> = ({
       let matchedClass = 'transfer_not_received_by_recipient';
       let confidence = 0.88;
 
-      if (lower.includes('activate') || lower.includes('card')) {
+      if (selectedTaskKey === 'cuad_covenant_not_to_sue') {
+        if (lower.includes('contest') || lower.includes('impair') || lower.includes('challenge') || lower.includes('claim') || lower.includes('covenant') || lower.includes('sue') || lower.includes('litigat')) {
+          matchedClass = 'yes';
+          confidence = 0.965;
+        } else {
+          matchedClass = 'no';
+          confidence = 0.978;
+        }
+      } else if (lower.includes('activate') || lower.includes('card')) {
         matchedClass = 'activate_my_card';
         confidence = 0.98;
       } else if (lower.includes('atm') || lower.includes('cash')) {
@@ -313,7 +325,25 @@ export const ZadumCascadeStudio: React.FC<ZadumCascadeStudioProps> = ({
             </span>
             <div className="inline-flex rounded-lg p-1 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-xs">
               <button
-                onClick={() => setSelectedTaskKey('banking77')}
+                onClick={() => {
+                  setSelectedTaskKey('cuad_covenant_not_to_sue');
+                  setTestQuery('Developer agrees that it will not at any time do or cause to be done any act or thing contesting or impairing any part of such right, title and interest.');
+                  setLiveRoutingTrace(null);
+                }}
+                className={`px-3 py-1.5 rounded-md font-medium transition-all ${
+                  selectedTaskKey === 'cuad_covenant_not_to_sue'
+                    ? 'bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white shadow-xs'
+                    : 'text-neutral-600 dark:text-neutral-400'
+                }`}
+              >
+                CUAD Covenant (2 Classes)
+              </button>
+              <button
+                onClick={() => {
+                  setSelectedTaskKey('banking77');
+                  setTestQuery('Why is the transfer still not showing up in my account?');
+                  setLiveRoutingTrace(null);
+                }}
                 className={`px-3 py-1.5 rounded-md font-medium transition-all ${
                   selectedTaskKey === 'banking77'
                     ? 'bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white shadow-xs'
@@ -323,7 +353,11 @@ export const ZadumCascadeStudio: React.FC<ZadumCascadeStudioProps> = ({
                 Banking77 (77 Intents)
               </button>
               <button
-                onClick={() => setSelectedTaskKey('financial_phrasebank')}
+                onClick={() => {
+                  setSelectedTaskKey('financial_phrasebank');
+                  setTestQuery('Operating profit increased by 15% to 45 million EUR.');
+                  setLiveRoutingTrace(null);
+                }}
                 className={`px-3 py-1.5 rounded-md font-medium transition-all ${
                   selectedTaskKey === 'financial_phrasebank'
                     ? 'bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white shadow-xs'

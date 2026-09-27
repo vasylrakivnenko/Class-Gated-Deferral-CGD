@@ -1,0 +1,105 @@
+{
+  "gemini-3.1-flash-lite": {
+    "model_id": "gemini-3.1-flash-lite",
+    "model_name": "Gemini 3.1 Flash-Lite",
+    "accuracy": 0.9,
+    "correct": 9,
+    "total": 10,
+    "avg_latency": 0.5686206102371216,
+    "avg_in_tokens": 153.1,
+    "avg_out_tokens": 1.0,
+    "cost_per_1k": 0.0117825,
+    "items": [
+      {
+        "id": "cns-1",
+        "gold": "yes",
+        "pred": "yes",
+        "correct": true,
+        "latency": 0.7419898509979248,
+        "in_tok": 183,
+        "out_tok": 1
+      },
+      {
+        "id": "cns-2",
+        "gold": "yes",
+        "pred": "yes",
+        "correct": true,
+        "latency": 0.5249228477478027,
+        "in_tok": 154,
+        "out_tok": 1
+      },
+      {
+        "id": "cns-3",
+        "gold": "yes",
+        "pred": "yes",
+        "correct": true,
+        "latency": 0.5508177280426025,
+        "in_tok": 279,
+        "out_tok": 1
+      },
+      {
+        "id": "cns-4",
+        "gold": "yes",
+        "pred": "yes",
+        "correct": true,
+        "latency": 0.5097217559814453,
+        "in_tok": 147,
+        "out_tok": 1
+      },
+      {
+        "id": "cns-5",
+        "gold": "yes",
+        "pred": "no",
+        "correct": false,
+        "latency": 0.5224819183349609,
+        "in_tok": 89,
+        "out_tok": 1
+      },
+      {
+        "id": "cns-6",
+        "gold": "no",
+        "pred": "no",
+        "correct": true,
+        "latency": 0.8539185523986816,
+        "in_tok": 165,
+        "out_tok": 1
+      },
+      {
+        "id": "cns-7",
+        "gold": "no",
+        "pred": "no",
+        "correct": true,
+        "latency": 0.418290376663208,
+        "in_tok": 114,
+        "out_tok": 1
+      },
+      {
+        "id": "cns-8",
+        "gold": "no",
+        "pred": "no",
+        "correct": true,
+        "latency": 0.5287785530090332,
+        "in_tok": 158,
+        "out_tok": 1
+      },
+      {
+        "id": "cns-9",
+        "gold": "no",
+        "pred": "no",
+        "correct": true,
+        "latency": 0.49711084365844727,
+        "in_tok": 106,
+        "out_tok": 1
+      },
+      {
+        "id": "cns-10",
+        "gold": "no",
+        "pred": "no",
+        "correct": true,
+        "latency": 0.5381736755371094,
+        "in_tok": 136,
+        "out_tok": 1
+      }
+    ]
+  }
+}
