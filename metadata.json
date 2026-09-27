@@ -1,0 +1,6 @@
+{
+  "name": "Downshift: LLM Benchmarking & Cost-to-Accuracy Pareto Frontier",
+  "description": "Interactive benchmark harness and Pareto frontier explorer comparing Prompted LLMs, DSPy GEPA optimization, classical ML baselines, and fine-tuned encoders across measured token pricing, Wilson confidence intervals, and live Gemini evaluation.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
