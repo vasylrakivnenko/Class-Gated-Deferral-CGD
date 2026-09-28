@@ -100,10 +100,25 @@ middle rather than at an end.
 representation nor a cascade recovered it. Say the boundary out loud -- it is
 more credible than pretending there isn't one, and the boundary is the product.
 
-### Do not claim a cascade beats both arms
+### When a cascade beats both arms, and when it does not
 
-We built the router, replayed three gates plus an oracle out-of-fold, and it
-does not:
+It does, on large enough data with a swept budget. Measured 2026-09-24 in
+`ocl_compare/` on the four Online Cascade Learning benchmarks (Nie et al., ICML
+2024), free arm trained on gold, operating point chosen by nested CV so the
+number is the procedure's and not the best of 16 configurations:
+
+| dataset | n | free alone | GPT-3.5 | best hybrid | LLM share | margin over both |
+|---|---:|---:|---:|---:|---:|---|
+| IMDB | 25,000 | 0.9420 | 0.9415 | **0.9508** | 10% | +0.0087 / +0.0092 |
+| HateSpeech | 10,703 | 0.8460 | 0.8331 | **0.8642** | 20% | +0.0182 / +0.0311 |
+| ISEAR | 7,666 | 0.6975 | 0.7036 | **0.7131** | 33% | +0.0155 / +0.0095 |
+| FEVER | 6,512 | 0.7349 | 0.7997 | **0.8183** | 75% | +0.0834 / +0.0187 |
+
+Every margin clears that dataset's resolution floor. Balanced accuracy
+throughout, because a constant predictor scores 0.8883 on HateSpeech.
+
+**It does not, on the nine LegalBench pairs**, and that result stands as
+measured -- it is the boundary condition, not a contradiction:
 
 - The oracle sits **5 to 13 points above every honest gate** on all nine
   (task, model) pairs.
@@ -114,11 +129,28 @@ does not:
 - On the supply-chain task, escalating made accuracy **worse**: the items the
   free model doubted were items the LLM got wrong more often.
 
-**The cascade is a cost dial, not an accuracy device.** "The cheap model is
-uncertain" is not "the LLM knows better"; routing needs relative competence and
-that signal is not recoverable from the cheap model's confidence. This includes
-the CUAD number above: 76% free at 90% reliability is a *coverage* claim about
-what needs no escalation, not a claim to beat an LLM.
+**Against the published online-cascade numbers, at a matched label budget: 7 of
+12 cells, not 12 of 12.** `ocl_compare/label_matched.py`, measured 2026-09-24.
+In neural caching `N` is both the call budget and the training-set size, because
+a call returns a label; our CV trained on 80% of the data regardless, so half the
+earlier margin was labels rather than method. Matching both, a static cascade
+wins below roughly 20-30% of the stream (IMDB +0.0631 at 5.2%, FEVER +0.0610 at
+10.7%) and loses above it (FEVER -0.0385 at 43%, ISEAR -0.0293 at 35%), because
+the online system keeps learning from every call and the static one trains once.
+Unpaired, and our encoder is 335M against their 110M.
+
+**What separates the two is resolution and label supply.** Those tasks carry
+300-614 items, which resolves about three points; three of the four gains above
+are under 1.6 points and would have been invisible there. And the effect
+depends on gold: re-running the same four datasets with every component fitted
+on the LLM's own annotations instead (`--train-on llm`, OCL's setting) leaves
+**no** resolvable gain over simply calling the LLM -- +0.0000, +0.0005, +0.0003
+and +0.0022 against floors of 0.0102, 0.0057, 0.0062 and 0.0032.
+
+So: the cascade is an accuracy device when you have labels and enough test data
+to see a one-point effect, and a cost dial otherwise. "The cheap model is
+uncertain" is still not "the LLM knows better" -- the CUAD number above remains
+a *coverage* claim about what needs no escalation, not a claim to beat an LLM.
 
 ### Do not claim a middle setting exists on every workload
 
@@ -305,14 +337,20 @@ the test set.
 ### Do not present benchmark numbers as deployment numbers
 
 Two of four suites are contaminated, which we found by checking rather than by
-being told:
+being told. Both audits live in `contamination/`, pinned to a dataset revision,
+fingerprinted, and re-asserted against these numbers on every run:
 
-- **FinBen headlines: 71.5% of test rows have a prompt that appears in train.**
-  Our avg wF1 is 0.982 on the full split and 0.967 on the 651 leak-free rows.
+- **FinBen headlines: 71.5% of test rows have a prompt that appears in train**
+  (1,632 of each sub-task's 2,283, at 99.7-100% label agreement, so the leak is
+  answerable by lookup). `contamination/finben_headlines_contam.py`.
+  Our avg wF1 is 0.982 on the full split and 0.967 on the 651 leak-free rows --
+  that pair is a modelling result from the FinBen arm, which was lost in the
+  2026-09-16 crash and is not yet re-derived; the leak rate beside it is.
 - **BeaverTails: 99.8% of test rows share a prompt with train** (distinct
-  responses, so pairs do not repeat). And the label ceiling is set by the
-  annotators, not the models: across texts appearing more than once, **27.7%
-  disagree on `is_safe`**, and 23.9% on `non_violent_unethical_behavior`.
+  responses, so pairs do not repeat: 0.0% pair overlap on 33,396 test rows).
+  And the label ceiling is set by the annotators, not the models: across texts
+  appearing more than once, **27.7% disagree on `is_safe`**, and 23.9% on
+  `non_violent_unethical_behavior`. `contamination/beavertails_contam.py`.
 - CUAD by contrast is clean: 4 pairs above 0.90 similarity, none crossing the
   split. That is a finding about CUAD, not a property we can assume.
 - **HINT3 is clean too:** 0.000% / 0.605% / 0.000% exact test-row overlap, and

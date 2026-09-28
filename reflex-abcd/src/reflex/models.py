@@ -311,7 +311,13 @@ class _ReflexModel(nn.Module):
         The once-per-epoch H7 refresh.
     ``value_candidate_tokens`` / ``value_target_index``
         ``utils/process.py::value_to_id`` reproduced, so H4's index space is the
-        official one.
+        official one. Its copy tier does not read the gold value -- see the
+        warning on the method.
+    ``value_target_index_value_aware``
+        The same index space, but the copy column resolved BY the gold value,
+        plus the reason it resolved that way. NOT YET WIRED IN: nothing calls
+        it, and every reported H4 number still comes from
+        ``value_target_index`` via ``probes/response_labels.py``.
     ``tokenizer``
         The tokenizer WITH the ABCD ``<slot>`` markers. Always use this one.
     ``class_orders``
@@ -952,6 +958,34 @@ class _ReflexModel(nn.Module):
             value: The gold value string.
             potential_vals: ``value_by_action[action]``; looked up when omitted,
                 stripping any position suffix first.
+
+        Warning:
+            THE COPY TIER OF THIS FUNCTION IS NOT A FUNCTION OF ``value``. The
+            ``else`` branch accepts the FIRST ``potential_vals`` entry whose
+            marker is present, whatever the gold value is, so for any action
+            with two or more non-enumerable slots (verify-identity,
+            validate-purchase, record-reason, enter-details, update-order,
+            update-account) the label is decided by ontology order and the
+            context alone. That is faithful -- ``utils/process.py::value_to_id``
+            does exactly this, and :mod:`reflex.train` needs the official index
+            space for its labels -- but it is NOT a correct gold label. Measured
+            on ``test_seen`` with the real ModernBERT-base tokenizer and the
+            shipped config (2,372 valued take_action turns, 2,193 resolvable --
+            the denominators ``outputs/probes/response/select.json`` publishes):
+            489 rows resolve through the copy tier and 284 of those have two or
+            more candidate markers present, i.e. the label is decided by
+            ontology order, and some are provably wrong (convo 777
+            ``validate-purchase``, gold ``rodriguezdomingo525@email.com``,
+            labelled at ``<username>``'s column; convo 3259 ``verify-identity``,
+            gold ``376-285-0809``, a phone, labelled at ``<zip_code>``'s).
+
+            THIS IS STILL THE FUNCTION EVERY REPORTED H4 NUMBER COMES FROM.
+            :meth:`value_target_index_value_aware` resolves by the value and
+            says how, but nothing calls it yet: the reporting path is
+            ``probes/response_labels.py`` (``H4TargetIndexer.index`` calls this
+            method, and ``_mirror_index`` / ``verify_against_model`` reproduce
+            and check this same ordering). Until that call site changes, H4's
+            published gold column carries the label error described here.
         """
         if potential_vals is None:
             base_action = action.split(" ")[0]
@@ -969,6 +1003,127 @@ class _ReflexModel(nn.Module):
             if target_id >= 0:
                 break
         return target_id, tokens
+
+    #: How :meth:`value_target_index_value_aware` resolved a row. The first two
+    #: are decided BY THE GOLD VALUE; ``copy_unambiguous`` is decided by the
+    #: context but could not have been decided otherwise (one candidate); the
+    #: rest resolve to ``-1`` and are unscorable, each for a different reason.
+    VALUE_RESOLUTIONS: tuple[str, ...] = (
+        "enumerable",
+        "copy_typed",
+        "copy_unambiguous",
+        "copy_ambiguous",
+        "copy_typed_marker_absent",
+        "copy_typed_not_an_action_slot",
+        "miss",
+    )
+
+    def value_target_index_value_aware(
+        self,
+        context_texts: list[str],
+        action: str,
+        value: str,
+        potential_vals: Optional[list[str]] = None,
+    ) -> tuple[int, list[str], str]:
+        """H4's gold column resolved BY THE VALUE. ``(target_id, tokens, resolution)``.
+
+        Same index space as :meth:`value_target_index` -- an enumerable hit is
+        ``value_list.index(value)``, a copy hit is
+        ``len(value_list) + tokens.index(marker)`` -- so the two are directly
+        comparable. What differs is only WHICH column the copy tier picks, and
+        it is picked by typing the gold value rather than by ontology order:
+
+        * the value is an enumerable value of one of the action's slots ->
+          ``enumerable`` (unchanged; that tier already read the value);
+        * the value's SHAPE types it to one of the action's non-enumerable slots
+          (``compile._type_literal``, the same evidence the compiler uses) and
+          that slot's marker is present -> ``copy_typed``;
+        * it types to a slot of this action whose marker is absent ->
+          ``copy_typed_marker_absent``, ``-1``: the value is not copyable here;
+        * it types to a slot this action does not even have ->
+          ``copy_typed_not_an_action_slot``, ``-1`` (convo 3259
+          ``verify-identity`` with a phone gold). ``_type_literal`` never
+          answers outside the action's own slots, so this takes a second,
+          candidate-free typing pass, with two carve-outs: a ``street_address``
+          shape counts as ``full_address`` when that is the slot the action has
+          (a full address begins with its street address), and a bare
+          alphanumeric token is NOT refused when the action has a ``username``
+          slot, because a username has no shape of its own;
+        * it has no shape at all (``username``, ``security_answer``,
+          ``details_slotval``) and exactly ONE candidate marker is present ->
+          ``copy_unambiguous``: still context-decided, but ontology order did
+          not decide it, so the label stands;
+        * shapeless with two or more markers present -> ``copy_ambiguous``,
+          ``-1``. This is the population :meth:`value_target_index` silently
+          labels by list order; refusing it is what keeps a label that is not a
+          function of the value out of a reported numerator. Report it as its
+          own count rather than folding it into ``miss``. It is CONSERVATIVE,
+          not a claim the old label was wrong: most of these rows are
+          validate-purchase usernames, which ontology order happens to label at
+          ``<username>``.
+
+        STATUS: NOT WIRED IN. No caller uses this. It is meant as the REPORTING
+        derivation -- deliberately not what :mod:`reflex.train` uses, since
+        training labels must stay in the official AST index space, which is
+        what :meth:`value_target_index` is for -- but the reporting path,
+        ``probes/response_labels.py``, still calls :meth:`value_target_index`
+        (``H4TargetIndexer.index``; its ``_mirror_index`` and
+        ``verify_against_model`` would have to follow, asserting parity only
+        where the resolution is ``enumerable``, ``copy_typed`` or
+        ``copy_unambiguous``). Wiring it in CHANGES PUBLISHED NUMBERS and needs
+        a probe re-run: measured on ``test_seen`` (real tokenizer, shipped
+        config) it agrees with :meth:`value_target_index` on 2,068 of 2,372
+        rows, moves 7 to a different column, and refuses 297 the other resolves
+        (220 ``copy_ambiguous``, 48 ``copy_typed_marker_absent``, 29
+        ``copy_typed_not_an_action_slot``), so H4's ``n_resolvable`` would go
+        from 2,193 to 1,896.
+        """
+        from reflex.compile import _type_literal  # local: compile pulls in data
+
+        if potential_vals is None:
+            base_action = action.split(" ")[0]
+            potential_vals = self.value_by_action.get(base_action, [])
+        tokens = self.value_candidate_tokens(context_texts, action)
+        n_values = len(self.value_list)
+
+        for option in potential_vals:
+            if option in self.enumerable and value in self.enumerable[option]:
+                return self.value_list.index(value), tokens, "enumerable"
+
+        copyable = [option for option in potential_vals if option not in self.enumerable]
+        typed = _type_literal(str(value), list(potential_vals), self.enumerable)
+        if not typed and copyable:
+            # _type_literal only ever answers with one of the action's OWN
+            # non-enumerable slots, so a value shaped like a slot this action
+            # does not have comes back None and would fall through to the
+            # shapeless branch below -- which is how a phone number entered
+            # into verify-identity got labelled at <zip_code>. Ask again with no
+            # candidate list, i.e. against every shape.
+            foreign = _type_literal(str(value), [], self.enumerable)
+            if foreign == "street_address" and "full_address" in copyable:
+                # A full address BEGINS with its street address; the shape test
+                # cannot tell them apart, and this action only has the one.
+                typed = "full_address"
+            elif foreign and foreign not in copyable:
+                # A username has no shape of its own and a bare alphanumeric
+                # token can be one ("sanyaa1253" has the account_id shape), so
+                # that case stays shapeless rather than being refused.
+                if not ("username" in copyable and str(value).strip().isalnum()):
+                    return -1, tokens, "copy_typed_not_an_action_slot"
+        if typed:
+            if typed not in copyable:
+                return -1, tokens, "copy_typed_not_an_action_slot"
+            marker = f"<{typed}>"
+            if marker not in tokens:
+                return -1, tokens, "copy_typed_marker_absent"
+            return n_values + tokens.index(marker), tokens, "copy_typed"
+
+        present = [option for option in copyable if f"<{option}>" in tokens]
+        if len(present) == 1:
+            return n_values + tokens.index(f"<{present[0]}>"), tokens, "copy_unambiguous"
+        if len(present) > 1:
+            return -1, tokens, "copy_ambiguous"
+        return -1, tokens, "miss"
 
 
 def _masked_cross_entropy(logits: torch.Tensor, labels: Optional[torch.Tensor]) -> torch.Tensor:

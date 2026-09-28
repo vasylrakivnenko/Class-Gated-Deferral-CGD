@@ -775,6 +775,7 @@ def _slot_columns(
     action: str,
     slot: str,
     tokens: Sequence[str],
+    lexicon: Optional[dict[str, str]] = None,
 ) -> tuple[list[int], list[str]]:
     """H4 columns and their value strings for one slot of ``action``.
 
@@ -783,6 +784,15 @@ def _slot_columns(
     occupies the COPY column of its ``<marker>`` in the context tokens. A slot
     may draw on both (``name`` is an enumerable ``product`` category for
     make-purchase AND a ``<name>`` marker -- see DEFECTS_OPEN D-4).
+
+    ``lexicon`` (``slot -> disclosed value``, from :func:`_disclosed_lexicon`)
+    is what turns a copy COLUMN into a copy VALUE. The column is the marker's
+    position and stays in the official index space; the NAME is the string the
+    marker stands for, because :class:`~reflex.schemas.Selection` documents
+    ``values`` as "H4 argmax VALUE per required slot" and
+    :mod:`reflex.evaluate` compares it against the gold value string. Falls
+    back to the marker when the customer has disclosed nothing for that slot --
+    a marker is at least honest about what the head pointed at.
     """
     n_values = len(bundle.value_list)
     columns: list[int] = []
@@ -805,8 +815,40 @@ def _slot_columns(
             column = n_values + list(tokens).index(marker)
             if column not in columns:
                 columns.append(column)
-                names.append(marker)
+                names.append((lexicon or {}).get(category) or marker)
     return columns, names
+
+
+def _disclosed_lexicon(bundle: _Selector, context: ContextWindow) -> dict[str, str]:
+    """``registry slot -> the value the customer has disclosed for it``.
+
+    The copy tier points at an ABCD ``<marker>``, which is a MASK, not a value:
+    the delexed context says ``<username>`` where the customer typed
+    ``cminh730``. ``context.disclosed`` already holds the unmasked string under
+    its scenario field name, and :func:`reflex.fill.disclosed_slot_values` is
+    the one reading of it as slot values -- CALLED rather than re-derived, so
+    the selector and the filler cannot end up with different ideas of what the
+    customer said: the same leaf-to-slot mapping, the same refusal of a
+    multi-value join ("shirt, jeans" names no single product), the same
+    transcript spelling (``michael kors jeans``, which is also how ABCD spells
+    the gold value). Nothing undisclosed is read -- the scenario is never passed
+    -- so the leakage boundary that :func:`reflex.data.build_context` owns is
+    inherited, not re-opened.
+
+    COVERAGE, stated rather than hidden: a copy column is lexicalized only when
+    THIS conversation's scenario carries the leaf and the customer has disclosed
+    it; otherwise its name stays the marker and cannot equal a gold value
+    string. Measured with the shipped config and bank over every valued
+    take_action turn: a lexicon value equals the gold string for 1,315 of 1,796
+    non-enumerable gold values on ``test_seen`` (73.2%) and 1,364 of 1,805 on
+    ``dev`` (75.6%) -- high for verify-identity / validate-purchase (83-93%),
+    low for enter-details (29-31%), whose values are mostly typed by the agent
+    and sit in no scenario leaf. That is a CEILING on string-scored H4 copy
+    accuracy, not an estimate of it.
+    """
+    from reflex.fill import disclosed_slot_values  # local: keeps compile off the import path
+
+    return disclosed_slot_values(context.disclosed or {}, bundle.bank.slot_registry, bundle.cfg)
 
 
 def score_turn(selector: Any, context: ContextWindow, turn: NormalizedTurn, cfg: dict[str, Any]) -> SelectorScores:
@@ -921,6 +963,16 @@ def _score_values(
     torch = _torch()
     slots = _value_slots(bundle, action) if bundle.value_restrict_to_action else ["**raw**"]
     if not slots:
+        # An EMPTY return is the gate's "this button takes no arguments" signal
+        # (gate.py skips its H4 block on an empty value_probs), so it must mean
+        # exactly that and nothing else. A button the ontology DOES give
+        # arguments, whose configured slot source happens to yield none -- the
+        # `value_slots_source: bank` case, where a bank ActionPattern of modal
+        # arity 0 stands in for a real argument list -- is the "empty argument
+        # list" failure mode instead: emit one empty distribution so the gate
+        # escalates rather than speaking an action with no arguments.
+        if bundle.value_restrict_to_action and bundle.value_by_action.get(action):
+            return [[]], [[]]
         return [], []
 
     context_texts = [
@@ -954,11 +1006,35 @@ def _score_values(
         columns = list(range(n_values)) + [n_values + i for i in range(len(tokens))]
         return [_softmax([logits[c] for c in columns])], [names]
 
+    lexicon = _disclosed_lexicon(bundle, context)
     probs: list[list[float]] = []
     candidates: list[list[str]] = []
     for slot in slots:
-        columns, names = _slot_columns(bundle, action, slot, tokens)
+        columns, names = _slot_columns(bundle, action, slot, tokens, lexicon)
         if not columns:
+            # Every slot of the predicted action OCCUPIES A POSITION, exactly as
+            # in the H7 template path above: a slot with no candidate column is
+            # an EMPTY distribution, not an absent one. Dropping it instead
+            # would hand the gate two distributions for validate-purchase's
+            # three arguments, so gate.py's size-0 "empty argument list"
+            # escalation could never fire and the turn would route `reflex` one
+            # value short.
+            #
+            # WHAT THIS COSTS, measured on abcd_v1.1.json train with the shipped
+            # bank under `bank_then_union` (markers searched over the WHOLE
+            # prior transcript, so a floor): 13,020 of 20,100 valued take_action
+            # turns have at least one slot with no column and so now escalate --
+            # pull-up-account 4,791/5,653, verify-identity 2,881/2,924,
+            # enter-details 1,671/1,671. Most of those slots are ALTERNATIVES in
+            # ABCD's ontology, not required arguments: the decoded slot count
+            # exceeds the gold arity on 15,870 of the 20,100 (pull-up-account
+            # decodes 2 slots and gold always carries 1; verify-identity 4 vs
+            # 3). Only validate-purchase (335) and offer-refund (247) lose a
+            # slot the gold list really has. Escalating is the safe direction,
+            # but until the slot source is arity-aware it is the slot list, not
+            # H4's confidence, that routes these turns.
+            probs.append([])
+            candidates.append([])
             continue
         probs.append(_softmax([logits[c] for c in columns]))
         candidates.append(names)
@@ -1080,10 +1156,14 @@ def select_from_scores(
                 "score_turn and select_from_scores disagree about the predicted branch."
             )
         action = bundle.actions[_argmax(scores.action_probs)]
+        # One entry per POSITION of scores.value_probs, including a slot with no
+        # candidate at all (empty string). Filtering those out instead would
+        # silently shorten the argument list and break the positional alignment
+        # the gate reads its per-slot set sizes off. Such a turn escalates on
+        # that slot's size-0 set, so the placeholder never reaches customer text.
         values = [
-            candidates[_argmax(probs)]
+            candidates[_argmax(probs)] if probs and candidates else ""
             for probs, candidates in zip(scores.value_probs, scores.value_candidates)
-            if probs and candidates
         ]
 
     elif nextstep == "retrieve_utterance":

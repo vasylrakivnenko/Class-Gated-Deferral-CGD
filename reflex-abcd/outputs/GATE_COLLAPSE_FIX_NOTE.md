@@ -10,11 +10,23 @@ into the **same distribution** `conformal_quantile` reads to set the
 accept/reject threshold for confident, covered turns. Coverage-absence (a
 structural fact: is the true answer even a candidate here) and confidence
 (given real candidates, how sure is the model) were being calibrated as one
-signal. At the real absent rate (~50% of dev template positions — matches
-D23's `gold_present_rate`), this forces `q → 1.0`, the prediction-set
+signal. At the real absent rate this forces `q → 1.0`, the prediction-set
 threshold to `0.0` (every class admitted), and the singleton gate then
 rejects every turn regardless of confidence. Reproduced synthetically at 3%
 absent, α=0.02: a 99.9%-confident response was rejected.
+
+**The real absent rate, read from the artifact rather than from prose
+(corrected 2026-09-20).** This note used to cite "~50% ... matches D23's
+`gold_present_rate`". The figure is right but D23 is not its source. From
+`outputs/probes/response/select.json` (and identically
+`outputs/probes/response/audit_dev.json`), `gold_present_rate` on **dev** is
+**5,629 / 11,330 = 0.4968225948808473** — the denominator is H7 *template
+positions*, not turns (dev has 9,021 retrieve turns and 11,330 positions across
+them). So 49.68% of dev template positions have their gold in the bank and
+**50.32% are absent**. The same field is **5,457 / 11,092 = 0.4919761990623873**
+on test_seen and **405 / 832 = 0.48677884615384615** on test_novel. Any of the
+three is an absent rate near one half, which is what makes the collapse total
+rather than marginal.
 
 ## Fix
 
@@ -74,12 +86,13 @@ behavior were reintroduced — it currently demonstrates the collapse exists in
 principle and that the new bucketing avoids it, which is the intended
 contract).
 
-**Full test suite**: `pytest tests/` — all calibrate/gate-related tests pass
-except one unrelated failure, `test_gate.py::test_a_50_50_value_prediction_now_escalates`,
-which belongs to a **different, parallel fix** (the required_slots/value-confidence
-gate work, touching `gate.py`/`select.py`, done by a separate agent working at
-the same time) — not caused by this change; `calibrate.py` was the only file
-this task touched.
+**Full test suite — superseded 2026-09-20.** This note recorded one failure,
+`test_gate.py::test_a_50_50_value_prediction_now_escalates`, belonging to a
+different, parallel fix (the required_slots/value-confidence gate work in
+`gate.py`/`select.py`). That fix has since landed. Re-run 2026-09-20:
+`python -m pytest -p no:warnings` → **561 passed, 0 failed, 0 errors**, with
+`tests/test_calibrate.py`'s 2 tests and `tests/test_gate.py`'s 47 among them.
+There is no longer any known failure in the suite.
 
 ## Left for later (explicitly out of scope here)
 

@@ -17,9 +17,21 @@ locally, no download) -- a real dense bi-encoder, 384-dim, cosine similarity.
 VECTOR SEARCH: RediSearch FT.CREATE with a FLAT (exact, brute-force) VECTOR
 field, not HNSW (approximate) -- FLAT was chosen deliberately: the LangCache
 run showed real result NON-DETERMINISM between two identical runs (compose@1
-2.75% vs 8.25% at the same n_train/n_test/seed), consistent with an
-approximate-search backend. FLAT guarantees the true nearest neighbor every
-time, same as TF-IDF's sklearn NearestNeighbors(algorithm="brute").
+2.75% vs 8.25% at the same n_train/n_test/seed). Comparing the two committed
+copies of langcache_baseline_mid.json row by row locates that entirely in TIED
+neighbours, not in approximate search: the two runs matched the identical 453
+of 800 rows and agreed exactly on every row whose similarity was < 1.0 (19
+full hits, 90 skeleton hits in both), while all 44 rows that flipped were at
+similarity EXACTLY 1.0 -- byte-identical prompts where several stored entries
+carry different answers and the search returned a different one of them.
+NEITHER of those two values is "the" LangCache number: that cell is unstable
+in [2.75%, 8.25%] across identical reruns.
+FLAT still guarantees the true nearest DISTANCE every time, same as TF-IDF's
+sklearn NearestNeighbors(algorithm="brute"); the tie-break itself is the part
+that has to be pinned down. All three 1-NN arms now use the same stated rule --
+lowest train turn_id (string order) among the tied candidates -- here via a
+KNN window that is widened until it is no longer entirely tied (see
+`_nearest_with_tie_break`), and each reports n_rows_with_tied_nearest_neighbour.
 
 SAME compose@1 predicate, same fully-covered population, as D26/D31.
 
@@ -37,6 +49,82 @@ import sys
 import time
 
 
+def _langcache_comparison(path: str) -> dict:
+    """Quote the LangCache head-to-head figure FROM ITS ARTIFACT.
+
+    This used to be a hardcoded 0.0825 copied out of D31's prose, while the
+    artifact on disk for that same 3,800/800 configuration records 0.0275 (an
+    identical rerun; see the module docstring). Neither is a stable point
+    estimate, so quote whatever the artifact says, carry the source path, and
+    say so when the artifact predates the explicit tie-break.
+    """
+    try:
+        with open(path, encoding="utf-8") as fh:
+            summary = json.load(fh)["summary"]
+    except Exception as exc:
+        return {"compose@1": None, "source": f"{path} (unreadable: {exc})"}
+    out = {
+        "compose@1": summary.get("compose@1_of_queried"),
+        "skeleton_only": summary.get("skeleton_only_of_queried"),
+        "median_similarity": summary.get("median_similarity_of_matches"),
+        "n_train_stored": summary.get("n_train_stored"),
+        "n_test_queried": summary.get("n_test_queried"),
+        "source": path,
+    }
+    if "tie_break" not in summary:
+        out["unstable"] = (
+            "artifact predates langcache_baseline.py's explicit tie-break: the answer "
+            "copied on similarity==1.0 duplicate prompts was whichever entry the service "
+            "listed first, so this value is one draw, not a point estimate. Measured size of "
+            "the effect: two identical 3,800/800 runs scored compose@1 0.0825 and 0.0275 "
+            "(skeleton-only 0.21375 and 0.11875), agreeing on every row below similarity 1.0.")
+    return out
+
+
+# RediSearch scores are float32 cosine distances, and the same text embedded in
+# two different batches differs by ~1e-7 per component (measured locally with
+# all-MiniLM-L6-v2), so exact float equality can miss true duplicates; 1e-6
+# groups them.
+TIE_EPS = 1e-6
+KNN_WINDOW = 10
+
+
+def _nearest_with_tie_break(search, n_pool, k0=KNN_WINDOW, eps=TIE_EPS):
+    """Nearest neighbour under an explicit rule: lowest turn_id among ties.
+
+    `search(k)` returns the k nearest docs (each with .score = cosine distance
+    and .turn_id). With KNN 1 the winner among identical-distance
+    entries (this corpus repeats its opening contexts many times over, with
+    DIFFERENT gold answers) was whichever RediSearch reached first. If the
+    whole window is tied the true tie set may extend past it, so widen the
+    window 10x until it is not, the pool is exhausted, or the server stops
+    returning more. Returns (winner_doc, best_distance, n_tied, truncated).
+    """
+    def _tied(docs):
+        d0 = min(float(d.score) for d in docs)
+        return d0, [d for d in docs if float(d.score) <= d0 + eps]
+
+    k = min(k0, n_pool) if n_pool else k0
+    docs = search(k)
+    if not docs:
+        return None, None, 0, False
+    d0, tied = _tied(docs)
+    while len(tied) >= len(docs) and len(docs) >= k and k < n_pool:
+        k = min(k * 10, n_pool)
+        try:
+            wider = search(k)
+        except Exception as exc:  # e.g. a server-side cap on K / LIMIT
+            print(f"  tie-set widening to K={k} failed: {exc}", file=sys.stderr)
+            break
+        if len(wider) <= len(docs):
+            break
+        docs = wider
+        d0, tied = _tied(docs)
+    truncated = len(tied) >= len(docs) and len(docs) < n_pool
+    winner = min(tied, key=lambda d: str(d.turn_id))
+    return winner, d0, len(tied), truncated
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -46,8 +134,18 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--index-name", default="reflex_vec_idx")
     ap.add_argument("--key-prefix", default="reflex:train:")
     ap.add_argument("--batch-size", type=int, default=256)
-    ap.add_argument("--flush-first", action="store_true")
+    ap.add_argument("--flush-first", action="store_true",
+                    help="wipe the WHOLE database (FLUSHDB) before storing")
+    ap.add_argument("--no-flush", action="store_true",
+                    help="do NOT delete existing keys under --key-prefix before storing. "
+                         "The default is to delete them, because the index is defined by "
+                         "prefix: hashes left by an earlier, larger run are re-indexed and "
+                         "silently enlarge the candidate pool this run's score is measured over")
     ap.add_argument("--out", default="outputs/probes/response/redis_vector_baseline.json")
+    ap.add_argument("--langcache-artifact",
+                    default="outputs/probes/response/langcache_baseline_mid.json",
+                    help="LangCache run quoted in compare_against; read from disk, "
+                         "never hardcoded")
     args = ap.parse_args(argv)
 
     import redis
@@ -60,7 +158,20 @@ def main(argv: list[str] | None = None) -> int:
     print("PING:", r.ping(), file=sys.stderr)
     if args.flush_first:
         r.flushdb()
-        print("flushed db", file=sys.stderr)
+        pool_reset = "FLUSHDB (whole database)"
+    elif not args.no_flush:
+        n_deleted = 0
+        del_pipe = r.pipeline(transaction=False)
+        for key in r.scan_iter(match=f"{args.key_prefix}*", count=1000):
+            del_pipe.delete(key)
+            n_deleted += 1
+            if n_deleted % 1000 == 0:
+                del_pipe.execute()
+        del_pipe.execute()
+        pool_reset = f"deleted {n_deleted} pre-existing keys under prefix '{args.key_prefix}'"
+    else:
+        pool_reset = "none (--no-flush): the pool may contain entries from earlier runs"
+    print(f"pool reset: {pool_reset}", file=sys.stderr)
 
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     from reflex.config import load_config
@@ -95,6 +206,8 @@ def main(argv: list[str] | None = None) -> int:
 
     train_covered = _fully_covered(train_rows["h5"], train_h7_by_turn)
     test_covered = _fully_covered(test_rows["h5"], test_h7_by_turn)
+    n_train_fully_covered = len(train_covered)
+    n_test_fully_covered = len(test_covered)
     if args.n_train:
         train_covered = train_covered[: args.n_train]
     if args.n_test:
@@ -130,6 +243,7 @@ def main(argv: list[str] | None = None) -> int:
           f"(batch={args.batch_size})...", file=sys.stderr)
     pipe = r.pipeline(transaction=False)
     n_stored = 0
+    stored_by_turn: dict = {}
     for i in range(0, len(train_covered), args.batch_size):
         batch = train_covered[i: i + args.batch_size]
         texts = [row.context.text for row, _, _ in batch]
@@ -145,6 +259,7 @@ def main(argv: list[str] | None = None) -> int:
                 "acts": "|".join(acts),
                 "composed_text": composed,
             })
+            stored_by_turn[row.turn_id] = ("|".join(tids), "|".join(acts), composed)
             n_stored += 1
         pipe.execute()
         if (i // args.batch_size) % 20 == 0:
@@ -155,16 +270,32 @@ def main(argv: list[str] | None = None) -> int:
 
     info = r.ft(args.index_name).info()
     print(f"  index num_docs={info.get('num_docs')}", file=sys.stderr)
+    # The retrieval pool is what the index holds, not what this process sent.
+    try:
+        index_num_docs = int(float(info.get("num_docs")))
+    except (TypeError, ValueError):
+        index_num_docs = None
+    if index_num_docs is not None and index_num_docs != n_stored:
+        print(f"  WARNING: index holds {index_num_docs} docs but this run stored "
+              f"{n_stored} -- the candidate pool is not the one n_train_stored names",
+              file=sys.stderr)
+    n_pool = index_num_docs if index_num_docs else n_stored
 
-    # ---- embed + query test entries (exact/FLAT top-1) ----
+    # ---- embed + query test entries (exact/FLAT, explicit tie-break) ----
     t2 = time.time()
     print(f"embedding + querying {len(test_covered):,} test_seen entries...", file=sys.stderr)
     n_scored = hit = hit_skel = 0
     sims = []
     per_row = []
-    q = Query("*=>[KNN 1 @embedding $vec AS score]").sort_by("score").return_fields(
-        "score", "turn_id", "template_ids", "acts", "composed_text"
-    ).dialect(2)
+    n_tied_rows = n_tie_set_truncated = 0
+
+    def _query(k):
+        # Same KNN form as the original top-1 query; only K changes. Only
+        # score + turn_id come back (a tie set can run to thousands of docs);
+        # the winner's answer is looked up by turn_id. paging() must follow K
+        # or redis-py's default LIMIT 0 10 silently caps the window.
+        return Query(f"*=>[KNN {int(k)} @embedding $vec AS score]").sort_by("score") \
+            .return_fields("score", "turn_id").paging(0, int(k)).dialect(2)
 
     for i in range(0, len(test_covered), args.batch_size):
         batch = test_covered[i: i + args.batch_size]
@@ -172,18 +303,30 @@ def main(argv: list[str] | None = None) -> int:
         embs = model.encode(texts, normalize_embeddings=True, show_progress_bar=False)
         for (row, positions, gold_tids), emb in zip(batch, embs):
             gold_acts = [p.act for p in positions]
-            res = r.ft(args.index_name).search(
-                q, query_params={"vec": np.asarray(emb, dtype=np.float32).tobytes()}
-            )
+            vec_bytes = np.asarray(emb, dtype=np.float32).tobytes()
+            doc, best_dist, n_tied, truncated = _nearest_with_tie_break(
+                lambda k: r.ft(args.index_name).search(
+                    _query(k), query_params={"vec": vec_bytes}).docs,
+                n_pool)
             n_scored += 1
-            if not res.docs:
+            if doc is None:
                 per_row.append({"turn_id": row.turn_id, "matched": False})
                 continue
-            doc = res.docs[0]
-            cosine_sim = 1.0 - float(doc.score)  # RediSearch KNN score is distance
+            if n_tied > 1:
+                n_tied_rows += 1
+            if truncated:
+                n_tie_set_truncated += 1
+            cosine_sim = 1.0 - best_dist  # RediSearch KNN score is distance
             sims.append(cosine_sim)
-            pred_tids = doc.template_ids.split("|")
-            pred_acts = doc.acts.split("|")
+            nearest_turn_id = str(doc.turn_id)
+            pred = stored_by_turn.get(nearest_turn_id)
+            if pred is None:
+                # only reachable under --no-flush: a leftover entry this run did not store
+                raw = r.hmget(f"{args.key_prefix}{nearest_turn_id}",
+                              "template_ids", "acts", "composed_text")
+                pred = tuple((v or b"").decode("utf-8") for v in raw)
+            pred_tids = pred[0].split("|")
+            pred_acts = pred[1].split("|")
             skel_hit = pred_acts == gold_acts
             full_hit = skel_hit and pred_tids == gold_tids and bool(gold_tids)
             if full_hit:
@@ -191,29 +334,57 @@ def main(argv: list[str] | None = None) -> int:
             if skel_hit:
                 hit_skel += 1
             per_row.append({"turn_id": row.turn_id, "matched": True, "similarity": cosine_sim,
+                            "nearest_train_turn_id": nearest_turn_id,
+                            "n_tied_candidates": n_tied,
                             "skeleton_hit": skel_hit, "full_hit": full_hit,
                             "context": row.context.text,
                             "gold_text": " ".join(bank_text.get(t, "") for t in gold_tids),
-                            "predicted_text": doc.composed_text})
+                            "predicted_text": pred[2]})
         if (i // args.batch_size) % 5 == 0:
             rate = n_scored / (time.time() - t2)
             print(f"  query progress: {n_scored}/{len(test_covered)}  {rate:.0f}/s",
                   file=sys.stderr)
     print(f"  queried {n_scored} in {time.time()-t2:.1f}s", file=sys.stderr)
 
+    coverage = (n_scored / n_test_fully_covered) if n_test_fully_covered else None
+    compare_note = ("learned_cache_TFIDF_logreg and 1NN_TFIDF_no_rerank_D26 are over ALL "
+                    "3985 fully-covered test_seen turns; the 1-NN arm searched all train turns.")
+    if n_scored < n_test_fully_covered or n_stored < n_train_fully_covered:
+        compare_note = (
+            "POPULATIONS DIFFER -- NOT directly comparable: compose@1 here is over "
+            f"{n_scored} of the {n_test_fully_covered} fully-covered test_seen turns "
+            f"(coverage {coverage if coverage is not None else 0.0:.4f}) against a pool of {n_stored} of the "
+            f"{n_train_fully_covered} fully-covered train turns; both are contiguous "
+            "head-of-list slices (--n-test / --n-train), not random samples. " + compare_note)
+
     result = {
         "method": "Self-hosted RediSearch FLAT (exact) vector search, "
                  "sentence-transformers/all-MiniLM-L6-v2 embeddings, FULL untruncated context",
         "n_train_stored": n_stored,
+        "n_train_fully_covered": n_train_fully_covered,
+        # n_train_stored is what THIS process sent; the retrieval pool is
+        # whatever the index actually held when the queries ran.
+        "pool_reset_before_store": pool_reset,
+        "index_num_docs_at_query_time": index_num_docs,
         "n_test_queried": n_scored,
+        "n_test_fully_covered": n_test_fully_covered,
+        "coverage": coverage,
+        "n_rows_with_tied_nearest_neighbour": n_tied_rows,
+        "n_rows_tie_set_truncated": n_tie_set_truncated,
+        "tie_break": (f"lowest train turn_id (string order) among candidates within "
+                      f"{TIE_EPS} of the best cosine distance"),
         "mean_similarity_of_matches": (sum(sims) / len(sims)) if sims else None,
         "median_similarity_of_matches": (sorted(sims)[len(sims) // 2] if sims else None),
         "compose@1": (hit / n_scored) if n_scored else None,
         "skeleton_only": (hit_skel / n_scored) if n_scored else None,
         "compare_against": {
             "learned_cache_TFIDF_logreg": {"conditional": 0.2765370138017566},
-            "1NN_TFIDF_no_rerank_D26": {"conditional": 0.05244667503136763, "median_similarity": 0.47},
-            "LangCache_3800_800_D31": {"compose@1": 0.0825, "median_similarity": 0.9457},
+            "1NN_TFIDF_no_rerank_D26": {"conditional": 0.05244667503136763, "median_similarity": 0.47,
+                                        "stale": "measured before the retrieval_baseline "
+                                                 "nearest-neighbour tie-break fix; re-run "
+                                                 "sft.eval.retrieval_baseline to refresh"},
+            "LangCache_D31": _langcache_comparison(args.langcache_artifact),
+            "note": compare_note,
         },
         "elapsed_s": round(time.time() - t0, 1),
     }

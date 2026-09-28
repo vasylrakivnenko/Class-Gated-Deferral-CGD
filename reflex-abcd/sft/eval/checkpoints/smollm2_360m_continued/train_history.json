@@ -1,0 +1,25 @@
+{
+  "base_model": "HuggingFaceTB/SmolLM2-360M",
+  "loaded_from": "sft/eval/checkpoints/smollm2_360m_dryrun_15t",
+  "resumed": true,
+  "n_train": 753,
+  "n_dev": 23,
+  "epochs": 2,
+  "batch_size": 4,
+  "grad_accum": 4,
+  "lr": 1e-05,
+  "best_dev_loss": 1.6199772953987122,
+  "total_time_s": 1176.422256231308,
+  "history": [
+    {
+      "epoch": 0,
+      "dev_loss": 1.633235941330592,
+      "elapsed_s": 602.7339482307434
+    },
+    {
+      "epoch": 1,
+      "dev_loss": 1.6199772953987122,
+      "elapsed_s": 1175.7437801361084
+    }
+  ]
+}

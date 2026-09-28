@@ -146,7 +146,7 @@ def load_split_rows(cfg: dict, split: str, bank: Any, h4_indexer: Any, cache_dir
     next to the raw object graph that produced it.
     """
     from reflex.compile import load_turn_labels
-    from reflex.data import build_partitions
+    from reflex.data import build_partitions, iter_agent_turns
     from reflex.train import _derive_turn_labels
 
     partitions = build_partitions(cfg)
@@ -159,7 +159,30 @@ def load_split_rows(cfg: dict, split: str, bank: Any, h4_indexer: Any, cache_dir
     rows = RL.build_rows(partitions, split, bank, labels, cfg, h4_indexer=h4_indexer)
     rows["label_provenance"] = provenance
     rows["partitions"] = partitions
+    # The PARENT population of rows["h4"]: build_rows drops every take_action turn
+    # with an empty gold value list, so len(rows["h4"]) is not the take_action count
+    # and must not be reported under that name. Counted here because build_rows
+    # does not return it. Cheap: no context is built, the partition is already
+    # parsed.
+    rows["n_take_action_turns"] = sum(
+        1 for _, _, turn in iter_agent_turns(getattr(partitions, split))
+        if turn.nextstep == "take_action"
+    )
+    # Same for rows["h5"]: build_rows drops every retrieve turn that has no
+    # TurnLabel BEFORE the arm sees it, so len(rows["h5"]) is "retrieve turns with
+    # a label", not "every retrieve turn". Count the parent population directly.
+    rows["n_retrieve_turns"] = sum(
+        1 for _, _, turn in iter_agent_turns(getattr(partitions, split))
+        if turn.nextstep == "retrieve_utterance"
+    )
     return rows
+
+
+def _n_unlabelled(rows: dict) -> Any:
+    """Retrieve turns build_rows dropped for having no TurnLabel (one H5Row per
+    labelled retrieve turn), or None when the split's turns were not counted."""
+    n_all = rows.get("n_retrieve_turns")
+    return None if n_all is None else int(n_all) - len(rows.get("h5") or [])
 
 
 # --------------------------------------------------------------------------- #
@@ -518,6 +541,19 @@ def mode_validate(args, probe_cfg: dict, cfg: dict) -> dict:
         row = {"vectorizer": vspec.as_dict(), "cells": cells,
                "cells_in_band": score, "headline_in_band": headline["in_band"]}
         results.append(row)
+        # Rank by the headline cell first, then by curve coverage. This is the rule
+        # that produced every certified artifact on disk, so it is kept deliberately:
+        # `certified` below gates on best["headline_in_band"], and ranking by anything
+        # else picks a winner the gate then rejects (a half-applied change did exactly
+        # that -- it made a re-run write certified:false with a different vectorizer).
+        #
+        # It is NOT a good rule. The headline band is 0.0006 wide while that cell's own
+        # clustered CI half-width is ~0.007, so the headline cannot really carry the
+        # ranking, and the winner it picks reproduces fewer of D7's 7 cells than another
+        # candidate does. That gap is now reported as max_cells_in_band /
+        # max_cells_vectorizer instead of being invisible, and probe.min_cells_in_band
+        # can enforce a floor. Changing the RANKING re-certifies a different vectorizer
+        # and moves every published headline, so it is a deliberate decision, not a fix.
         if best is None or (row["headline_in_band"], score) > (best["headline_in_band"], best["cells_in_band"]):
             best = row
 
@@ -528,11 +564,25 @@ def mode_validate(args, probe_cfg: dict, cfg: dict) -> dict:
     }
     identity_ok = len(set(identity.values())) == 1
 
-    certified = bool(best and best["headline_in_band"] and identity_ok)
+    # Optional floor on curve reproduction. probe.yaml does not set it today, so
+    # the default is "no floor" and the verdict is unchanged for a config that
+    # already reproduces the curve; set probe.min_cells_in_band to require one.
+    min_cells = (probe_cfg.get("probe") or {}).get("min_cells_in_band")
+    cells_ok = True if min_cells is None else bool(best and best["cells_in_band"] >= int(min_cells))
+    certified = bool(best and best["headline_in_band"] and identity_ok and cells_ok)
     return {
         "certified": certified,
         "stage": "validate",
         "identity_check_k6_maxb_6_8_12": identity_ok,
+        "n_cells": len(D7_CELLS),
+        "best_cells_in_band": (best or {}).get("cells_in_band"),
+        # Curve coverage of the BEST-COVERING candidate, which is not necessarily the
+        # certified one. If max_cells_in_band > best_cells_in_band, the certified config
+        # reproduces D7's curve worse than another candidate in the same grid.
+        "max_cells_in_band": max((r["cells_in_band"] for r in results), default=None),
+        "max_cells_vectorizer": (max(results, key=lambda r: r["cells_in_band"])["vectorizer"]
+                                 if results else None),
+        "min_cells_in_band": min_cells,
         "best": best,
         "all": results,
         "conformance": conf,
@@ -547,7 +597,9 @@ def mode_validate(args, probe_cfg: dict, cfg: dict) -> dict:
             "no H5/H7/H4 number may be quoted until it is resolved."
         ) if not certified else (
             "CERTIFIED. The reproduction cell landed in band and the MAXB 6/8/12 identity "
-            "holds. Quote the row set and vectorizer settings with every number (D6)."
+            "holds. Quote the row set and vectorizer settings with every number (D6). "
+            "Read best_cells_in_band / n_cells with the boolean: certification turns on the "
+            "headline cell, but the curve is how much of D7 this harness actually reproduces."
         ),
     }
 
@@ -570,7 +622,7 @@ def _arm_specs(probe_cfg: dict) -> list:
 
 
 def _h5_arm(featurizer, train_rows, dev_rows, spec, vspec, ks, n_boot, seed, shuffle_seed,
-            *, guard=None, controls=True):
+            *, guard=None, controls=True, n_retrieve_all=None):
     fit = [r for r in train_rows if r.gold_skeleton_id]
     ev = [r for r in dev_rows if r.gold_skeleton_id]
     shuf = RenderSpec(**{**spec.as_dict(), "shuffle": "within_window", "shuffle_seed": shuffle_seed})
@@ -593,6 +645,18 @@ def _h5_arm(featurizer, train_rows, dev_rows, spec, vspec, ks, n_boot, seed, shu
     acc = {f"recall@{k}": RM.accuracy([bool(x) for x in nat["per_row_hits"][k]]) for k in ks}
     ci1 = RM.bootstrap_ci(nat["per_row_hits"][1], clusters, n_boot=n_boot, seed=seed)
 
+    # `ev` dropped every turn whose gold act-tuple is not in the train skeleton
+    # bank (gold_skeleton_id is None for an OOV tuple), so `acc` is CONDITIONAL on
+    # a reachable gold. Report both denominators, as _h7_arm and _composed do.
+    # An OOV turn can never be a hit, so the rescale below is EXACT.
+    # `dev_rows` is itself already conditional: build_rows dropped every retrieve
+    # turn with no TurnLabel. `n_retrieve_all` is the COUNTED parent population
+    # (load_split_rows); an unlabelled turn cannot be a hit either, so the rescale
+    # stays exact. None (caller did not count) falls back to len(dev_rows).
+    n_with_label = len(dev_rows)
+    n_unconditional = n_retrieve_all if n_retrieve_all is not None else n_with_label
+    gold_scale = (len(ev) / n_unconditional) if n_unconditional else 0.0
+
     # near-miss shape: right acts wrong order / right arity
     gold_acts = {r.turn_id: r.gold_acts for r in ev}
     shape = {"act_multiset": [], "arity": []}
@@ -609,7 +673,32 @@ def _h5_arm(featurizer, train_rows, dev_rows, spec, vspec, ks, n_boot, seed, shu
         "_gold_by_turn": {r.turn_id: r.gold_skeleton_id for r in ev},
         "head": "h5", "spec": spec.label(), "n_fit": len(fit), "n_eval": len(ev),
         "vectorizer": vspec.as_dict(), "dense_state": nat["dense_state"],
+        "denominators": {
+            "conditional_n": len(ev),
+            "unconditional_n": n_unconditional,
+            "unconditional_n_source": (
+                "counted: every retrieve_utterance turn in the partition"
+                if n_retrieve_all is not None else
+                "NOT counted: len(rows) = retrieve turns that have a TurnLabel"),
+            "n_turns_with_a_label": n_with_label,
+            "turns_dropped_no_label": n_unconditional - n_with_label,
+            "turns_dropped_gold_skeleton_oov": n_with_label - len(ev),
+            "gold_present_rate": gold_scale,
+            "note": "conditional_n is turns whose gold act-tuple exists in the train "
+                    "skeleton bank. `accuracy` is over that subset; `unconditional` is "
+                    "over unconditional_n (see unconditional_n_source), counting a turn "
+                    "with no label and a turn with an OOV gold as misses.",
+        },
         "accuracy": acc, "ci_top1": ci1, "constant": const,
+        "unconditional": {
+            "n": n_unconditional,
+            "accuracy": {k: (v * gold_scale if v is not None else None)
+                         for k, v in acc.items()},
+            "constant": {k: (v * gold_scale if v is not None else None)
+                         for k, v in const.items()},
+            "note": "turns with no label or whose gold skeleton is OOV counted as misses "
+                    "(exact, not an approximation: such a turn cannot be a hit).",
+        },
         "d5": RM.d5_verdict(acc["recall@1"], const["recall@1"], ci1["lo"]),
         "controls": {
             "nat_to_nat": acc["recall@1"],
@@ -634,7 +723,8 @@ def _h5_arm(featurizer, train_rows, dev_rows, spec, vspec, ks, n_boot, seed, shu
 
 
 def _h7_arm(featurizer, train_rows, dev_rows, spec, vspec, ks, n_boot, seed,
-            shuffle_seed, equivalence, *, guard=None, controls=True):
+            shuffle_seed, equivalence, *, guard=None, controls=True,
+            n_retrieve_unlabelled=None):
     """One logreg PER ACT, because that is the pool select._score_templates ranks in."""
     by_act_fit = defaultdict(list)
     for r in train_rows:
@@ -730,9 +820,18 @@ def _h7_arm(featurizer, train_rows, dev_rows, spec, vspec, ks, n_boot, seed,
             "positions_with_a_gold": n_with_gold,
             "positions_dropped_for_an_unfittable_act": n_with_gold - n_scored,
             "unconditional_n": n_all_positions,
+            # build_rows emits positions only for retrieve turns that HAVE a
+            # TurnLabel (a turn's sentence count is read off its label), so
+            # unconditional_n cannot include an unlabelled turn's positions. The
+            # count of such turns is reported so that gap is visible, not assumed
+            # to be zero. None = the caller did not count it.
+            "retrieve_turns_without_a_label": n_retrieve_unlabelled,
             "gold_present_rate": scale,
             "note": "the conditional denominator is optimistic by construction: "
-                    "compile.min_template_count dropped exactly the rare phrasings.",
+                    "compile.min_template_count dropped exactly the rare phrasings. "
+                    "unconditional_n is every sentence position of the retrieve turns "
+                    "that have a label; retrieve_turns_without_a_label says how many "
+                    "turns that leaves out.",
         },
         "conditional": {"micro": micro_acc, "ci_top1": ci1,
                         "constant": const_micro["micro"],
@@ -773,7 +872,8 @@ def _h7_arm(featurizer, train_rows, dev_rows, spec, vspec, ks, n_boot, seed,
 
 
 def _h4_arm(featurizer, train_rows, dev_rows, spec, vspec, ks, n_boot, seed,
-            shuffle_seed, value_list_len, *, guard=None, controls=True):
+            shuffle_seed, value_list_len, *, guard=None, controls=True,
+            n_take_action_all=None):
     """H4 in INDEX space; the constant is the modal COLUMN, not the modal string."""
     fit = [r for r in train_rows if r.gold_column >= 0]
     ev = [r for r in dev_rows if r.gold_column >= 0]
@@ -818,12 +918,29 @@ def _h4_arm(featurizer, train_rows, dev_rows, spec, vspec, ks, n_boot, seed,
         "head": "h4", "spec": spec.label(),
         "vectorizer": vspec.as_dict(), "dense_state": nat["dense_state"],
         "denominators": {
-            "n_take_action_turns": len(dev_rows),
+            # dev_rows is rows["h4"], which response_labels.build_rows already
+            # filtered to take_action turns that HAVE a gold value list -- ~31% of
+            # take_action turns in ABCD v1.1 have an empty one and never become a
+            # row. The old name `n_take_action_turns` for len(dev_rows) therefore
+            # overstated the population it covered; response_labels.audit names the
+            # same set `n_take_action_turns_with_values`.
+            "n_take_action_turns": n_take_action_all,
+            "n_take_action_turns_with_values": len(dev_rows),
+            "n_take_action_turns_dropped_no_values": (
+                None if n_take_action_all is None else n_take_action_all - len(dev_rows)),
             "n_resolvable": len(ev),
-            "resolvable_rate": len(ev) / len(dev_rows) if dev_rows else None,
+            "resolvable_rate_over_turns_with_values": (
+                len(ev) / len(dev_rows) if dev_rows else None),
+            "resolvable_rate_over_all_take_action": (
+                len(ev) / n_take_action_all if n_take_action_all else None),
             "scorable_turn_ids": {r.turn_id for r in ev},
             "note": "resolvability depends on the WINDOW (the copy tier reads context.turns). "
-                    "Use response_metrics.align_h4_denominator before comparing arms.",
+                    "Use response_metrics.align_h4_denominator before comparing arms. "
+                    "A take_action turn with no gold value has nothing to resolve, so "
+                    "resolvable_rate_over_turns_with_values is the rate H4 is answerable on; "
+                    "the over_all_take_action rate is the share of the whole take_action "
+                    "population H4 covers. n_take_action_turns is None when the caller did "
+                    "not pass the split's true take_action count.",
         },
         "index_space": {"accuracy": acc, "ci_top1": ci1},
         "string_space": {"accuracy@1": RM.accuracy([bool(x) for x in string_hits])},
@@ -906,14 +1023,17 @@ def mode_measure(args, probe_cfg: dict, cfg: dict) -> dict:
         "audit_dev": RL.audit(rows_dev, cfg, "dev"),
         "featurizer_fingerprint": featurizer.fingerprint(),
         "vectorizer": vspec.as_dict(),
-        "vectorizer_by_head": {h: v.as_dict() for h, v in head_vspecs.items()},
+        # Same key name as mode_select. measure runs no sweep, so as-run == the
+        # probe.yaml per-head spec here; the config block keeps its own name,
+        # probe.vectorizer_by_head.
+        "vectorizer_as_run_by_head": {h: v.as_dict() for h, v in head_vspecs.items()},
         "memory_guard": memory_guard,
         "estimator_note": (
             "H5/H7/H4 do NOT use the certified nextstep estimator. nextstep is 3-way so "
             "lbfgs/multinomial costs nothing there; these heads are 226 to 1,066-way and an "
             "lbfgs history at that width does not fit in RAM (ASK alone projects to ~36 GiB). "
-            "vectorizer_by_head records the estimator and the feature cap each number was "
-            "produced with -- quote them with the number (D6)."
+            "vectorizer_as_run_by_head records the estimator and the feature cap each number "
+            "was produced with -- quote them with the number (D6)."
         ),
         "arms": [],
     }
@@ -927,23 +1047,40 @@ def mode_measure(args, probe_cfg: dict, cfg: dict) -> dict:
                                       "shuffle": "within_window",
                                       "shuffle_seed": args.shuffle_seed})
         sample_shuf = [featurizer.render_context(r.context, shuffled_spec) for r in sample_rows]
+        min_headroom = float(probe_cfg["probe"].get("min_order_headroom", 0.01))
         probe_vec = featurizer.make_vectorizer(vspec)
         probe_vec.fit_transform(sample)
-        arm["order_headroom"] = RM.order_sensitivity_headroom(probe_vec, sample, sample_shuf)
+        arm["order_headroom"] = RM.order_sensitivity_headroom(
+            probe_vec, sample, sample_shuf, min_headroom=min_headroom)
+        # The figure above is the BASE (nextstep) vectorizer's. The H5/H7/H4
+        # numbers in this arm come from head_vspecs, whose feature caps differ, so
+        # each head's order control is bounded by ITS OWN vectorizer's headroom.
+        arm["order_headroom"]["vectorizer"] = "base probe.vectorizer (NOT a head's)"
+        arm["order_headroom_by_head"] = {}
+        for h in ("h5", "h7", "h4"):
+            if h not in args.heads:
+                continue
+            head_vec = featurizer.make_vectorizer(head_vspecs[h])
+            head_vec.fit_transform(sample)
+            arm["order_headroom_by_head"][h] = RM.order_sensitivity_headroom(
+                head_vec, sample, sample_shuf, min_headroom=min_headroom)
 
         if "h5" in args.heads:
             arm["h5"] = _h5_arm(featurizer, rows_train["h5"], rows_dev["h5"], spec,
                                 head_vspecs["h5"], ks, args.n_boot, args.seed,
-                                args.shuffle_seed, guard=memory_guard)
+                                args.shuffle_seed, guard=memory_guard,
+                                n_retrieve_all=rows_dev.get("n_retrieve_turns"))
         if "h7" in args.heads:
             arm["h7"] = _h7_arm(featurizer, rows_train["h7"], rows_dev["h7"], spec,
                                 head_vspecs["h7"], ks, args.n_boot, args.seed,
-                                args.shuffle_seed, equivalence, guard=memory_guard)
+                                args.shuffle_seed, equivalence, guard=memory_guard,
+                                n_retrieve_unlabelled=_n_unlabelled(rows_dev))
         if "h4" in args.heads:
             arm["h4"] = _h4_arm(featurizer, rows_train["h4"], rows_dev["h4"], spec,
                                 head_vspecs["h4"], ks, args.n_boot, args.seed,
                                 args.shuffle_seed, len(spaces.value_list),
-                                guard=memory_guard)
+                                guard=memory_guard,
+                                n_take_action_all=rows_dev.get("n_take_action_turns"))
             if "denominators" in arm["h4"]:
                 h4_denominators[spec.label()] = arm["h4"]["denominators"].pop(
                     "scorable_turn_ids")
@@ -1256,11 +1393,20 @@ def score_candidate(featurizer, rows_fit: dict, rows_sel: dict, spec: RenderSpec
             )
             const = RM.constant_recall_at_k([r.gold_skeleton_id for r in fit],
                                             [r.gold_skeleton_id for r in sel], (1,))
+            h5_value = RM.accuracy([bool(x) for x in out["per_row_hits"][1]])
+            h5_all = len(rows_sel["h5"])
             result["objectives"]["h5"] = {
                 "metric": "recall@1 (skeleton top-1) on train-select",
-                "value": RM.accuracy([bool(x) for x in out["per_row_hits"][1]]),
+                "value": h5_value,
                 "constant": const["recall@1"], "n_fit": out["n_fit"], "n_eval": out["n_eval"],
                 "n_features": out["n_features"], "n_classes": out["n_classes"],
+                # `value` is CONDITIONAL on a gold skeleton in the bank, like the h7
+                # objective below. The denominator is the same for every candidate,
+                # so the ranking does not depend on which one is read.
+                "conditional_n": out["n_eval"], "unconditional_n": h5_all,
+                "unconditional_value": (
+                    h5_value * (out["n_eval"] / h5_all)
+                    if h5_value is not None and h5_all else None),
             }
             result["_h5_pred"] = {r.turn_id: p for r, p in zip(sel, out["top1"])}
             result["_h5_gold"] = {r.turn_id: r.gold_skeleton_id for r in sel}
@@ -1324,12 +1470,21 @@ def score_candidate(featurizer, rows_fit: dict, rows_sel: dict, spec: RenderSpec
                                           [str(r.gold_column) for r in sel], (1,))
             string = RM.constant_recall_at_k([r.gold_value for r in fit],
                                              [r.gold_value for r in sel], (1,))
+            h4_value = RM.accuracy([bool(x) for x in out["per_row_hits"][1]])
+            h4_all = len(rows_sel["h4"])
             result["objectives"]["h4"] = {
                 "metric": "index-space recall@1 on train-select",
-                "value": RM.accuracy([bool(x) for x in out["per_row_hits"][1]]),
+                "value": h4_value,
                 "constant": max([v for v in (col["recall@1"], string["recall@1"])
                                  if v is not None] or [0.0]),
                 "n_fit": out["n_fit"], "n_eval": out["n_eval"],
+                # CONDITIONAL on an in-window gold column. unconditional_n is the
+                # take_action turns that carry a value (build_rows already dropped
+                # the value-less ones), NOT every take_action turn.
+                "conditional_n": out["n_eval"], "unconditional_n": h4_all,
+                "unconditional_value": (
+                    h4_value * (out["n_eval"] / h4_all)
+                    if h4_value is not None and h4_all else None),
             }
 
     if "_h5_pred" in result and "_h7_pred" in result:
@@ -1568,15 +1723,18 @@ def mode_select(args, probe_cfg: dict, cfg: dict) -> dict:
             if head == "h5":
                 built = _h5_arm(featurizer, rows_train["h5"], rows_eval["h5"], spec, vs, ks,
                                 args.n_boot, args.seed, args.shuffle_seed,
-                                guard=memory_guard, controls=controls)
+                                guard=memory_guard, controls=controls,
+                                n_retrieve_all=rows_eval.get("n_retrieve_turns"))
             elif head == "h7":
                 built = _h7_arm(featurizer, rows_train["h7"], rows_eval["h7"], spec, vs, ks,
                                 args.n_boot, args.seed, args.shuffle_seed, equivalence,
-                                guard=memory_guard, controls=controls)
+                                guard=memory_guard, controls=controls,
+                                n_retrieve_unlabelled=_n_unlabelled(rows_eval))
             elif head == "h4":
                 built = _h4_arm(featurizer, rows_train["h4"], rows_eval["h4"], spec, vs, ks,
                                 args.n_boot, args.seed, args.shuffle_seed,
-                                len(spaces.value_list), guard=memory_guard, controls=controls)
+                                len(spaces.value_list), guard=memory_guard, controls=controls,
+                                n_take_action_all=rows_eval.get("n_take_action_turns"))
             else:
                 raise ValueError(f"no arm for head {head!r}")
             memo[key] = built
@@ -1621,8 +1779,27 @@ def mode_select(args, probe_cfg: dict, cfg: dict) -> dict:
         "label_spaces": spaces.summary(),
         "featurizer_fingerprint": featurizer.fingerprint(),
         "memory_guard": memory_guard,
-        "vectorizer_by_head": {h: vspec_for_head(probe_cfg, h).as_dict()
-                               for h in ("h5", "h7", "h4")},
+        # Two different things, and the old single key "vectorizer_by_head" was the
+        # BASE one while claiming to be the record of what ran (D6). The base is
+        # probe.yaml before the sweep; as-run is base + the head's winning override,
+        # i.e. exactly the spec each headline number was produced with.
+        "vectorizer_base_by_head": {h: vspec_for_head(probe_cfg, h).as_dict()
+                                    for h in ("h5", "h7", "h4")},
+        "vectorizer_as_run_by_head": {
+            **{h: vspec_for_head(
+                probe_cfg, h,
+                (selection["winners"].get(h) or {}).get("vectorizer_overrides") or {}).as_dict()
+               if selection["winners"].get(h) else None
+               for h in ("h5", "h7", "h4")},
+            # compose@1 is NOT produced by the per-head winners above: it refits
+            # h5 and h7 with the COMPOSE winner's overrides, which can differ.
+            "compose": (
+                {h: vspec_for_head(
+                    probe_cfg, h,
+                    selection["winners"]["compose"].get("vectorizer_overrides") or {}).as_dict()
+                 for h in ("h5", "h7")}
+                if selection["winners"].get("compose") else None),
+        },
         "selection": selection,
         "refits_avoided": reuse_log,
         "winner_vs_dev_choice": comparison,
@@ -1644,8 +1821,17 @@ def mode_select(args, probe_cfg: dict, cfg: dict) -> dict:
             "constants": "every headline number carries its label-blind constant and a D5 "
                          "verdict. A metric the constant wins is DROPPED, not caveated.",
             "config": "every number carries the arm and the vectorizer/estimator it was "
-                      "produced with (D6). H5/H7/H4 do not use the certified nextstep "
-                      "estimator -- see vectorizer_by_head.",
+                      "produced with (D6): read it off that head's "
+                      "selected_config.vectorizer, or off vectorizer_as_run_by_head, "
+                      "which is the same thing collected in one place. Its h5/h7/h4 "
+                      "entries cover the PER-HEAD headlines only; the compose headline "
+                      "refits h5 and h7 with the compose winner's own overrides, recorded "
+                      "as its `compose` entry and at "
+                      "headline_test_seen.compose.selected_config.vectorizer -- it is NOT "
+                      "the h5 and h7 entries side by side. "
+                      "vectorizer_base_by_head is probe.yaml BEFORE the sweep and is not "
+                      "what produced any number here. H5/H7/H4 do not use the certified "
+                      "nextstep estimator.",
         },
         "known_limits": {
             "bank_saw_train_select": (
@@ -1760,9 +1946,20 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         elif args.mode == "validate":
             result = mode_validate(args, probe_cfg, cfg)
             path = _write(result, os.path.join(args.out_dir, "validate.json"))
+            # The stamp carries the EVIDENCE, not just the boolean: downstream
+            # readers (_read_certification, select.json's "certified") saw a bare
+            # true and could not tell 1-of-7 cells reproduced from 7-of-7.
+            _best = result.get("best") or {}
             _write({"certified": result["certified"],
                     "when": time.strftime("%Y-%m-%dT%H:%M:%S"),
-                    "best": (result.get("best") or {}).get("vectorizer"),
+                    "best": _best.get("vectorizer"),
+                    "cells_in_band": _best.get("cells_in_band"),
+                    "n_cells": len(D7_CELLS),
+                    "headline_in_band": _best.get("headline_in_band"),
+                    "cells": [{"cell": c.get("cell"), "accuracy": c.get("accuracy"),
+                               "band": [c.get("target_lo"), c.get("target_hi")],
+                               "in_band": c.get("in_band")}
+                              for c in (_best.get("cells") or [])],
                     "n_train_rows": result.get("n_train_rows"),
                     "n_dev_rows": result.get("n_dev_rows")},
                    _cert_path(args.out_dir))

@@ -7,10 +7,10 @@ only), `tests/test_select.py`, `tests/test_gate.py`. No other files touched.
 ## Sub-claim A: `required_slots` treated as the complete action schema
 
 **Root cause.** `compile.py`'s `ActionPattern.required_slots` docstring
-(line 1311) is explicit: it holds only the slots the FILLER could source from
-disclosed state — a subset, not the schema. `select.py:_value_slots`'s
-`bank_then_union` mode ignored that and returned `bank_slots` alone whenever
-non-empty:
+(now `compile.py:1326`; it was line 1311 when this note was written) is
+explicit: it holds only the slots the FILLER could source from disclosed state —
+a subset, not the schema. `select.py:_value_slots`'s `bank_then_union` mode
+ignored that and returned `bank_slots` alone whenever non-empty:
 
 ```python
 # before
@@ -18,10 +18,19 @@ if bundle.value_slots_source == "bank_then_union" and bank_slots:
     return bank_slots
 ```
 
-Ground truth: ontology `validate-purchase`/`verify-identity`-shaped actions
-list 3 arguments; the compiled bank drops the ones the filler never had a
-chance to source (e.g. `username`), even though train labels carry real
-values for them. H4 was never even ASKED to decode the dropped slot.
+Ground truth, recomputed 2026-09-20 from
+`/Users/vasyl/zadumai/data/abcd/data/ontology.json` and
+`outputs/compile/bank/actions.jsonl` (the earlier "3 arguments" in this note was
+right for one action and wrong for the other):
+
+| action | ontology arguments | bank `required_slots` | dropped |
+|---|---|---|---|
+| `validate-purchase` | `username, email, order_id` (3) | `email, order_id` (2) | `username` |
+| `verify-identity` | `customer_name, account_id, order_id, zip_code` (4) | `customer_name, account_id, order_id` (3) | `zip_code` |
+
+The compiled bank drops the arguments the filler never had a chance to source,
+even though train labels carry real values for them. H4 was never even ASKED to
+decode the dropped slot.
 
 **Fix.** `bank_then_union` now unions bank slots (kept first — the
 filler-availability signal was tuned against that order) with the full
@@ -102,9 +111,31 @@ the natural next step for whoever owns that module.
 
 ## Test-suite status
 
-`tests/test_select.py` (36 tests), `tests/test_gate.py` (47 tests, 3
-pre-existing `set_sizes` fixtures updated to include the new `"values": []`
-key): **all pass.** Full suite (`pytest tests/ -q`, excluding
-`test_run_report.py` — a different fork was actively editing `run.py` in
-parallel, avoided to prevent reading it mid-edit): **all pass, no
-regressions.**
+**Superseded 2026-09-20 — re-counted and re-run, nothing excluded.** This note
+originally claimed 36 tests in `tests/test_select.py` and a partial suite run
+that skipped `test_run_report.py`. Current, verified by
+`python -m pytest -p no:warnings --collect-only -q`:
+
+| module | tests | note |
+|---|---:|---|
+| `tests/test_select.py` | **33** (not 36) | includes the three `_value_slots` / `_score_values` tests named above |
+| `tests/test_gate.py` | **47** | includes all six value-confidence tests named above; 3 pre-existing `set_sizes` fixtures carry the new `"values": []` key |
+| **whole suite** | **561** | **561 passed, 0 failed, 0 errors** — `test_run_report.py` (24 tests) included; no module is excluded any more |
+
+All nine tests this note names by ID were confirmed present on 2026-09-20.
+
+**The "Deliberate non-choice" prerequisite above has since been CLOSED, and the
+paragraph that states it is out of date.** It said extending `calibrate.py` to
+compute `quantiles["value"]` was out of scope and "the natural next step for
+whoever owns that module". Somebody took it: `src/reflex/calibrate.py:135` now
+reads `_HEADS = ("nextstep", "intent", "action", "skeleton", "template",
+"value")`, `_collect_dev_scores` appends `probs["value"]` / `golds["value"]`
+(lines 903-904), and the step-3 loop computes a conformal quantile for every
+head in `_HEADS`, so a `reflex calibrate` run now writes `quantiles["value"]`
+and `evaluate_gate` will not raise. `calibrate.py:131-134` records exactly why:
+"every Arm B run died on its first slot-bearing take_action turn".
+
+What is still true: **no calibration has ever been produced.**
+`outputs/calibration/` is empty, so `evaluate_gate` has never seen a real
+`take_action` turn and the `ContractViolation` path has never fired outside
+`test_value_confidence_without_a_calibrated_value_quantile_raises`.

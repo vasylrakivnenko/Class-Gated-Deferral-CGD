@@ -22,6 +22,12 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# The classic dynamic-selection baselines (LCA / OLA / KNORA-E). Pinned because
+# 0.3.7 predates scikit-learn 1.7 removing BaseEstimator._validate_data, which
+# classpipe shims rather than patching the library.
+deslib = [
+    "deslib==0.3.7",
+]
 # The encoder leg. Heavy, and only needed for the fine-tuned/frozen rows.
 encoders = [
     "torch==2.14.0",

@@ -1,0 +1,68 @@
+{
+  "cuad_governing_law": [
+    "text"
+  ],
+  "cuad_insurance": [
+    "text"
+  ],
+  "cuad_ip_ownership_assignment": [
+    "text"
+  ],
+  "cuad_license_grant": [
+    "text"
+  ],
+  "cuad_minimum_commitment": [
+    "text"
+  ],
+  "cuad_non-compete": [
+    "text"
+  ],
+  "cuad_non-transferable_license": [
+    "text"
+  ],
+  "cuad_post-termination_services": [
+    "text"
+  ],
+  "cuad_renewal_term": [
+    "text"
+  ],
+  "cuad_revenue-profit_sharing": [
+    "text"
+  ],
+  "cuad_rofr-rofo-rofn": [
+    "text"
+  ],
+  "cuad_termination_for_convenience": [
+    "text"
+  ],
+  "cuad_volume_restriction": [
+    "text"
+  ],
+  "cuad_warranty_duration": [
+    "text"
+  ],
+  "definition_classification": [
+    "text"
+  ],
+  "function_of_decision_section": [
+    "Paragraph"
+  ],
+  "learned_hands_traffic": [
+    "text"
+  ],
+  "opp115_user_choice_control": [
+    "text"
+  ],
+  "supply_chain_disclosure_disclosed_audits": [
+    "text"
+  ],
+  "supply_chain_disclosure_disclosed_certification": [
+    "text"
+  ],
+  "supply_chain_disclosure_disclosed_training": [
+    "text"
+  ],
+  "supply_chain_disclosure_disclosed_verification": [
+    "text"
+  ]
+}

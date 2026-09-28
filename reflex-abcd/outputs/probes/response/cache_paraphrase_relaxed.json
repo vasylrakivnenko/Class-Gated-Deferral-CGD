@@ -1,0 +1,19 @@
+{
+  "method": "certified cache (TF-IDF+logreg), template match relaxed from exact to paraphrase-equivalence (cosine >= 0.95), skeleton match unchanged (still exact)",
+  "paraphrase_threshold": 0.95,
+  "conditional": {
+    "n": 3985,
+    "compose@1_exact": 0.2765370138017566,
+    "compose@1_relaxed": 0.2767879548306148,
+    "miss_rate_exact": 0.7234629861982433,
+    "miss_rate_relaxed": 0.7232120451693852
+  },
+  "unconditional": {
+    "n": 8889,
+    "compose@1_exact": 0.12397345033187085,
+    "compose@1_relaxed": 0.12408594892563843,
+    "miss_rate_exact": 0.8760265496681292,
+    "miss_rate_relaxed": 0.8759140510743616
+  },
+  "n_positions_rescued_by_paraphrase_only": 1
+}

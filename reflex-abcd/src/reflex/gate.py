@@ -510,6 +510,19 @@ def evaluate_gate(
     # before evaluate_gate is called on live take_action turns; there is no
     # silent fallback, per this module's existing "a missing quantile is not
     # a zero" rule for every other head.
+    #
+    # WHAT `and scores.value_probs` MEANS, and why the size-0 branch below is
+    # reachable at all. Until select._score_values was fixed it DROPPED a slot
+    # with no candidate column instead of emitting an empty distribution, so an
+    # empty value_probs[i] was a state select could never produce and this
+    # block's own promise was dead code: validate-purchase's three arguments
+    # arrived as two confident slots and passed. select now emits one (possibly empty)
+    # distribution PER SLOT of the predicted action, which makes the branch
+    # live, and narrows an entirely empty value_probs to the one case it should
+    # mean -- a button that takes no arguments at all. That is not a failure and
+    # must not demand a "value" quantile, hence the guard stays. The two halves
+    # only work together: if select ever goes back to dropping slots, this guard
+    # becomes a free pass again.
     value_sizes: list[int] = []
     if applicable["action"] and scores.value_probs:
         q_value = _quantile(calibration, quantiles, _VALUE_QUANTILE_KEY)

@@ -44,6 +44,55 @@ import time
 from collections import Counter, defaultdict
 
 
+# ---------------------------------------------------------------------------
+# The learned cache's (certified H5) skeleton@1 bar, carried WITH its population.
+# These are three DIFFERENT denominators and must never be stacked in one column:
+#   n=3985 -- the template-fully-covered turns this file calls "conditional".
+#             Source: outputs/probes/response/recall_at_k.json, block
+#             "ALL (conditional)", skeleton_recall@1 = 0.5821831869510665.
+#   n=8858 -- every test_seen turn that HAS a gold skeleton. This is H5's own
+#             eval set (probes/run_response_probe.py: rows filtered on
+#             gold_skeleton_id). Source: outputs/probes/response/select.json
+#             headline_test_seen.h5 accuracy.recall@1 = 0.431700158049221,
+#             n_eval = 8858.
+#   n=8889 -- all test_seen turns, i.e. this file's "unconditional" population.
+#             The 31 turns carrying no gold skeleton can never be hit, so the
+#             n=8858 rate rescales exactly: 0.431700158049221 * 8858 / 8889
+#             = 3824 hits / 8889 = 0.43019462256721785.
+# The entry that used to live here was {"conditional": 0.432} -- the n=8858
+# rate filed under the n=3985 label, which is what made the n-gram look 1.2
+# points behind the cache and the RNN look 9 points ahead of it. On matched
+# populations the cache leads on every one of the three.
+H5_SKELETON_BAR = {
+    "conditional_n3985": 0.5821831869510665,
+    "gold_skeleton_n8858": 0.431700158049221,
+    "unconditional_n8889": 0.43019462256721785,
+    "label_blind_constant_n8858": 0.2630390607360578,
+    "compare_like_with_like": (
+        "conditional_n3985 <-> skeleton_accuracy.conditional.rnn; "
+        "gold_skeleton_n8858 <-> skeleton_accuracy.skeleton_population.rnn; "
+        "unconditional_n8889 <-> skeleton_accuracy.unconditional.rnn"
+    ),
+    "sources": [
+        "outputs/probes/response/recall_at_k.json -> blocks['ALL (conditional)'].skeleton_recall@1 (n=3985)",
+        "outputs/probes/response/select.json -> headline_test_seen.h5.accuracy['recall@1'] (n_eval=8858)",
+    ],
+}
+# ---------------------------------------------------------------------------
+
+
+def _argmax(counter):
+    """Deterministic argmax over a Counter.
+
+    Counter.most_common resolves a tie by INSERTION order, i.e. by the order
+    train rows happened to be parsed, so a tied prediction would depend on row
+    order rather than on any stated rule. Break ties lexicographically on the
+    key instead -- the same total-order key src/reflex/arm_b0.py already uses
+    for its constant label.
+    """
+    return sorted(counter.items(), key=lambda kv: (-kv[1], kv[0]))[0][0]
+
+
 _SUFFIXES = ("ing", "edly", "ed", "ies", "es", "ly", "s")
 
 
@@ -113,7 +162,7 @@ def main(argv: list[str] | None = None) -> int:
     label_counts = Counter(r.gold_skeleton_id for r in train_sample)
     labels = sorted(label_counts)
     label_to_idx = {sk: i for i, sk in enumerate(labels)}
-    constant_skeleton = label_counts.most_common(1)[0][0]
+    constant_skeleton = _argmax(label_counts)
     print(f"  label space: {len(labels)} skeletons", file=sys.stderr)
 
     # ---- vocab from stemmed tokens in the train subset ----
@@ -193,6 +242,7 @@ def main(argv: list[str] | None = None) -> int:
     model.eval()
     n_cond = hit_cond = hit_cond_const = 0
     n_uncond = hit_uncond = hit_uncond_const = 0
+    n_skel = hit_skel = hit_skel_const = 0
     predictions: dict = {}
     with torch.no_grad():
         for row in test_rows["h5"]:
@@ -210,6 +260,15 @@ def main(argv: list[str] | None = None) -> int:
             const_hit = constant_skeleton == row.gold_skeleton_id
 
             n_uncond += 1
+            # Denominator note: n_skel counts turns that HAVE a gold skeleton
+            # (expected 8858) -- the population the certified H5's 0.4317 is
+            # scored on. Neither the 3,985 fully-covered turns nor all 8,889.
+            if row.gold_skeleton_id is not None:
+                n_skel += 1
+                if skel_hit:
+                    hit_skel += 1
+                if const_hit:
+                    hit_skel_const += 1
             if skel_hit:
                 hit_uncond += 1
             if const_hit:
@@ -239,11 +298,30 @@ def main(argv: list[str] | None = None) -> int:
                             "label_blind_constant_same_5k_fit": (hit_cond_const / n_cond) if n_cond else None},
             "unconditional": {"n": n_uncond, "rnn": hit_uncond / n_uncond if n_uncond else None,
                               "label_blind_constant_same_5k_fit": hit_uncond_const / n_uncond if n_uncond else None},
+            "skeleton_population": {
+                "n": n_skel,
+                "rnn": (hit_skel / n_skel) if n_skel else None,
+                "label_blind_constant_same_5k_fit": (hit_skel_const / n_skel) if n_skel else None,
+                "note": "turns with a gold skeleton -- the SAME population the certified "
+                        "H5's 0.4317 is measured over (select.json h5.n_eval=8858). This is "
+                        "the only skeleton accuracy directly comparable to it.",
+            },
         },
+        "seed": args.seed,
         "compare_against": {
-            "H5_TFIDF_logreg_full_train_D25": {"conditional": 0.432},
-            "ngram_skeleton_full_train": {"conditional": 0.41957340025094103},
-            "H5_label_blind_constant_full_train_D25": 0.2632,
+            "H5_TFIDF_logreg_full_train_D25": H5_SKELETON_BAR,
+            "ngram_skeleton_full_train": {
+                "conditional_n3985": 0.41957340025094103,
+                "stale": "measured before the n-gram argmax tie-break fix; re-run "
+                         "sft.eval.ngram_skeleton_baseline to refresh",
+            },
+            "H5_label_blind_constant_full_train_D25": {
+                "gold_skeleton_n8858": 0.2630390607360578,
+                "note": "select.json headline_test_seen.h5.constant['recall@1'], measured "
+                        "over the 8,858 gold-skeleton turns -- NOT over the 3,985 "
+                        "fully-covered turns, and so not comparable to "
+                        "conditional.label_blind_constant_same_5k_fit.",
+            },
         },
         "elapsed_s": round(time.time() - t0, 1),
     }

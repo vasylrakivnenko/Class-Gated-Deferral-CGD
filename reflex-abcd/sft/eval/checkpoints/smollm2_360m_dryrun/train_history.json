@@ -1,0 +1,23 @@
+{
+  "base_model": "HuggingFaceTB/SmolLM2-360M",
+  "n_train": 776,
+  "n_dev": 24,
+  "epochs": 2,
+  "batch_size": 4,
+  "grad_accum": 4,
+  "lr": 2e-05,
+  "best_dev_loss": 1.9396952788035076,
+  "total_time_s": 2891.4204618930817,
+  "history": [
+    {
+      "epoch": 0,
+      "dev_loss": 1.9750661651293437,
+      "elapsed_s": 1409.2634959220886
+    },
+    {
+      "epoch": 1,
+      "dev_loss": 1.9396952788035076,
+      "elapsed_s": 2890.0981438159943
+    }
+  ]
+}

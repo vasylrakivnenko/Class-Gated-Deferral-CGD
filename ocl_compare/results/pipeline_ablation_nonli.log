@@ -1,0 +1,44 @@
+Run the class-aware AutoML pipeline over the reconstructed OCL streams.
+
+`src/downshift/classpipe.py` holds the reusable analysis; this file holds only
+what is specific to these four datasets. Point it at any (texts, gold, expert)
+triple and it does the same thing.
+  ablation: dropped ['nli+logreg']
+
+==============================================================================
+isear  n=7666  classes=7  imbalance 1:1.00
+==============================================================================
+  ! G2: 218 rows (2.84%) share text with another row; CV is grouped so copies cannot straddle a fold.
+  headline metric: accuracy  (resolution +/-0.0057)
+
+  candidates (balanced accuracy):
+    bge-large-en-v1.5+logreg    0.6879  <- best
+    bge-small-en-v1.5+logreg    0.6302
+    tfidf+logreg                0.6011
+    rerank+logreg               0.4181
+    constant-majority           0.1429
+
+  G3 n/a (multiclass)
+  G4 pass: members disagree on 43.4% of items.
+    oracle 0.8121 vs independence null 0.9734
+  G5 pass: spread 0.0765 across 7 classes, cheap arm wins 3.
+  G7 pass: every class's vote is right more often than not (worst 58.7%).
+
+  class-aware layer (vs bge-large-en-v1.5+logreg 0.6879):
+    selection_dcs_lca   0.6614  -0.0265 CI [-0.0327,-0.0202] p=0.000 holm=True
+    stacking            0.6924  +0.0046 CI [-0.0010,+0.0104] p=0.124 holm=False
+    -> no construction beats bge-large-en-v1.5+logreg; ship the single model
+
+  bge-large-en-v1.5+logreg vs expert LLM: 0.6879 vs 0.7036  delta -0.0157 CI [-0.0256,-0.0058] p=0.002
+  non-inferiority at 2pts: inconclusive -- test set too small to rule out a 2% loss
+
+  per-class guaranteed coverage (free share | guarantee holds):
+    bar 0.80  free  66.4%  balanced 0.6969  holds=True
+    bar 0.90  free  44.8%  balanced 0.7034  holds=False
+    bar 0.95  free  30.5%  balanced 0.7051  holds=False
+
+  >> ship: bge-large-en-v1.5+logreg
+  >> build class-aware layer: True
+     all gates open -- a class-aware layer has something to work with
+
+wrote /Users/vasyl/zadumai/ocl_compare/results/pipeline_ablation_nonli.json (21s)

@@ -21,8 +21,32 @@ HEADS CALIBRATED
 ``nextstep`` (H1) and ``intent`` (H2) on every dev agent turn; ``action`` (H3) on
 take_action turns; ``skeleton`` (H5) on retrieve_utterance turns; ``template``
 (H7) once per act position of retrieve_utterance turns, pooled into ONE shared
-``q`` (:class:`reflex.schemas.Calibration` fixes those five keys). H4 (values) is
-not calibrated: :func:`reflex.gate.evaluate_gate` never consults it.
+``q``; and ``value`` (H4) once per value slot of a take_action turn, pooled into
+ONE shared ``q`` (:class:`reflex.schemas.Calibration` fixes those six keys). A
+value slot with a single candidate column is counted but not scored -- its
+prediction set is that candidate at every ``q``, see the single-candidate rule
+in :func:`_collect_dev_scores`.
+
+H4 used to be skipped here, on the stated grounds that the gate never consulted
+it. That stopped being true when :func:`reflex.gate.evaluate_gate` grew its
+value-confidence block: it demands ``calibration.quantiles["value"]`` for every
+take_action turn that has value distributions and refuses to invent one, so a
+calibration written without that key aborted the FIRST such turn of every Arm B
+run with a ContractViolation.
+
+WHICH BRANCH A HEAD IS CALIBRATED ON
+------------------------------------
+Applicability here matches :func:`reflex.gate.evaluate_gate` exactly: H3/H4 are
+collected on turns whose PREDICTED nextstep is take_action and H5/H7 on turns
+whose PREDICTED nextstep is retrieve_utterance -- never the gold one. That is
+the population the gate actually applies ``q_h`` to, so it is the population
+split conformal has to be exchangeable with; fitting on the gold branch instead
+would calibrate on turns the gate never routes through that head. A row still
+needs a GOLD label to be scored at all, so a turn predicted into a branch its
+gold does not share carries a ``-1`` gold index and is skipped by
+:func:`nonconformity_scores` (and by the ECE diagnostic) rather than counted.
+How many gold-branch turns were dropped that way is reported as ``branch_drops``
+in the diagnostics sidecar instead of being left invisible.
 
 A CALIBRATION GAP IS NOT A GATE
 -------------------------------
@@ -101,11 +125,14 @@ __all__ = [
 # prices from code, not the vocabulary the frozen schema already fixes).
 # ---------------------------------------------------------------------------
 
-#: The five :attr:`reflex.schemas.Calibration.quantiles` keys, in report order.
+#: The six :attr:`reflex.schemas.Calibration.quantiles` keys, in report order.
 #: Frozen by the ``Calibration`` docstring, so they are NOT a config knob:
 #: a config that disagreed with the schema would silently produce a calibration
-#: the gate cannot read.
-_HEADS: tuple[str, ...] = ("nextstep", "intent", "action", "skeleton", "template")
+#: the gate cannot read. ``"value"`` is exactly that failure: the schema has
+#: named it since gate.py grew its H4 value-confidence check, this tuple did
+#: not, and :func:`reflex.gate._quantile` raises rather than defaulting -- so
+#: every Arm B run died on its first slot-bearing take_action turn.
+_HEADS: tuple[str, ...] = ("nextstep", "intent", "action", "skeleton", "template", "value")
 
 #: Sidecar banner. Repeated in the file so nobody wires it into a decision.
 _DIAGNOSTIC_BANNER = (
@@ -708,12 +735,50 @@ def _gold_index(class_list: Sequence[str], gold: Optional[str], head: str) -> in
         ) from exc
 
 
+def _value_gold_index(candidates: Sequence[str], gold_values: Sequence[str]) -> int:
+    """Index of a gold value inside ONE H4 slot's candidate list; ``-1`` when absent.
+
+    Mirrors the H7 template rule (the gold has to BE one of the candidates the
+    model scored) and :mod:`reflex.evaluate`'s value comparison (case-folded
+    string equality).
+
+    It deliberately does NOT read ``turn.values[i]`` as the gold for slot ``i``:
+    ABCD's gold value list is not positionally aligned with an action's slot
+    list. ``verify-identity`` carries three golds that are
+    name/account_id/order_id on one turn and name/zip_code/phone on the next,
+    and ``select._score_values`` drops slots with no candidate columns, so both
+    sides move independently. Membership is the only alignment that holds.
+
+    WHAT A COPY-TIER CANDIDATE IS CALLED. ``select._slot_columns`` names a copy
+    column by the value the customer has DISCLOSED for that slot
+    (``select._disclosed_lexicon``) and falls back to the bare ``<marker>`` only
+    when nothing has been disclosed. So a NON-ENUMERABLE gold (a name, an email,
+    an order id) DOES match here once the customer has said it, and matches
+    nothing before that -- the undisclosed case stays a coverage miss instead of
+    being guessed at. (This docstring used to say copy candidates were always
+    markers and therefore never matched; that stopped being true when select
+    began naming copy columns by their disclosed value.)
+
+    This function only answers "is the gold among the candidates". Whether a
+    matched slot is allowed to SET the threshold is the caller's decision: see
+    the single-candidate rule in :func:`_collect_dev_scores`.
+    """
+    wanted = {str(value).strip().lower() for value in gold_values}
+    if not wanted:
+        return -1
+    for index, name in enumerate(candidates):
+        if str(name).strip().lower() in wanted:
+            return index
+    return -1
+
+
 def _collect_dev_scores(
     cfg: dict[str, Any],
     selector: Any,
     rows: Sequence[tuple[int, int, NormalizedTurn, ContextWindow]],
     labels: dict[str, Any],
     class_orders: dict[str, Sequence[str]],
+    diagnostics: Optional[dict[str, Any]] = None,
 ) -> tuple[dict[str, list[list[float]]], dict[str, list[int]], list[float], dict[str, int]]:
     """Score dev and bucket ``(probs, gold_index)`` per head. No decisions, no routing.
 
@@ -721,9 +786,20 @@ def _collect_dev_scores(
     is ``{"n_positions": ..., "n_gold_present": ...}`` -- see the note on
     ``h7_absent_gold`` below for why it exists as a SEPARATE return value
     rather than folded into ``golds["template"]``.
+
+    ``diagnostics``, when given, is filled in place with the two exclusion
+    counts that are otherwise invisible in the outputs -- ``branch_drops`` (gold
+    take_action / retrieve_utterance turns the model routed the other way, so
+    the head the gate would have consulted is not the head their gold belongs
+    to) and ``value_coverage`` (how many H4 slots had their gold among the
+    candidate columns, and how many of those were single-candidate slots kept
+    out of the quantile). Both are REPORTING ONLY; nothing reads them back.
     """
     from reflex.data import turn_key
-    from reflex.select import score_turn
+    # select's own argmax, imported rather than re-implemented: this has to
+    # break ties the same way score_turn does or calibrate would disagree with
+    # the selector about which branch a turn was predicted into.
+    from reflex.select import _argmax, score_turn
 
     absent_mode = str(get_dotted(cfg, "calibrate.h7_absent_gold")).lower()
     if absent_mode not in ("max_nonconformity", "skip"):
@@ -735,6 +811,15 @@ def _collect_dev_scores(
     golds: dict[str, list[int]] = {head: [] for head in _HEADS}
     novelty: list[float] = []
     template_coverage = {"n_positions": 0, "n_gold_present": 0}
+    value_coverage = {
+        "n_slots": 0,
+        "n_gold_present": 0,
+        "n_no_candidates": 0,
+        "n_single_candidate": 0,
+        "n_single_candidate_gold_present": 0,
+        "n_scored": 0,
+    }
+    branch_drops = {"action": 0, "skeleton": 0}
 
     for convo_id, turn_index, turn, context in rows:
         scores = score_turn(selector, context, turn, cfg)
@@ -746,19 +831,93 @@ def _collect_dev_scores(
         probs["intent"].append(list(scores.intent_probs))
         golds["intent"].append(_gold_index(class_orders["intent"], turn.intent, "intent"))
 
-        if turn.nextstep == "take_action" and scores.action_probs:
+        # Applicability follows the PREDICTED nextstep, because that is what
+        # gate.evaluate_gate routes on ("never the gold one", its docstring) and
+        # therefore the population q_h is applied to. Filtering on turn.nextstep
+        # instead made the population depend on select.score_inapplicable_heads:
+        # with it off the two filters coincide, but switching it on -- which
+        # select.score_turn's docstring recommends as a bias fix -- would quietly
+        # start fitting H3/H5/H7 on turns the gate never sends through those
+        # heads. Recomputing the argmax is arithmetic, not routing; the gate
+        # remains the only decision point.
+        predicted_nextstep = NEXT_STEPS[_argmax(scores.nextstep_probs)]
+        if turn.nextstep != predicted_nextstep:
+            if turn.nextstep == "take_action":
+                branch_drops["action"] += 1
+            elif turn.nextstep == "retrieve_utterance":
+                branch_drops["skeleton"] += 1
+
+        if predicted_nextstep == "take_action" and scores.action_probs:
             probs["action"].append(list(scores.action_probs))
             golds["action"].append(_gold_index(class_orders["action"], turn.action, "action"))
 
-        if turn.nextstep == "retrieve_utterance" and scores.skeleton_probs:
+            # H4, one row per value slot of the PREDICTED action, pooled into the
+            # single shared quantiles["value"] gate.py asks for. Only a gold
+            # take_action turn can supply a gold value, so a turn predicted here
+            # whose gold is retrieve_utterance contributes no slot at all --
+            # counting its slots would inflate the value_coverage denominator
+            # with rows that could never have matched.
+            #
+            # THE SINGLE-CANDIDATE RULE. A slot with exactly ONE candidate column
+            # has the distribution [1.0] (select._softmax of one logit), and
+            # select.prediction_set([1.0], q) is {0} for EVERY q in [0, 1]:
+            # q_value cannot change what the gate does with that slot. Its
+            # nonconformity is exactly 0, so scoring it informs nothing about the
+            # slots q_value DOES decide and only dilutes their distribution --
+            # with a share f of such rows the alpha-quantile is taken at
+            # alpha / (1 - f) of the multi-candidate rows, i.e. those slots are
+            # covered below nominal. These are overwhelmingly copy-tier slots
+            # whose one column select names by the customer's disclosed value, so
+            # they DO match a gold (see _value_gold_index). They are therefore
+            # kept out of the quantile (gold index -1, exactly like an absent
+            # gold) and reported in value_coverage instead. The stratum is
+            # defined by the candidate list alone -- context and predicted
+            # action, never the label -- so restricting to it keeps split
+            # conformal's exchangeability argument intact.
+            gold_values = list(turn.values or []) if turn.nextstep == "take_action" else []
+            value_slots = list(scores.value_probs) if gold_values else []
+            for slot_index, slot_probs in enumerate(value_slots):
+                candidates = (
+                    list(scores.value_candidates[slot_index])
+                    if slot_index < len(scores.value_candidates)
+                    else []
+                )
+                value_coverage["n_slots"] += 1
+                slot_gold = _value_gold_index(candidates, gold_values)
+                if slot_gold >= 0:
+                    value_coverage["n_gold_present"] += 1
+                if len(slot_probs) == 0:
+                    # select's "slot with no candidate column" -- the gate's
+                    # size-0 escalation. Nothing to score, nothing to match.
+                    value_coverage["n_no_candidates"] += 1
+                elif len(slot_probs) == 1:
+                    value_coverage["n_single_candidate"] += 1
+                    if slot_gold >= 0:
+                        value_coverage["n_single_candidate_gold_present"] += 1
+                    slot_gold = -1
+                if slot_gold >= 0:
+                    value_coverage["n_scored"] += 1
+                # Index-aligned exactly like the template rows below: an absent
+                # gold is kept as -1 and skipped by nonconformity_scores, never
+                # folded into the distribution that sets the threshold.
+                probs["value"].append(list(slot_probs))
+                golds["value"].append(slot_gold)
+
+        if predicted_nextstep == "retrieve_utterance" and scores.skeleton_probs:
             gold_skeleton = getattr(label, "skeleton_id", None) if label is not None else None
             probs["skeleton"].append(list(scores.skeleton_probs))
             golds["skeleton"].append(
                 _gold_index(class_orders["skeleton"], gold_skeleton, "skeleton")
             )
 
+            # Same denominator rule as the value slots above: H7 positions exist
+            # only where the turn HAS gold agent text, so a turn predicted into
+            # this branch whose gold is take_action contributes no position.
             gold_templates = list(getattr(label, "template_ids", None) or [])
-            for position, position_probs in enumerate(scores.template_probs):
+            template_positions = (
+                list(scores.template_probs) if turn.nextstep == "retrieve_utterance" else []
+            )
+            for position, position_probs in enumerate(template_positions):
                 candidates = (
                     list(scores.template_candidates[position])
                     if position < len(scores.template_candidates)
@@ -814,6 +973,9 @@ def _collect_dev_scores(
                     probs["template"].append(list(position_probs))
                     golds["template"].append(-1)
 
+    if diagnostics is not None:
+        diagnostics["branch_drops"] = dict(branch_drops)
+        diagnostics["value_coverage"] = dict(value_coverage)
     return probs, golds, novelty, template_coverage
 
 
@@ -822,7 +984,7 @@ def _dev_labels(
     bank: Bank,
     cfg: dict[str, Any],
 ) -> list[Any]:
-    """``labels/dev.jsonl``, derived against the compiled bank when it is absent.
+    """The dev turn labels, ALWAYS derived fresh against the compiled bank.
 
     INTERFACE FIX, found by running the pipeline. ``compile.compile_bank`` writes
     ``labels/train.jsonl`` and NOTHING ELSE -- ``split = "train"`` is hard-set at
@@ -831,26 +993,45 @@ def _dev_labels(
     called ``load_turn_labels("dev", cfg)`` directly, so a clean tree raised
     ``FileNotFoundError`` before a single dev turn was scored.
 
-    ``train._labels_for`` already solved exactly this for early stopping -- it
-    derives the labels through ``compile``'s own ``split_sentences`` /
+    ``train._derive_turn_labels`` already solved exactly this for early stopping
+    -- it derives the labels through ``compile``'s own ``split_sentences`` /
     ``label_acts`` and matches against EXISTING bank templates, never extending
     the bank. Reusing it is deliberate: two derivations of the same gold that
     drift apart would make the calibration's H5/H7 quantiles incomparable with
     the dev selection score training stopped on.
 
-    ``persist=False``: ``train --smoke`` labels a 10-conversation dev subset, and
-    a partial ``labels/dev.jsonl`` cached on disk would then be silently reused
-    by a later full calibration. Deriving costs one act-labelling pass and is
-    the safe side of that trade.
-    """
-    from reflex.compile import load_turn_labels
-    from reflex.train import _labels_for
+    ALWAYS DERIVED, NEVER READ OFF DISK -- this used to try
+    ``load_turn_labels("dev", cfg)`` first and only derive on FileNotFoundError,
+    which is the trade this function already refused in the other direction (it
+    passed ``persist=False`` precisely because ``train --smoke`` labels a
+    10-conversation dev subset, and a partial ``labels/dev.jsonl`` left on disk
+    would then be silently reused by a later full calibration -- but reading
+    whatever is already there has exactly that failure mode, and a worse one).
+    Template and skeleton ids are POSITIONAL (``compile`` hands out ``T%06d`` /
+    ``S%04d`` by descending count and re-sorts on every recompile), so a labels
+    file written against an EARLIER bank still resolves every id -- to a
+    different template. ``_gold_index`` cannot catch it: the id exists in the new
+    bank, so it returns a valid index for the wrong class instead of raising, and
+    ``quantiles['skeleton']``, ``quantiles['template']`` and the whole alpha
+    sweep come out fitted against wrong golds with no warning anywhere. Nothing
+    guards it on the file either: ``compile.write_turn_labels`` stamps no bank or
+    dataset hash and ``compile.load_turn_labels`` checks none, and
+    ``paths.labels_dir`` is ONE directory shared across bank fractions, so
+    ``compile --fraction`` / ``train --fraction`` runs overwrite each other's dev
+    labels. The real fix is provenance on the file itself (a ``__meta__`` header
+    carrying bank_hash/dataset_hash, checked on load) and belongs in
+    :mod:`reflex.compile`; until that exists, deriving is the only read of these
+    golds that cannot be silently stale.
 
-    try:
-        return list(load_turn_labels("dev", cfg))
-    except FileNotFoundError:
-        labels, _origin = _labels_for(dev_partition, bank, cfg, "dev", persist=False)
-        return list(labels)
+    Note it calls ``train._derive_turn_labels`` and NOT ``train._labels_for``:
+    ``_labels_for`` loads ``labels/<split>.jsonl`` first and only derives on
+    FileNotFoundError, so routing through it would put the same stale file back
+    one frame down. ``_derive_turn_labels`` is the derivation ``_labels_for``
+    itself calls, so the "one derivation, no drift" argument above still holds.
+    """
+    from reflex.train import _derive_turn_labels
+
+    return list(_derive_turn_labels(dev_partition, bank, cfg, "dev"))
 
 
 def calibrate(cfg: dict[str, Any], checkpoint_path: str, seed: int) -> Calibration:
@@ -872,6 +1053,11 @@ def calibrate(cfg: dict[str, Any], checkpoint_path: str, seed: int) -> Calibrati
 
     Returns:
         A :class:`Calibration`.
+
+    Raises:
+        ContractViolation: before any work is done, if the file
+            :func:`write_calibration` would write already holds another seed's
+            or another checkpoint's calibration (:func:`_refuse_foreign_overwrite`).
     """
     _require_dependencies()
 
@@ -888,6 +1074,17 @@ def calibrate(cfg: dict[str, Any], checkpoint_path: str, seed: int) -> Calibrati
     percentile = float(get_dotted(cfg, "gate.novelty_percentile"))
     percentile_method = str(get_dotted(cfg, "calibrate.novelty_percentile_method"))
     min_scores = int(get_dotted(cfg, "calibrate.min_head_scores"))
+
+    # PRE-FLIGHT, before anything expensive or destructive. write_calibration
+    # refuses to replace another seed's / checkpoint's file, but it only runs
+    # after this function returns (reflex.__main__) -- i.e. after every train
+    # context was encoded, every dev turn scored, and the diagnostics sidecar of
+    # the calibration being protected had already been overwritten. Asking the
+    # same question here costs one small JSON read and fails in the first second.
+    _refuse_foreign_overwrite(
+        _calibration_write_path(cfg, seed),
+        Calibration(alpha=alpha, checkpoint_path=checkpoint_path, seed=int(seed)),
+    )
 
     ontology = load_ontology(cfg)
     bank = load_bank(cfg)
@@ -927,8 +1124,9 @@ def calibrate(cfg: dict[str, Any], checkpoint_path: str, seed: int) -> Calibrati
         what="the dev turns behind the conformal quantiles",
     )
     labels = {label.turn_id: label for label in _dev_labels(partitions.dev, bank, cfg)}
+    collection_diagnostics: dict[str, Any] = {}
     probs, golds, novelty, template_coverage = _collect_dev_scores(
-        cfg, selector, dev_rows, labels, class_orders
+        cfg, selector, dev_rows, labels, class_orders, collection_diagnostics
     )
     scores_by_head = {
         head: nonconformity_scores(probs[head], golds[head]) for head in _HEADS
@@ -976,7 +1174,7 @@ def calibrate(cfg: dict[str, Any], checkpoint_path: str, seed: int) -> Calibrati
     if bool(get_dotted(cfg, "calibrate.write_diagnostics")):
         _write_diagnostics(
             cfg, calibration, probs, golds, scores_by_head, novelty, len(dev_rows),
-            template_coverage,
+            template_coverage, collection_diagnostics,
         )
     return calibration
 
@@ -990,6 +1188,7 @@ def _write_diagnostics(
     novelty: Sequence[float],
     n_dev_rows: int,
     template_coverage: dict[str, int],
+    collection_diagnostics: Optional[dict[str, Any]] = None,
 ) -> str:
     """Write the dev ECE / in-sample-coverage sidecar. REPORTING ONLY, never a gate."""
     n_bins = int(get_dotted(cfg, "eval.ece_bins"))
@@ -1007,6 +1206,9 @@ def _write_diagnostics(
         for key, head_quantiles in calibration.alpha_sweep_quantiles.items()
     }
     array = np.asarray(novelty, dtype=np.float64)
+    extra = dict(collection_diagnostics or {})
+    value_coverage = dict(extra.get("value_coverage") or {})
+    branch_drops = dict(extra.get("branch_drops") or {})
     payload = {
         "WARNING": _DIAGNOSTIC_BANNER,
         "not_a_gate": True,
@@ -1034,6 +1236,61 @@ def _write_diagnostics(
                 "in _collect_dev_scores for why that used to collapse the gate."
             ),
         },
+        "value_coverage": {
+            **value_coverage,
+            "gold_present_rate": (
+                value_coverage["n_gold_present"] / value_coverage["n_slots"]
+            ) if value_coverage.get("n_slots") else None,
+            "scored_rate": (
+                value_coverage["n_scored"] / value_coverage["n_slots"]
+            ) if value_coverage.get("n_slots") and "n_scored" in value_coverage else None,
+            "note": (
+                "Which H4 slots set `quantiles['value']`. n_slots counts slots of "
+                "turns that HAVE at least one gold value: a gold button taking no "
+                "arguments (11,327 of ABCD's 36,482 action turns) poses no H4 "
+                "question, so it is not a miss and is not in the denominator. "
+                "n_gold_present is how many of those slots had the gold among their "
+                "candidates; a copy-tier candidate is named by the value the customer "
+                "DISCLOSED (select._slot_columns), so it matches once the customer "
+                "has said it and is a miss before that. n_scored is the subset that "
+                "actually carries a nonconformity score: gold present AND at least "
+                "two candidates. n_single_candidate slots are excluded on purpose -- "
+                "their distribution is [1.0], the gate's set for them is that one "
+                "candidate at every q, and their nonconformity of exactly 0 would only "
+                "dilute the distribution that decides the multi-candidate slots "
+                "(at a share f of such rows, those slots would be covered at "
+                "1 - alpha/(1-f), not 1 - alpha). n_single_candidate_gold_present "
+                "reports how many rows that rule removed; n_no_candidates is the "
+                "gate's size-0 escalation case."
+            ),
+        },
+        "branch_drops": {
+            **branch_drops,
+            "note": (
+                "Gold take_action / retrieve_utterance dev turns whose PREDICTED "
+                "nextstep was the other branch. They carry no H3/H4 (resp. H5/H7) "
+                "score, because those heads are calibrated on the population the "
+                "gate applies them to -- the predicted branch, per "
+                "gate.evaluate_gate -- and a turn the gate would route through the "
+                "other head cannot inform this one's threshold. Recorded here so "
+                "the exclusion is visible rather than implicit in n_scores_per_head."
+            ),
+        },
+        "calibration_set_used_for_model_selection": True,
+        "calibration_set_independence_note": (
+            "NOT AN INDEPENDENT CALIBRATION SET. The quantiles above were fitted on "
+            "the same partitions.dev turns reflex.train early-stops on (it keeps the "
+            "epoch that maximizes dev_selection_score), so the calibration scores are "
+            "not independent of the fitted predictor and the nonconformity "
+            "distribution is optimistically low. Split conformal's 1-alpha coverage "
+            "is therefore NOMINAL here, not guaranteed, and no coverage claim quoted "
+            "from these quantiles may be called exact. Making it real needs "
+            "partitions.dev split by convo_id into a fit half (early stopping) and a "
+            "calibration half (these quantiles), which is a change to reflex.data and "
+            "reflex.train, not to this module. The independent measurement is the "
+            "test-side empirical coverage from reflex.evaluate.calibration_metrics, "
+            "which report.py checks as criterion 4."
+        ),
         "novelty_distance": {
             "percentile": float(get_dotted(cfg, "gate.novelty_percentile")),
             "threshold": calibration.novelty_threshold,
@@ -1044,6 +1301,11 @@ def _write_diagnostics(
         },
     }
     path = resolve_path(cfg, "paths.calibration_diagnostics_path")
+    if "{seed}" in path:
+        # Same placeholder rule as paths.calibration_path: a per-seed calibration
+        # whose sidecar is one shared file would keep only the last seed's
+        # value_coverage / branch_drops / ECE.
+        path = path.format(seed=int(calibration.seed))
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w", encoding="utf-8") as handle:
         json.dump(payload, handle, indent=2, sort_keys=False)
@@ -1056,8 +1318,71 @@ def _write_diagnostics(
 # ---------------------------------------------------------------------------
 
 
+def _calibration_write_path(cfg: dict[str, Any], seed: int) -> str:
+    """Where ``seed``'s calibration is written: ``paths.calibration_path``, ``{seed}`` formatted.
+
+    The ONE formatting rule, shared by :func:`write_calibration` and the
+    pre-flight check in :func:`calibrate`. ``reflex.run._resolve_calibration``
+    and ``reflex.evaluate._load_calibration`` format the read side the same way
+    (``"{seed}" in path`` -> ``path.format(seed=int(seed))``) and hand the
+    concrete file to :func:`load_calibration`.
+    """
+    path = resolve_path(cfg, "paths.calibration_path")
+    if "{seed}" in path:
+        path = path.format(seed=int(seed))
+    return path
+
+
+def _calibration_identity(calibration: Calibration) -> tuple[int, str]:
+    """What a calibration file belongs to: ``(seed, absolute checkpoint path)``."""
+    checkpoint = str(calibration.checkpoint_path or "")
+    return int(calibration.seed), os.path.abspath(checkpoint) if checkpoint else ""
+
+
+def _refuse_foreign_overwrite(path: str, calibration: Calibration) -> None:
+    """Refuse to replace a calibration fitted for a DIFFERENT seed or checkpoint.
+
+    ``paths.calibration_path`` is one un-templated file while quantiles belong to
+    exactly one checkpoint and one seed (this module's own contract, repeated in
+    the ``Calibration`` docstring). Spec 6.4 asks for every ``train.seeds`` entry
+    to be run, so the second ``reflex calibrate`` silently destroyed the first
+    seed's quantiles, its entire ``alpha_sweep_quantiles`` table and the
+    ``novelty_index_path`` binding them to a seed-scoped ``.npz`` -- none of it
+    re-derivable without re-running the calibration. Refusing costs one manual
+    step; overwriting costs a run.
+    """
+    if not os.path.exists(path):
+        return
+    try:
+        with open(path, "r", encoding="utf-8") as handle:
+            existing = Calibration.from_dict(json.load(handle))
+    except (OSError, ValueError, TypeError, KeyError):
+        # Unreadable or not a Calibration: there is no identity to protect.
+        return
+    if _calibration_identity(existing) == _calibration_identity(calibration):
+        return
+    raise ContractViolation(
+        f"{path} already holds the calibration for seed {int(existing.seed)} / "
+        f"{existing.checkpoint_path or '<unrecorded>'!r}, but this one is for seed "
+        f"{int(calibration.seed)} / {calibration.checkpoint_path!r}. Overwriting it "
+        f"would destroy that seed's quantiles, its whole alpha sweep and the novelty "
+        f"index they are bound to, and nothing re-derives them. Point "
+        f"paths.calibration_path at a per-seed path -- it accepts a {{seed}} "
+        f"placeholder, e.g. outputs/calibration/gate_seed{{seed}}.json, formatted here "
+        f"exactly as paths.novelty_index_template already is -- or move the existing "
+        f"file aside first."
+    )
+
+
 def write_calibration(calibration: Calibration, cfg: dict[str, Any]) -> str:
     """Persist to ``paths.calibration_path`` (``outputs/calibration/gate.json``).
+
+    ``paths.calibration_path`` may carry a ``{seed}`` placeholder, formatted from
+    ``calibration.seed`` exactly as :func:`save_novelty_index` formats
+    ``paths.novelty_index_template``. With the un-templated default every seed
+    writes the same file, so a calibration belonging to another seed or
+    checkpoint is refused rather than clobbered -- see
+    :func:`_refuse_foreign_overwrite`.
 
     Args:
         calibration: From :func:`calibrate`.
@@ -1065,8 +1390,13 @@ def write_calibration(calibration: Calibration, cfg: dict[str, Any]) -> str:
 
     Returns:
         The absolute path written.
+
+    Raises:
+        ContractViolation: if the target file holds another seed's or another
+            checkpoint's calibration.
     """
-    path = resolve_path(cfg, "paths.calibration_path")
+    path = _calibration_write_path(cfg, calibration.seed)
+    _refuse_foreign_overwrite(path, calibration)
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w", encoding="utf-8") as handle:
         json.dump(calibration.to_dict(), handle, indent=2, sort_keys=False)
@@ -1090,6 +1420,18 @@ def load_calibration(cfg: dict[str, Any], path: Optional[str] = None) -> Calibra
     resolved = path if path is not None else resolve_path(cfg, "paths.calibration_path")
     if not os.path.isabs(resolved):
         resolved = os.path.join(os.path.dirname(resolve_path(cfg, "paths.calibration_path")), resolved)
+    if "{seed}" in resolved:
+        # This function's signature is frozen (reflex.contracts) and carries no
+        # seed, so a per-seed template can only be resolved by the caller, which
+        # is the one that knows the run's seed. Checked on the FINAL path: a
+        # relative `path` is joined onto the configured directory, which may be
+        # the templated part.
+        raise ContractViolation(
+            f"calibration path {resolved!r} still carries the {{seed}} placeholder of "
+            f"a per-seed paths.calibration_path; load_calibration takes no seed, so "
+            f"the caller must format it (path.format(seed=...), exactly as "
+            f"write_calibration does) and pass the concrete file as `path`."
+        )
     if not os.path.exists(resolved):
         raise FileNotFoundError(
             f"calibration not found: {resolved}. Run `python -m reflex calibrate "

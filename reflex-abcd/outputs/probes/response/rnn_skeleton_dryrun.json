@@ -18,12 +18,24 @@
   },
   "compare_against": {
     "H5_TFIDF_logreg_full_train_D25": {
-      "conditional": 0.432
+      "conditional_n3985": 0.5821831869510665,
+      "gold_skeleton_n8858": 0.431700158049221,
+      "unconditional_n8889": 0.43019462256721785,
+      "label_blind_constant_n8858": 0.2630390607360578,
+      "compare_like_with_like": "conditional_n3985 <-> skeleton_accuracy.conditional.rnn; unconditional_n8889 <-> skeleton_accuracy.unconditional.rnn; gold_skeleton_n8858 has no counterpart in this artifact (it predates the skeleton_population counter)",
+      "sources": [
+        "outputs/probes/response/recall_at_k.json -> blocks['ALL (conditional)'].skeleton_recall@1 (n=3985)",
+        "outputs/probes/response/select.json -> headline_test_seen.h5.accuracy['recall@1'] and .constant['recall@1'] (n_eval=8858)"
+      ]
     },
     "ngram_skeleton_full_train": {
       "conditional": 0.41957340025094103
     },
-    "H5_label_blind_constant_full_train_D25": 0.2632
+    "H5_label_blind_constant_full_train_D25": {
+      "gold_skeleton_n8858": 0.2630390607360578,
+      "note": "select.json headline_test_seen.h5.constant['recall@1'], over the 8,858 gold-skeleton turns -- NOT the 3,985 fully-covered turns, so not comparable to conditional.label_blind_constant_same_5k_fit."
+    }
   },
+  "compare_against_patched": "2026-09-20 audit patch (G02; findings F02/F03/F04/F20/F22). The H5 entry previously read {\"conditional\": 0.432}: that is the certified H5's recall@1 over the 8,858 gold-skeleton turns, filed under the label of the 3,985 template-fully-covered turns. On those 3,985 turns the cache scores 0.5822, so the old entry understated the cache by ~15 points. ONLY the H5 entries of compare_against were replaced with population-labelled values read from the sources listed there; every other key of this file, including this artifact's own measured numbers, is byte-identical. The script was NOT re-run. The n-gram figure cross-referenced in compare_against predates the deterministic argmax tie-break fix (F19/F52).",
   "elapsed_s": 161.5
 }

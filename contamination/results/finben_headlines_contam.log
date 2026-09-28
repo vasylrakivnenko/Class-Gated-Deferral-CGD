@@ -1,0 +1,45 @@
+dataset : TheFinAI/flare-headlines @ 39e4f9ba3515a7cf464ed07ece80a4f7f4189134
+files   : 5 in snapshot
+          f4e703ea6e44bbeb         2,307  .gitattributes
+          9681062cba5a8848           661  README.md
+          84775bec089b6125       899,498  data/test-00000-of-00001-2a1cddfd1b6bd5cb.parquet
+          46dc6a309f2a2d6b     2,517,850  data/train-00000-of-00001-b4185af3fde5de2a.parquet
+          e73eb79e0dc1cbc0       365,008  data/valid-00000-of-00001-eaa51bb586dd9ed5.parquet
+env     : python 3.12.8, datasets 5.0.1, commit 12ed998c (dirty)
+
+content fingerprints (query+answer, row order):
+          292fbd57a9c34ee3881d3a0ec4351842  test (20,547 rows)
+          a9b9061064de9ea62bb6de40c9a3106d  train (71,892 rows)
+          6a17c0a20f07a4ed59c3b98e13dc6288  valid (10,269 rows)
+
+sub-task vocabulary, read from the dataset's label_type column (9): ['Asset Comparision', 'Direction Constant', 'Direction Down', 'Direction Up', 'FutureNews', 'FuturePrice', 'PastNews', 'PastPrice', 'Price or Not']
+
+train: rows=71892 unparsed_headline=0 no_subtask=0 multi_hit=0
+  derived: {'Asset Comparision': 7988, 'Direction Constant': 7988, 'Direction Down': 7988, 'Direction Up': 7988, 'FutureNews': 7988, 'FuturePrice': 7988, 'PastNews': 7988, 'PastPrice': 7988, 'Price or Not': 7988}
+
+test: rows=20547 unparsed_headline=0 no_subtask=0 multi_hit=0
+  derived: {'Asset Comparision': 2283, 'Direction Constant': 2283, 'Direction Down': 2283, 'Direction Up': 2283, 'FutureNews': 2283, 'FuturePrice': 2283, 'PastNews': 2283, 'PastPrice': 2283, 'Price or Not': 2283}
+
+test derivation agrees with the dataset's own label_type column: 20547/20547
+unique headlines: train=7,718 test=2,239 overlap=1,590
+
+sub-task               n_tr   n_te  te_in_tr   %leak  lbl_agree
+Asset Comparision      7988   2283      1632  71.5%      99.9%
+Direction Constant     7988   2283      1632  71.5%      99.8%
+Direction Down         7988   2283      1632  71.5%      99.8%
+Direction Up           7988   2283      1632  71.5%      99.7%
+FutureNews             7988   2283      1632  71.5%     100.0%
+FuturePrice            7988   2283      1632  71.5%     100.0%
+PastNews               7988   2283      1632  71.5%     100.0%
+PastPrice              7988   2283      1632  71.5%     100.0%
+Price or Not           7988   2283      1632  71.5%     100.0%
+TOTAL                        20547     14688  71.5%
+
+supplementary: test rows whose headline is in train OR valid: 16,677/20,547 = 81.2%
+
+train dup headlines (Direction Up): 159 headlines appear >1x
+train headlines with CONFLICTING labels (Direction Up): 8
+
+wrote /Users/vasyl/zadumai/contamination/results/finben_headlines_contam.json (12.2s)
+
+OK: every published number reproduced exactly.

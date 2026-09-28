@@ -90,6 +90,11 @@ _NULL_VALUES: frozenset[str] = _compile._NULL_VALUES
 #: ``(value, declared_categories, enumerable) -> registry slot | None``.
 _type_literal = _compile._type_literal
 
+#: ``value -> (scenario surface, transcript surface)``. ABCD writes product
+#: names as ``michael_kors jeans`` in the scenario and ``michael kors jeans`` in
+#: the transcript; the compiler already treats the two as the same surface.
+_surface_variants = _compile._surface_variants
+
 #: Turn speaker whose ``values`` are prior-action values (spec 5.1: the action
 #: turn's text IS the button name and ``nextstep`` is ``take_action``).
 _ACTION_SPEAKER: str = "action"
@@ -182,6 +187,74 @@ def _is_value(value: Any) -> bool:
     return bool(str(value).strip()) and str(value).strip().lower() not in _NULL_VALUES
 
 
+def _transcript_surface(value: str) -> str:
+    """How a SCENARIO value is spelled in customer-facing text.
+
+    ``_surface_variants`` returns the scenario spelling first and the transcript
+    spelling last, which for ``michael_kors shirt`` is ``michael kors shirt``.
+    Splicing the scenario spelling into an agent sentence puts an underscore in
+    front of the customer. Applied to scenario-sourced values ONLY, never to a
+    value the customer typed: measured over all 10,042 ABCD conversations,
+    ``product.names`` is the only disclosable scenario leaf whose values ever
+    contain ``_`` (6,973 occurrences), so no email, username or id is touched.
+    """
+    variants = _surface_variants(value)
+    return variants[-1] if variants else str(value).strip()
+
+
+def disclosed_slot_values(
+    disclosed: dict[str, str],
+    registry: SlotRegistry,
+    cfg: dict[str, Any],
+    leaf_values: Optional[dict[str, list[str]]] = None,
+) -> dict[str, str]:
+    """``registry slot -> the ONE value the customer has disclosed for it``.
+
+    The single reading of :attr:`reflex.schemas.ContextWindow.disclosed` as slot
+    values. :func:`collect_slot_sources` (the filler) and
+    ``reflex.select._disclosed_lexicon`` (H4's copy tier) both call it, so the
+    two cannot hold different ideas of what the customer said.
+
+    THE ONE RULE. A leaf that disclosed SEVERAL of its values at once
+    (``product.names``, ``product.amounts`` -- :func:`reflex.data._disclosure_timeline`
+    joins them with ``", "``) names no single one, and "which of the three
+    products" is exactly the guess this module refuses: the slot is left out,
+    so it stays unavailable and the gate escalates.
+
+    How a compound is recognised depends on what the caller may see:
+
+    * ``leaf_values`` given (the filler, which holds the scenario): cardinality
+      is read off the leaf, never off a comma count -- a street address ("0069
+      kennedy st newark, tx 78018") legitimately contains ``", "``.
+    * ``leaf_values`` omitted (the selector, which by the leakage boundary never
+      holds the scenario): a LIST leaf is recognised structurally, as one that
+      reached its slot through :func:`_scenario_slot`'s singular-strip branch
+      (``names -> name``, ``amounts -> amount``), and only for such a leaf does
+      ``", "`` mean a join. Measured over all 10,042 conversations of
+      ``abcd_v1.1.json``: ``product.names`` and ``product.amounts`` are the only
+      list-valued scenario leaves and none of their values contains ``", "``,
+      so on ABCD the two readings agree exactly.
+
+    Values are returned in their TRANSCRIPT spelling (:func:`_transcript_surface`).
+    """
+    out: dict[str, str] = {}
+    for field, value in (disclosed or {}).items():
+        slot = _scenario_slot(str(field), registry, cfg)
+        if not slot or not _is_value(value):
+            continue
+        text = str(value).strip()
+        if leaf_values is not None:
+            options = leaf_values.get(str(field))
+            compound = options is not None and len(options) > 1 and text not in options
+        else:
+            leaf = str(field).rsplit(".", 1)[-1]
+            compound = leaf != slot and leaf[:-1] == slot and ", " in text
+        if compound:
+            continue
+        out.setdefault(slot, _transcript_surface(text))
+    return out
+
+
 def _lookup(sources: SlotSources, slot: str) -> Optional[str]:
     """The value for ``slot``, or ``None``. Priority: customer, then action, then scenario.
 
@@ -236,11 +309,8 @@ def collect_slot_sources(
     # build_context owns the disclosure boundary; re-deriving it here is how the
     # filler and the model end up disagreeing about what the customer said.
     disclosed = _data.build_context(turns, turn_index, scenario or {}, cfg).disclosed
-    from_scenario: dict[str, str] = {}
-    for field, value in disclosed.items():
-        slot = _scenario_slot(str(field), registry, cfg)
-        if slot and _is_value(value):
-            from_scenario.setdefault(slot, str(value).strip())
+    leaf_values = dict(_data._flatten_scenario(scenario or {}, cfg))
+    from_scenario = disclosed_slot_values(disclosed, registry, cfg, leaf_values)
 
     # --- 2. values entered in PRIOR ACTIONS ---------------------------------- #
     declared, enumerable = _typing_evidence(cfg)

@@ -27,10 +27,22 @@ METRIC: compose@1, the SAME metric select.json's headline_test_seen reports.
   - skeleton match: the generation's act SEQUENCE == gold_acts
   - full match (compose@1): skeleton matches AND every position's resolved
     template_id == the gold template_id at that position
-This is computed on the SAME conditional population (turns with gold text at
-every position, n=3985) AND the unconditional population (all 8889, uncovered
-counted as a miss) -- both numbers, never one alone, matching
-headline_test_seen's own reporting convention.
+Both numbers are reported, never one alone, matching headline_test_seen's own
+reporting convention:
+  - conditional:   turns with gold text at every position
+  - unconditional: all turns
+
+DENOMINATORS ARE THE GENERATED ROWS, NOT THE PROMPT POPULATION
+--------------------------------------------------------------
+A turn the model was never asked to generate for is NOT evidence about the
+model, so it is not scored: it stays in `rows` with generated=false but enters
+no headline denominator. On a full run (gen_unconstrained/gen_structured, one
+generation per prompt) that is the whole 3985 / 8889 test_seen population and
+the arm is directly comparable to select.json. On a partial run (a 50/500/1000
+prompt subsample) the denominators are that subsample -- dividing by 3985/8889
+there understates the arm by the coverage ratio (~8x-21x). The old
+full-population reading is still emitted, explicitly labelled, as
+`full_population_lower_bound`.
 
 USAGE
 -----
@@ -134,7 +146,8 @@ def main(argv: list[str] | None = None) -> int:
 
     n_total = len(gold_by_turn)
     n_generated = 0
-    n_cond = 0          # conditional: gold fully covered at every position
+    n_cond = 0          # conditional AND generated: gold fully covered at every position
+    n_cond_full = 0     # fully covered anywhere in the prompt population (3985 on test_seen)
     hit_cond = 0
     hit_skel_cond = 0
     hit_uncond = 0
@@ -145,15 +158,20 @@ def main(argv: list[str] | None = None) -> int:
         gold_acts = rec["gold_acts"]
         gold = rec["gold"]
         fully_covered = bool(gold) and all(g["text"] for g in gold)
+        if fully_covered:
+            n_cond_full += 1
 
         gen_text = gens.get(turn_id)
         if gen_text is None:
-            # no generation for this turn -- counts as a miss everywhere
+            # No generation for this turn: it is NOT scored. The row is kept so the
+            # prompt population stays visible, but it enters NO headline denominator
+            # -- a numerator can only ever draw on generated rows, so counting it
+            # would understate the arm by the coverage ratio. The full-population
+            # reading (un-generated == miss) is emitted separately below as
+            # `full_population_lower_bound`.
             per_row.append({"turn_id": turn_id, "convo_id": rec["convo_id"],
                             "generated": False, "skeleton_hit": False, "full_hit": False,
                             "fully_covered": fully_covered})
-            if fully_covered:
-                n_cond += 1
             continue
         n_generated += 1
 
@@ -186,25 +204,72 @@ def main(argv: list[str] | None = None) -> int:
         if skeleton_hit:
             hit_skel_uncond += 1
 
+    coverage = (n_generated / n_total) if n_total else 0.0
+    n_convos = len({r["convo_id"] for r in per_row if r["generated"]})
+    partial = n_generated < n_total
+
+    _select = ("outputs/probes/response/select.json :: headline_test_seen.compose "
+               "-- conditional.compose@1=0.2765 (n=3985), unconditional.compose@1=0.1240 (n=8889). "
+               "Scored on the SAME bank lookup and SAME (act, normalized text) matching as "
+               "reflex.train._derive_turn_labels.")
+    if partial:
+        compare_against = (
+            _select + f" POPULATIONS DIFFER -- NOT directly comparable: this arm was generated for"
+            f" only {n_generated} of the {n_total} test_seen prompt turns (coverage {coverage:.4f},"
+            f" a contiguous prompt-file slice, not a random sample). The rates above are over"
+            f" {n_cond} conditional turns / {n_generated} turns in {n_convos} conversations -- NOT"
+            f" over 3985 / 8889. To compare against the cache, recompute select.json's rate on these"
+            " same turn_ids; `full_population_lower_bound` carries the 3985/8889 denominators but is"
+            " a lower bound on this arm, not its rate.")
+    else:
+        compare_against = (
+            _select + f" This arm was generated for all {n_total} prompt turns, so its conditional"
+            f" (n={n_cond}) and unconditional (n={n_generated}) populations are exactly the ones"
+            " select.json reports and the two arms are directly comparable.")
+
     result = {
         "arm": args.arm,
-        "n_total_turns": n_total,
+        # Headline denominators below are GENERATED rows, not the prompt population.
+        "n_total_turns": n_total,       # context only: size of the prompts file
         "n_generated": n_generated,
+        "coverage": coverage,
+        "n_conversations_scored": n_convos,
+        "scored_population": (f"all {n_total} test_seen prompt turns" if not partial else
+                              f"a {n_generated}-turn subsample of the {n_total} test_seen prompt turns"),
         "conditional": {
             "n": n_cond,
+            "n_note": "conditional turns (gold text at every position) that HAVE a generation",
             "compose@1": (hit_cond / n_cond) if n_cond else None,
             "skeleton_only": (hit_skel_cond / n_cond) if n_cond else None,
         },
         "unconditional": {
-            "n": n_total,
-            "compose@1": hit_uncond / n_total,
-            "skeleton_only": hit_skel_uncond / n_total,
+            "n": n_generated,
+            "n_note": "turns that HAVE a generation",
+            "compose@1": (hit_uncond / n_generated) if n_generated else None,
+            "skeleton_only": (hit_skel_uncond / n_generated) if n_generated else None,
         },
-        "compare_against": ("outputs/probes/response/select.json :: headline_test_seen.compose "
-                           "-- conditional.compose@1=0.2765 (n=3985), unconditional.compose@1=0.1240 (n=8889). "
-                           "Scored on the SAME bank lookup and SAME (act, normalized text) matching as "
-                           "reflex.train._derive_turn_labels, so the two arms are directly comparable."),
+        "full_population_lower_bound": {
+            "note": ("every un-generated prompt turn counted as a miss. Same denominators as "
+                     "select.json (3985 / 8889 on test_seen), but whenever coverage < 1.0 this is "
+                     "a LOWER BOUND on the arm, not its rate."),
+            "conditional": {
+                "n": n_cond_full,
+                "compose@1": (hit_cond / n_cond_full) if n_cond_full else None,
+                "skeleton_only": (hit_skel_cond / n_cond_full) if n_cond_full else None,
+            },
+            "unconditional": {
+                "n": n_total,
+                "compose@1": (hit_uncond / n_total) if n_total else None,
+                "skeleton_only": (hit_skel_uncond / n_total) if n_total else None,
+            },
+        },
+        "compare_against": compare_against,
     }
+    if partial:
+        print(f"WARNING: partial run -- {n_generated}/{n_total} prompt turns have a generation "
+              f"(coverage {coverage:.4f}). Headline compose@1 is over the generated subsample "
+              f"only and is NOT comparable to select.json's 3985/8889 populations.", file=sys.stderr)
+
     out_path = args.out or args.generations.replace(".jsonl", "_scored.json")
     with open(out_path, "w", encoding="utf-8") as fh:
         json.dump({"summary": result, "rows": per_row}, fh, indent=1)

@@ -93,6 +93,18 @@ def _is_missing(value: Any) -> bool:
     return False
 
 
+def _cfg_opt(cfg: dict[str, Any], key: str) -> Any:
+    """``get_dotted`` for a key that may be absent: returns ``None``, never raises.
+
+    A number the config does not carry is a GAP, printed as such with the key
+    named. It is never defaulted and never written as a literal in this module.
+    """
+    try:
+        return get_dotted(cfg, key)
+    except KeyError:
+        return None
+
+
 def _num(value: Any, cfg: dict[str, Any]) -> str:
     """Print a number at ``report.float_precision``, or ``n/a``."""
     if _is_missing(value):
@@ -156,6 +168,27 @@ def _label(metrics: dict[str, Any]) -> str:
 def _forced_reflex(metrics: dict[str, Any]) -> bool:
     """Was this run's escalation set left unanswered? Read from the run manifest copy."""
     return bool(_get(metrics, "manifest", "machine", "forced_reflex", default=False))
+
+
+def _manifest_error(metrics: dict[str, Any]) -> str:
+    """Why this run has NO attached manifest, or ``""`` when it has one."""
+    return str(metrics.get("manifest_error") or "")
+
+
+def _mode_cell(metrics: dict[str, Any], forced_label: str) -> str:
+    """The run's mode, as Section 1 and Table E print it.
+
+    The forced-reflex flag has exactly ONE source, the run manifest -- the
+    evaluator never copies it into ``metrics.json``. So with no manifest the
+    flag is absent, and absent is UNKNOWN, not "normal": printing "normal"
+    would silently drop the Table B warning that a forced-reflex run's quality
+    columns score a system that declined to answer part of its turn set.
+    """
+    if _forced_reflex(metrics):
+        return forced_label
+    if _manifest_error(metrics):
+        return "UNKNOWN (no manifest)"
+    return "normal"
 
 
 def _fixture_note(metrics: dict[str, Any]) -> Optional[str]:
@@ -332,6 +365,9 @@ def _table_b(metrics: Sequence[dict[str, Any]], cfg: dict[str, Any]) -> str:
     )
 
     forced = [m for m in metrics if _forced_reflex(m)]
+    # A run with no manifest cannot be shown to be a normal run either, so the
+    # warning below has to cover it too.
+    unknown = [m for m in metrics if not _forced_reflex(m) and _manifest_error(m)]
     forced_note = ""
     if forced:
         forced_note = (
@@ -342,6 +378,15 @@ def _table_b(metrics: Sequence[dict[str, Any]], cfg: dict[str, Any]) -> str:
             "declined to answer part of its turn set. The ROUTING numbers (Table A, Table C) are "
             "unaffected and are the reason that mode exists.\n>\n> Affected runs: "
             + ", ".join(_label(m) for m in forced)
+        )
+    if unknown:
+        forced_note += (
+            "\n\n> **Mode is UNKNOWN for the runs below, so the warning may apply to them "
+            "too.** The forced-reflex flag lives only in the run manifest and these runs have "
+            "none, so this report CANNOT tell a normal run from one whose escalated turns "
+            "nobody answered. Treat their quality columns as unverified until the manifest is "
+            "present.\n>\n> Affected runs: "
+            + ", ".join(f"{_label(m)} -- {_manifest_error(m)}" for m in unknown)
         )
 
     return (
@@ -446,7 +491,7 @@ def _table_e(metrics: Sequence[dict[str, Any]], cfg: dict[str, Any]) -> str:
                 _num(m.get("alpha"), cfg),
                 _pct(_get(m, "routing", "reflex_rate"), cfg),
                 _num(_get(m, "official", "cds", "Joint_Accuracy"), cfg),
-                "forced-reflex" if _forced_reflex(m) else "normal",
+                _mode_cell(m, "forced-reflex"),
             ]
         )
     in_report = _table(
@@ -685,7 +730,7 @@ def _section_setup(metrics: Sequence[dict[str, Any]], cfg: dict[str, Any]) -> st
                 ", ".join(str(s) for s in (m.get("seeds") or [])) or _NA,
                 str(m.get("n_records", _NA)),
                 str(m.get("n_conversations", _NA)),
-                "forced-reflex ($0)" if _forced_reflex(m) else "normal",
+                _mode_cell(m, "forced-reflex ($0)"),
                 "**FIXTURE**" if _fixture_note(m) else "measured",
             ]
         )
@@ -723,6 +768,37 @@ def _section_setup(metrics: Sequence[dict[str, Any]], cfg: dict[str, Any]) -> st
     def _pending(value: Any) -> str:
         return "**PENDING**" if _is_missing(value) else _pct(value, cfg)
 
+    # DECISIONS D23: the train reconstruction rate is IN-SAMPLE and is never the
+    # headline. The numbers this repo quotes are the held-out ones; like every
+    # other measured constant they come from cfg (spec 10), and each renders as a
+    # named gap -- not an estimate -- when cfg does not carry it.
+    heldout_rows: list[list[str]] = []
+    for _split, _key in (
+        ("dev", "report.bank_exact_reconstruction_rate_dev"),
+        ("test_seen", "report.bank_exact_reconstruction_rate_test_seen"),
+        ("test_novel", "report.bank_exact_reconstruction_rate_test_novel"),
+    ):
+        _value = _cfg_opt(cfg, _key)
+        if _is_missing(_value):
+            _cell = _NA
+            _meaning = (
+                f"HELD-OUT {_split} reconstruction -- the number DECISIONS D23 says to quote "
+                f"instead of the in-sample train figure above. NO INPUT: `{_key}` is not in "
+                "the config. It HAS been measured (coverage probe, "
+                f"`splits.{_split}.variants.A.turn_coverage`); carry that value into the "
+                "config. Never estimate it here"
+            )
+        else:
+            _cell = _pct(_value, cfg)
+            _meaning = (
+                f"HELD-OUT {_split}: share of {_split} agent utterances fully reconstructible "
+                "from the SAME bank. THIS, not the train row, is the coverage of the technique "
+                "(DECISIONS D23)"
+            )
+        heldout_rows.append(
+            [f"exact reconstruction, utterances -- {_split.upper()} (HELD-OUT)", _cell, _meaning]
+        )
+
     bank = _table(
         ["bank property", "value", "what it means"],
         [
@@ -739,16 +815,19 @@ def _section_setup(metrics: Sequence[dict[str, Any]], cfg: dict[str, Any]) -> st
                 "rate from the bank side** -- and it bounds it at 100%",
             ],
             [
-                "exact reconstruction, utterances (FIDELITY)",
+                "exact reconstruction, utterances (FIDELITY) -- TRAIN, IN-SAMPLE",
                 _pct(fidelity, cfg),
-                "share of train agent utterances the bank rebuilds VERBATIM. A fidelity "
-                "number. It is not a ceiling on anything",
+                "share of TRAIN agent utterances the bank rebuilds VERBATIM. A fidelity "
+                "number. It is not a ceiling on anything. IN-SAMPLE, count>=2 vocabulary, "
+                ">=4.8 pts of it resubstitution (DECISIONS D23) -- the HELD-OUT rows below "
+                "are what this repo quotes, never this figure on its own",
             ],
             [
-                "exact reconstruction, sentences",
+                "exact reconstruction, sentences -- TRAIN, IN-SAMPLE",
                 _pct(fidelity_sent, cfg),
-                "the same, per sentence",
+                "the same, per sentence, and in-sample for the same reason",
             ],
+            *heldout_rows,
             [
                 "wrong-field rate, post-fix",
                 _pending(wrong_field)
@@ -800,6 +879,16 @@ def _section_setup(metrics: Sequence[dict[str, Any]], cfg: dict[str, Any]) -> st
         if machine:
             break
 
+    gaps = [(_label(m), _manifest_error(m)) for m in metrics if _manifest_error(m)]
+    manifest_gap = ""
+    if gaps:
+        manifest_gap = (
+            "\n\n**No manifest attached for these runs**, which is why their provenance cells "
+            "read n/a and their mode reads UNKNOWN (the forced-reflex flag exists only in the "
+            "manifest): "
+            + "; ".join(f"`{label}` -- {reason}" for label, reason in gaps)
+        )
+
     return (
         "Runs feeding this report:\n\n"
         + runs
@@ -807,10 +896,13 @@ def _section_setup(metrics: Sequence[dict[str, Any]], cfg: dict[str, Any]) -> st
         + budget
         + "\n\nProvenance (spec 10):\n\n"
         + _table(["run", "dataset hash", "bank hash", "git commit", "llm enabled"], hashes)
+        + manifest_gap
         + "\n\nNOVEL subflows held out of train and dev: "
         + (", ".join(f"`{s}`" for s in novel) if novel else _NA)
         + "\n\n**Bank fidelity -- three numbers, never one** (DECISIONS D16 corrects the earlier "
-        "'61.01% is the ceiling on reflex rate' framing, which was wrong):\n\n"
+        "'61.01% is the ceiling on reflex rate' framing, which was wrong; DECISIONS D23 adds "
+        "that the train figure is IN-SAMPLE and the held-out rates are what this repo "
+        "quotes):\n\n"
         + bank
         + "\n\nMachine (spec 10, 'document the actual machine'): "
         + (
@@ -882,6 +974,14 @@ def _unmeasurable_reason(m: dict[str, Any], key: str) -> str:
         return "no run in this report scored the `test_novel` split."
     if key == "empirical_coverage_min":
         source = _get(m, "calibration", "source", default="")
+        unmeasured = _get(m, "verdict", "criteria", key, "unmeasured_heads", default=[]) or []
+        if unmeasured:
+            return (
+                "the probs sidecar has no coverage rows for head(s) "
+                + ", ".join(str(h) for h in unmeasured)
+                + ", so the minimum over ALL gate heads is not known; the value shown is the "
+                "minimum over the measured heads only."
+            )
         if source == "unavailable":
             return str(_get(m, "calibration", "unavailable_reason", default="no calibration file."))
         return (
@@ -963,16 +1063,32 @@ def _attach_manifest(metrics: dict[str, Any], cfg: dict[str, Any]) -> dict[str, 
     """
     run_id = str(metrics.get("run_id", ""))
     if not run_id:
+        metrics = dict(metrics)
+        metrics["manifest_error"] = (
+            "this metrics.json carries no run_id, so no manifest could be located"
+        )
         return metrics
     path = os.path.join(resolve_path(cfg, "paths.runs_dir"), run_id, "manifest.json")
     if not os.path.exists(path):
+        # A failure here is never silent: without the manifest the forced-reflex
+        # flag has no source at all, and a missing flag must not read as "normal".
+        metrics = dict(metrics)
+        metrics["manifest_error"] = f"no manifest at {path}"
         return metrics
+    # `reflex evaluate` ABORTS on a manifest that exists but does not parse (it
+    # computes split-scoped numbers from it, so it must not guess). This branch is
+    # therefore for a manifest damaged or made unreadable AFTER metrics.json was
+    # written: the reporter only prints the manifest, so it degrades to UNKNOWN
+    # instead of refusing to render numbers that were scored while it was intact.
     try:
         with open(path, "r", encoding="utf-8") as handle:
-            metrics = dict(metrics)
-            metrics["manifest"] = json.load(handle)
-    except (OSError, ValueError):
-        pass
+            payload = json.load(handle)
+    except (OSError, ValueError) as exc:
+        metrics = dict(metrics)
+        metrics["manifest_error"] = f"unreadable manifest {path}: {exc}"
+        return metrics
+    metrics = dict(metrics)
+    metrics["manifest"] = payload
     return metrics
 
 

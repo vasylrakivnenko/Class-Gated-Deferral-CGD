@@ -52,6 +52,29 @@ the same n=3985 headline_test_seen scores), restricted to compose@1 MISSES,
 stratified by gold act-sequence tuple so the sample is not just repeats of
 whichever failure mode is most common, seeded for reproducibility.
 
+THE STRATIFICATION IS NOT FREE, SO EVERY ROW CARRIES ITS WEIGHT. Allocation
+is round-robin over act-sequence groups -- roughly equal per stratum, NOT
+proportional to population. ('ASK',) is 31.4% of the conditional population
+(1251/3985) but gets ~3 of 100 rows, so an UNWEIGHTED verdict share over this
+sample is an average over failure MODES, not over turns, and is not the same
+statistic as the simple-random samples every other arm in the five-arm
+comparison uses (build_langcache_judge_sample.py, build_rnn_judge_sample.py,
+build_qwen_judge_sample.py, build_qwen_structured_judge_sample.py,
+build_smollm2_judge_sample.py all use plain `rng.sample`).
+
+The stratification is kept as the default -- it is what makes rare failure
+modes visible at n=100 -- and each sampled row instead carries
+`stratum_weight`, the standard design weight (stratum's share of the MISS pool
+the sample is drawn from / rows drawn from that stratum; the per-row
+`stratum_population_share` records that share). run_llm_judge.py reads it and
+reports `share_*_weighted` beside the unweighted share. The weighted share is
+the statistic comparable to the other arms -- BUT equal allocation makes it a
+very noisy one: a handful of single-act strata hold most of the miss pool and
+get 1-4 rows each, so the weighted share rests on roughly a dozen rows
+(run_llm_judge.py prints the Kish effective n; ~16 of 100 on the D27b sample).
+For a cross-arm number with real precision use `--design simple_random`, which
+draws exactly as the other arms do (plain `rng.sample`, no weights needed).
+
 USAGE
 -----
     PYTHONPATH=src python -m sft.eval.build_llm_judge_sample --n 100
@@ -64,7 +87,7 @@ import json
 import os
 import random
 import sys
-from collections import defaultdict
+from collections import Counter, defaultdict
 
 
 def _fit_per_act_h7(featurizer, train_h7_rows, spec, vspec):
@@ -120,6 +143,11 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--select-json", default="outputs/probes/response/select.json")
     ap.add_argument("--out", default="sft/eval/data/llm_judge_sample.jsonl")
+    ap.add_argument("--design", choices=("stratified", "simple_random"), default="simple_random",
+                    help="stratified (default, D27/D27b): equal-allocation round-robin over "
+                         "gold act-sequence strata, rows carry stratum_weight. simple_random: "
+                         "plain rng.sample over the misses, the design every other arm's "
+                         "builder uses -- the one to use for a cross-arm comparison.")
     ap.add_argument("--set", dest="overrides", action="append", default=[])
     args = ap.parse_args(argv)
 
@@ -238,12 +266,20 @@ def main(argv: list[str] | None = None) -> int:
     by_acts: dict[tuple, list] = defaultdict(list)
     for m in misses:
         by_acts[tuple(m["gold_acts"])].append(m)
+    # Snapshot stratum populations BEFORE the round-robin below pops from the
+    # buckets -- these are the weights' numerators.
+    stratum_size = {k: len(v) for k, v in by_acts.items()}
 
     rng = random.Random(args.seed)
     groups = list(by_acts.items())
     rng.shuffle(groups)
     sample = []
     gi = 0
+    if args.design == "simple_random":
+        # Same design as every other arm's builder; self-weighting, so no
+        # stratum_weight is written and run_llm_judge.py's plain share applies.
+        sample = rng.sample(misses, min(args.n, len(misses)))
+        groups = []
     while len(sample) < min(args.n, len(misses)) and groups:
         key, bucket = groups[gi % len(groups)]
         if bucket:
@@ -255,6 +291,32 @@ def main(argv: list[str] | None = None) -> int:
         else:
             gi += 1
 
+    # Design weights. Allocation is ~equal per stratum, not proportional, so a
+    # sampled row stands for stratum_size/n_drawn_from_that_stratum turns. The
+    # divisor is the number of rows actually drawn from the stratum, which the
+    # round-robin does NOT hold constant (1 to 4 per stratum on the D27b sample:
+    # small strata are exhausted early) -- omitting it would leave the estimate
+    # biased toward the under-drawn strata.
+    # 2026-09-21: the DEFAULT flipped from "stratified" to "simple_random".
+    # Equal allocation over the 47 act-sequence strata makes this arm's judged
+    # share an average over failure MODES while every other arm's is an average
+    # over TURNS, and the two were being ranked against each other. Measured on
+    # one fixed 200-row sample of the same arm and judge, the estimator alone
+    # moved p_appropriate from 0.6850 (turn-level) to 0.4835 (equal allocation).
+    # The weights below make the stratified design recoverable, but with 1-4 rows
+    # per stratum its Kish effective n is ~16, so it cannot carry a headline;
+    # simple_random is what a cross-arm comparison needs.
+    drawn_per_stratum = Counter(tuple(m["gold_acts"]) for m in sample)
+    n_misses_total = len(misses)
+    for row in (sample if args.design == "stratified" else []):
+        key = tuple(row["gold_acts"])
+        row["stratum_size"] = stratum_size[key]
+        row["stratum_population_share"] = stratum_size[key] / n_misses_total
+        row["n_drawn_from_stratum"] = drawn_per_stratum[key]
+        row["stratum_weight"] = (
+            stratum_size[key] / n_misses_total / drawn_per_stratum[key]
+        )
+
     os.makedirs(os.path.dirname(args.out), exist_ok=True)
     with open(args.out, "w", encoding="utf-8") as fh:
         for row in sample:
@@ -263,10 +325,19 @@ def main(argv: list[str] | None = None) -> int:
     print(json.dumps({
         "wrote": args.out,
         "n_sampled": len(sample),
-        "n_conditional_misses_total": len(misses) + sum(len(b) for _, b in by_acts.items() if b not in sample),
+        "n_conditional_misses_total": len(misses),
         "conditional_n": n_cond,
         "conditional_compose@1": hits / n_cond if n_cond else None,
         "n_distinct_act_sequences_in_sample": len({tuple(r["gold_acts"]) for r in sample}),
+        "n_distinct_act_sequences_in_population": len(stratum_size),
+        "sampling_design": ("equal-allocation round-robin over gold act-sequence strata; "
+                           "rows carry stratum_weight -- use run_llm_judge.py's "
+                           "share_*_weighted to compare against simple-random arms"
+                           if args.design == "stratified" else
+                           "simple random sample of the misses (self-weighting; same "
+                           "design as the other arms' builders)"),
+        "sum_stratum_weight": (sum(r["stratum_weight"] for r in sample)
+                               if args.design == "stratified" else None),
         "certified_config_reused": compose_win["arm"],
     }, indent=2))
     return 0

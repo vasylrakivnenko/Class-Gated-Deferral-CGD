@@ -912,7 +912,23 @@ def _disclosure_timeline(
         resolved: list[str] = []
         for field, (values, field_markers) in pending.items():
             if markers & field_markers:
-                timeline[field] = (turn_index, ", ".join(values))
+                # The leakage boundary, in the small. A multi-valued leaf
+                # (product.names, product.amounts) has SEVERAL surface values;
+                # joining all of them would disclose values this turn never
+                # carried, on the evidence of a single mask. Disclose only what
+                # the turn evidences: the values it spells out, or -- since
+                # ABCD masked them -- as many as it carries markers for. The
+                # surface-text branch below cannot rescue these: amounts are
+                # 2 characters and `len(v) >= min_chars` filters them out, so
+                # this branch is the only way they are ever disclosed.
+                stated = [
+                    v
+                    for v in values
+                    if len(v) >= min_chars and _contains_value(haystack, _normalize_text(v))
+                ]
+                hits = sum(haystack.count(f"<{marker}>") for marker in field_markers)
+                shown = stated or values[: max(1, hits)]
+                timeline[field] = (turn_index, ", ".join(shown))
                 resolved.append(field)
                 continue
             matched = [v for v in values if len(v) >= min_chars and _contains_value(haystack, _normalize_text(v))]

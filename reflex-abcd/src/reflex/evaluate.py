@@ -379,15 +379,45 @@ def _gold_utt_rank(record: EvalRecord) -> Optional[int]:
     return None
 
 
+def _values_official(record: EvalRecord) -> Optional[bool]:
+    """The OFFICIAL value predicate for one turn (``None`` off ``take_action``).
+
+    ``_expand_rows`` writes ``value_label = -1`` for a button that takes no
+    values, and ``argmax`` can never return ``-1``, so the official
+    ``value_match``/``joint_match`` score those rows WRONG (module docstring
+    point 3); 31% of ABCD's ``take_action`` turns take no values.
+    ``_turn_correct["values"]`` deliberately keeps the lenient ``[] == []`` rule
+    because the runner's independently written flag uses it and
+    :func:`_log_correct_mismatch` must compare like with like. Every slice that
+    is reported BESIDE an official headline uses this predicate instead.
+    """
+    if _gold_nextstep(record) != "take_action":
+        return None
+    gold_vals = [_norm_value(v) for v in _gold_values(record)]
+    pred_vals = [_norm_value(v) for v in _pred_values(record)]
+    return bool(gold_vals) and gold_vals == pred_vals
+
+
 def _turn_correct(record: EvalRecord) -> dict[str, Optional[bool]]:
     """Per-component correctness for one turn. ``None`` means "does not apply".
 
     The official reports return AGGREGATES only, but spec 8.1/8.3/8.4/8.7 need
     per-turn correctness on slices the official code cannot express (reflex turns
     only, the novel split, per-conversation bootstrap resamples, McNemar pairs).
-    The turn-level predicate below is the same one the official
-    ``task_completion_report`` uses, so the slices stay comparable to the
-    headline numbers, which still come from the official functions.
+
+    TWO value predicates exist here, deliberately -- they are NOT the same rule:
+
+    * ``values`` (this dict): exact list equality, which scores a value-LESS
+      ``take_action`` turn correct (``[] == []``). It mirrors the runner's
+      independently written flag (``run._correct_flags``) so that
+      :func:`_log_correct_mismatch` compares like with like.
+    * :func:`_values_official`: the official rule, under which a value-less
+      button is always wrong.
+
+    ``turn`` here, and the ``action_values`` component, are built from
+    :func:`_values_official`, so those slices stay comparable to the official
+    headline numbers, which still come from the official functions. ``values``
+    itself is the runner cross-check only -- do not report a rate off it.
     """
     dec = record.decision
     gold_step = _gold_nextstep(record)
@@ -408,7 +438,7 @@ def _turn_correct(record: EvalRecord) -> dict[str, Optional[bool]]:
         out["utterance"] = None if gold_rank is None else dec.candidate_rank == gold_rank
 
     if gold_step == "take_action":
-        tail = bool(out["action"]) and bool(out["values"])
+        tail = bool(out["action"]) and bool(_values_official(record))
     elif gold_step == "retrieve_utterance":
         tail = bool(out["utterance"])
     else:
@@ -812,16 +842,24 @@ def routing_metrics(records: Sequence[EvalRecord], cfg: dict[str, Any]) -> dict[
 def _component_rates(records: Iterable[EvalRecord]) -> tuple[dict[str, float], dict[str, int]]:
     correct: Counter[str] = Counter()
     total: Counter[str] = Counter()
+    rank_absent = 0
     for record in records:
         flags = _turn_correct(record)
         for component in _FASTPATH_COMPONENTS:
             if component == "action_values":
                 if flags["action"] is None:
                     continue
-                ok = bool(flags["action"]) and bool(flags["values"])
+                # official predicate, to stay comparable to cds.Joint_Accuracy
+                ok = bool(flags["action"]) and bool(_values_official(record))
             elif component == "utterance_recall_at_1":
-                if flags["utterance"] is None:
+                # Gated on the GOLD branch, not on the flag: a retrieve_utterance
+                # turn whose gold rank is absent can never be a recall@1 hit, and
+                # `_turn_correct["turn"]` already scores it wrong. Dropping it
+                # here understated this error rate against that one.
+                if _gold_nextstep(record) != "retrieve_utterance":
                     continue
+                if flags["utterance"] is None:
+                    rank_absent += 1
                 ok = bool(flags["utterance"])
             else:
                 value = flags[component]
@@ -831,7 +869,11 @@ def _component_rates(records: Iterable[EvalRecord]) -> tuple[dict[str, float], d
             total[component] += 1
             correct[component] += int(ok)
     rates = {c: (1.0 - correct[c] / total[c]) if total[c] else float("nan") for c in _FASTPATH_COMPONENTS}
-    return rates, dict(total)
+    denominators = dict(total)
+    # Kept visible rather than collapsed: how many of the utterance_recall_at_1
+    # rows are misses only because the gold rank was absent from the candidates.
+    denominators["utterance_gold_rank_absent"] = rank_absent
+    return rates, denominators
 
 
 def fastpath_metrics(records: Sequence[EvalRecord], cfg: dict[str, Any]) -> dict[str, Any]:
@@ -926,6 +968,41 @@ def _read_probs_sidecar(cfg: dict[str, Any], run_id: str) -> dict[tuple[int, int
     return out
 
 
+def _llm_answered(record: EvalRecord) -> bool:
+    """Did the LLM, not the selector, write this Decision's predictions?
+
+    ``run._build_decision`` overwrites nextstep/intent/action/values with the
+    LLM's parse on an answered escalation; an UNANSWERED (forced-reflex) one keeps
+    the selector's nextstep/intent and withholds the rest.
+    """
+    dec = record.decision
+    if dec.route == "reflex":
+        return False
+    return bool(dec.llm_tokens_in or dec.llm_tokens_out or dec.latency_ms_llm or dec.cache_hit)
+
+
+def _selector_nextstep(record: EvalRecord) -> Optional[str]:
+    """The SELECTOR's predicted nextstep -- what the gate's head applicability followed.
+
+    ``GateOutput.set_sizes`` reports 0 both for "head does not apply" and for
+    "head applied and its prediction set came out EMPTY", so applicability has to
+    be re-derived exactly as ``gate.evaluate_gate`` derives it. ``Decision.nextstep``
+    is the selector's unless the LLM answered the turn -- and every empty-set turn
+    escalates -- so the gate's own branch evidence is read first. ``None`` means
+    the log cannot say.
+    """
+    gate = record.decision.gate
+    sizes = gate.set_sizes if gate is not None else {}
+    skeleton, action = sizes.get("skeleton"), sizes.get("action")
+    if (isinstance(skeleton, int) and skeleton > 0) or sizes.get("templates"):
+        return NEXT_STEPS[0]  # retrieve_utterance
+    if (isinstance(action, int) and action > 0) or sizes.get("values"):
+        return NEXT_STEPS[1]  # take_action
+    if not _llm_answered(record):
+        return str(record.decision.nextstep)
+    return None
+
+
 def calibration_metrics(
     records: Sequence[EvalRecord],
     calibration: Calibration,
@@ -939,12 +1016,20 @@ def calibration_metrics(
 
     * if ``outputs/runs/<run_id>/<eval.probs_filename>`` exists, its rows --
       ``{"convo_id", "turn_index", "max_prob": {head: p}, "correct":
-      {head: bool}, "gold_in_set": {head: bool}}`` -- give exact ECE over
+      {head: bool}, "gold_in_set": {head: bool}, "gold_oov": {head: bool}}``
+      (``gold_oov`` optional) -- give exact ECE over
       ``eval.ece_bins`` bins and exact empirical coverage per head;
     * otherwise ``ece`` is empty and ``empirical_coverage`` is ``None`` per head,
       with BOUNDS derived from the log instead: a singleton prediction set
-      contains the gold iff the prediction was correct, and a set of size > 1 is
-      unknown. A bound is not silently promoted to a point estimate.
+      contains the gold iff the prediction was correct, an EMPTY set on an
+      applicable head is a known miss, and a set of size > 1 is unknown. A bound
+      is not silently promoted to a point estimate. (The skeleton head has no
+      logged gold, so its singleton rows use utterance recall@1 as the proxy.)
+
+    ``empirical_coverage`` always carries every gate head -- ``None`` for a head
+    with no sidecar rows -- beside ``coverage_n`` (its denominator) and
+    ``coverage_gold_oov_n`` (how many of those rows are structural misses: a gold
+    the head cannot emit).
     """
     n_bins = int(get_dotted(cfg, "eval.ece_bins"))
     run_ids = {r.run_id for r in records}
@@ -953,6 +1038,8 @@ def calibration_metrics(
 
     ece: dict[str, float] = {}
     coverage: dict[str, Optional[float]] = {}
+    coverage_n: dict[str, int] = {head: 0 for head in _GATE_HEADS}
+    gold_oov_n: dict[str, int] = {head: 0 for head in _GATE_HEADS}
     if sidecar:
         per_head_conf: dict[str, list[float]] = defaultdict(list)
         per_head_hit: dict[str, list[bool]] = defaultdict(list)
@@ -970,26 +1057,69 @@ def calibration_metrics(
             for head, in_set in (row.get("gold_in_set") or {}).items():
                 if in_set is not None:
                     per_head_cov[head].append(bool(in_set))
+            # Rows whose gold the head CANNOT EMIT (run._sidecar_row): they are
+            # coverage misses and stay in the denominator above; this is how much
+            # of it is structural rather than a confidence failure.
+            for head, oov in (row.get("gold_oov") or {}).items():
+                if oov and head in gold_oov_n:
+                    gold_oov_n[head] += 1
         ece = {head: _ece(per_head_conf[head], per_head_hit[head], n_bins) for head in sorted(per_head_conf)}
-        coverage = {head: (sum(v) / len(v)) for head, v in sorted(per_head_cov.items()) if v}
+        # Over EVERY gate head, never only the ones that happened to produce rows:
+        # a head with no rows is `None` (unmeasured), so verdict criterion 4 cannot
+        # pass on the easy heads while the 570-way skeleton head is silently absent.
+        coverage = {
+            head: (sum(per_head_cov[head]) / len(per_head_cov[head])) if per_head_cov.get(head) else None
+            for head in _GATE_HEADS
+        }
+        coverage_n = {head: len(per_head_cov.get(head, [])) for head in _GATE_HEADS}
 
+    # Same population as the sidecar's exact coverage (run._sidecar_row): the head
+    # APPLIED (the selector's nextstep, as gate.evaluate_gate derives it) and the
+    # turn HAS a gold on that head's branch. `set_sizes[head] <= 0` cannot stand in
+    # for "inapplicable": it is also what an applicable head with an EMPTY
+    # prediction set logs, and an empty set provably misses the gold -- dropping
+    # it biased both bounds upward.
+    branch_of = {"action": NEXT_STEPS[1], "skeleton": NEXT_STEPS[0]}
     bounds: dict[str, dict[str, Any]] = {}
     for head in _GATE_HEADS:
         applicable = 0
         singleton_correct = 0
         unknown = 0
+        empty = 0
+        ambiguous = 0
         for record in records:
             gate = record.decision.gate
             if gate is None:
                 continue
             size = gate.set_sizes.get(head)
-            if not isinstance(size, int) or size <= 0:
+            if not isinstance(size, int):
                 continue
+            branch = branch_of.get(head)
+            if branch is not None:
+                if _gold_nextstep(record) != branch:
+                    continue
+                predicted = _selector_nextstep(record)
+                if predicted is None:
+                    # An LLM-answered turn whose log cannot say which branch the
+                    # selector took: either an empty-set MISS or not applicable.
+                    ambiguous += 1
+                    continue
+                if predicted != branch:
+                    continue
             applicable += 1
-            if size == 1:
+            if size <= 0:
+                empty += 1  # a known miss: 0 to singleton_correct, 0 to unknown
+            elif size == 1:
+                # The logged prediction is the SELECTOR's only where the selector
+                # wrote it: nextstep/intent unless the LLM answered, action and
+                # utterance on reflex turns alone (withheld or the LLM's otherwise).
+                if branch is None:
+                    selector_wrote = not _llm_answered(record)
+                else:
+                    selector_wrote = record.decision.route == "reflex"
                 flags = _turn_correct(record)
                 key = "utterance" if head == "skeleton" else head
-                flag = flags.get(key)
+                flag = flags.get(key) if selector_wrote else None
                 if flag is None:
                     unknown += 1
                 else:
@@ -997,15 +1127,25 @@ def calibration_metrics(
             else:
                 unknown += 1
         if applicable:
-            low = singleton_correct / applicable
+            # `ambiguous` turns widen the bound instead of vanishing: counted as
+            # misses for `lower`, left out for `upper`.
             bounds[head] = {
-                "lower": low,
-                "upper": low + unknown / applicable,
+                "lower": singleton_correct / (applicable + ambiguous),
+                "upper": (singleton_correct + unknown) / applicable,
                 "n_applicable": applicable,
                 "n_unknown": unknown,
+                "n_empty_set": empty,
+                "n_applicability_unknown": ambiguous,
             }
         else:
-            bounds[head] = {"lower": None, "upper": None, "n_applicable": 0, "n_unknown": 0}
+            bounds[head] = {
+                "lower": None,
+                "upper": None,
+                "n_applicable": 0,
+                "n_unknown": 0,
+                "n_empty_set": 0,
+                "n_applicability_unknown": ambiguous,
+            }
 
     if not coverage:
         coverage = {head: None for head in _GATE_HEADS}
@@ -1013,6 +1153,8 @@ def calibration_metrics(
     return {
         "ece": ece,
         "empirical_coverage": coverage,
+        "coverage_n": coverage_n,
+        "coverage_gold_oov_n": gold_oov_n,
         "alpha": float(calibration.alpha),
         "coverage_bounds": bounds,
         "source": "probs_sidecar" if sidecar else "unavailable",
@@ -1266,7 +1408,12 @@ def _constant_records(records: Sequence[EvalRecord]) -> tuple[list[EvalRecord], 
         r.gold.get("action") for r in records if _gold_nextstep(r) == "take_action"
     )
     value = _majority(v for r in records for v in _gold_values(r))
-    n_positions = max([len(_gold_values(r)) for r in records] + [1])
+    # MODAL gold arity, not the maximum: _turn_correct compares value lists by
+    # exact equality, so a max-arity constant is wrong by LENGTH alone on every
+    # gold arity-1 turn, which handicaps the guard instead of the system.
+    n_positions = _majority(
+        len(_gold_values(r)) for r in records if _gold_nextstep(r) == "take_action"
+    ) or 1
 
     out: list[EvalRecord] = []
     for record in records:
@@ -1320,9 +1467,13 @@ def _constant_guard(
 
     dropped: list[str] = []
     comparisons: dict[str, Any] = {}
+    # The official metrics are NESTED at system["official"][family]; reading them
+    # from the top level leaves sys_block empty and silently disables the whole
+    # CDS/AST half of this guard (report.py:_quality_rows reads the same path).
+    official_block = system.get("official") or {}
     for family, const_block, sys_block in (
-        ("cds", const_cds, system.get("cds", {})),
-        ("ast", const_ast, system.get("ast", {})),
+        ("cds", const_cds, official_block.get("cds") or {}),
+        ("ast", const_ast, official_block.get("ast") or {}),
     ):
         for key, const_value in const_block.items():
             sys_value = sys_block.get(key)
@@ -1336,6 +1487,15 @@ def _constant_guard(
             }
             if wins:
                 dropped.append(f"{family}.{key}")
+
+    for family in ("cds", "ast"):
+        if official_block.get(family) and not any(
+            k.startswith(f"{family}.") for k in comparisons
+        ):
+            raise ContractViolation(
+                f"constant guard produced no {family} comparison although "
+                f"official['{family}'] is non-empty: D5 would be unenforced"
+            )
 
     sys_fast = system.get("fastpath", {}).get("fastpath_error_rate", {})
     for key, const_err in const_fast["fastpath_error_rate"].items():
@@ -1409,11 +1569,17 @@ def _try_read_manifest(cfg: dict[str, Any], run_id: str) -> Optional[RunManifest
     path = os.path.join(_run_dir(cfg, run_id), "manifest.json")
     if not os.path.exists(path):
         return None
+    # A manifest that EXISTS but does not parse is a corrupt run, not an absent
+    # manifest: swallowing it made the two indistinguishable and silently
+    # unscoped every split-scoped metric below.
     try:
         with open(path, "r", encoding="utf-8") as fh:
             return RunManifest.from_dict(json.load(fh))
-    except (KeyError, TypeError, ValueError):
-        return None
+    except (KeyError, TypeError, ValueError) as exc:
+        raise ContractViolation(
+            f"{path} exists but is not a spec 5.8 RunManifest ({exc}); "
+            "split-scoped metrics cannot be attributed"
+        ) from exc
 
 
 def _load_ontology(cfg: dict[str, Any]) -> dict[str, Any]:
@@ -1434,12 +1600,38 @@ def _load_bank(cfg: dict[str, Any]) -> Bank:
         return Bank()
 
 
-def _load_calibration(cfg: dict[str, Any]) -> Optional[Calibration]:
+def _load_calibration(cfg: dict[str, Any], seed: Optional[int] = None) -> Optional[Calibration]:
+    """Load the run's calibration, or ``None`` when it cannot be resolved.
+
+    ``paths.calibration_path`` may be the per-seed template ``reflex calibrate``
+    tells a second seed to use (``...gate_seed{seed}.json``). ``load_calibration``
+    carries no seed and refuses an unformatted template, so it is formatted here
+    from the run's ``seed`` exactly as ``write_calibration`` formats it. A
+    template with no usable seed degrades to ``None`` -- scoring a run must not
+    abort because its calibration file cannot be located.
+    """
+    path = resolve_path(cfg, "paths.calibration_path")
+    explicit: Optional[str] = None
+    if "{seed}" in path:
+        if seed is None:
+            return None
+        try:
+            path = path.format(seed=int(seed))
+        except (KeyError, IndexError, TypeError, ValueError):
+            return None
+        explicit = path
     try:
         calibrate_mod = importlib.import_module("reflex.calibrate")
-        return calibrate_mod.load_calibration(cfg, None)
-    except (NotImplementedError, FileNotFoundError, OSError, KeyError, TypeError, ValueError):
-        path = resolve_path(cfg, "paths.calibration_path")
+        return calibrate_mod.load_calibration(cfg, explicit)
+    except (
+        NotImplementedError,
+        FileNotFoundError,
+        OSError,
+        KeyError,
+        TypeError,
+        ValueError,
+        ContractViolation,
+    ):
         if not os.path.exists(path):
             return None
         try:
@@ -1488,7 +1680,14 @@ def evaluate_run(cfg: dict[str, Any], run_id: str, baseline_run_id: Optional[str
     manifest = _try_read_manifest(cfg, run_id)
     ontology = _load_ontology(cfg)
     bank = _load_bank(cfg)
-    calibration = _load_calibration(cfg)
+    # The run's seed formats a per-seed `paths.calibration_path` template: the
+    # manifest's when there is one, else the log's when it holds exactly one.
+    record_seeds = sorted({r.seed for r in records})
+    if manifest is not None:
+        calibration_seed: Optional[int] = int(manifest.seed)
+    else:
+        calibration_seed = int(record_seeds[0]) if len(record_seeds) == 1 else None
+    calibration = _load_calibration(cfg, calibration_seed)
 
     arm = manifest.arm if manifest else _majority(r.decision.arm for r in records)
     split = manifest.split if manifest else ""
@@ -1519,7 +1718,10 @@ def evaluate_run(cfg: dict[str, Any], run_id: str, baseline_run_id: Optional[str
         "cost_latency": cost_latency_metrics(records, cfg),
         "log_correct_mismatch": _log_correct_mismatch(records),
     }
-    if split == "test_novel" or not split:
+    # Spec 8.4 is a test_novel metric. novelty_metrics does no filtering of its
+    # own, so computing it on an UNKNOWN split labels seen-split turns "novel"
+    # and feeds spec 9 criterion 3 the wrong population.
+    if split == "test_novel":
         metrics["novelty"] = novelty_metrics(records, cfg)
     if calibration is not None:
         metrics["calibration"] = calibration_metrics(records, calibration, cfg)
@@ -1579,9 +1781,12 @@ def _statistics(records: Sequence[EvalRecord], cfg: dict[str, Any]) -> dict[str,
             if component == "action_values":
                 if flags["action"] is None:
                     continue
-                ok = bool(flags["action"]) and bool(flags["values"])
+                # official predicate, to stay comparable to cds.Joint_Accuracy
+                ok = bool(flags["action"]) and bool(_values_official(record))
             elif component == "utterance_recall_at_1":
-                if flags["utterance"] is None:
+                # Same population as `_component_rates`: every gold
+                # retrieve_utterance turn; an absent gold rank is a miss.
+                if _gold_nextstep(record) != "retrieve_utterance":
                     continue
                 ok = bool(flags["utterance"])
             else:
@@ -1687,9 +1892,18 @@ def verdict(metrics: dict[str, Any], cfg: dict[str, Any]) -> dict[str, Any]:
     coverage = metrics.get("calibration", {}).get("empirical_coverage", {}) or {}
     floor = (1.0 - float(alpha) - slack) if isinstance(alpha, (int, float)) else float("nan")
     observed = [v for v in coverage.values() if isinstance(v, (int, float))]
+    # The minimum is over EVERY gate head. A head with no sidecar rows is
+    # unmeasured, and the min over a partial head set is only an upper bound on
+    # the true min: it can FAIL the criterion, never pass it.
+    unmeasured_heads = [h for h in _GATE_HEADS if not isinstance(coverage.get(h), (int, float))]
     if observed and not math.isnan(floor):
         worst = min(observed)
-        add("empirical_coverage_min", worst, floor, worst >= floor)
+        if worst < floor:
+            add("empirical_coverage_min", worst, floor, False)
+        else:
+            add("empirical_coverage_min", worst, floor, None if unmeasured_heads else True)
+        if unmeasured_heads:
+            criteria["empirical_coverage_min"]["unmeasured_heads"] = unmeasured_heads
     else:
         add("empirical_coverage_min", None, floor, None)
 

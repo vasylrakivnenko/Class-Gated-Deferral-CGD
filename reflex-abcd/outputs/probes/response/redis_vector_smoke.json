@@ -16,8 +16,10 @@
     "median_similarity": 0.47
    },
    "LangCache_3800_800_D31": {
-    "compose@1": 0.0825,
-    "median_similarity": 0.9457
+    "compose@1_of_queried": 0.0275,
+    "median_similarity": 0.94568324,
+    "stale_value_replaced_2026-09-21": 0.0825,
+    "note": "was 0.0825, which is not on disk: outputs/probes/response/langcache_baseline_mid.json records 0.0275 for this exact configuration. LangCache's compose@1 is NOT reproducible -- it swings between 0.0275 and 0.0825 across identical re-runs purely from tie-breaks among similarity==1.0 duplicate contexts (the non-duplicate bucket is stable at 19/302 = 6.3%). Quote it as a range, never as a point estimate."
    }
   },
   "elapsed_s": 24.3

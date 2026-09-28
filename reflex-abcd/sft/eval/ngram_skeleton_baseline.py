@@ -9,14 +9,33 @@ ABSTRACT FLOW (greet -> pull-up-account -> verify-identity -> ask-issue)
 even when the literal wording is completely different, which text-similarity
 methods cannot see by construction.
 
-WHY GOLD PRIOR SKELETONS, NOT PREDICTED ONES
------------------------------------------------
-Every other turn-level measurement in this project (H5/H7/H4, D25) scores
-each turn independently against the TRUE preceding context/state, not a
-chain of the model's own predictions -- this keeps errors from compounding
-into an unmeasurable moving target. This script follows that same
-convention: a test turn's n-gram context is the GOLD skeleton_ids of
-earlier turns in its own conversation, not this model's own prior guesses.
+HISTORY MODE -- READ THIS BEFORE QUOTING ANY NUMBER FROM THIS SCRIPT
+--------------------------------------------------------------------
+Until 2026-09-21 this script conditioned on the GOLD skeleton_ids of earlier
+turns in the test conversation, justified as follows:
+
+    "Every other turn-level measurement in this project (H5/H7/H4, D25)
+     scores each turn independently against the TRUE preceding
+     context/state, not a chain of the model's own predictions -- this
+     keeps errors from compounding into an unmeasurable moving target."
+
+That argument does not hold for THIS model, and the distinction is the whole
+ballgame. H5/H7/H4 condition on the prior conversation TEXT, which genuinely
+exists at inference time. This model conditions on prior skeleton IDS, which
+are LABELS -- the very thing the system is asked to predict. Feeding them in
+is not "scoring each turn independently against the true state", it is
+handing the model the answer key for every turn but the current one. The
+cache it is benchmarked against gets text only.
+
+Measured 2026-09-21: free-running, this model's conditional skeleton@1 is
+0.3139272271016311 -- BIT-IDENTICAL to the label-blind constant. Its own
+predicted history never matches a training context, so backoff falls through
+to the order-0 prior on essentially every turn. Teacher-forced it scored
+0.4281. The entire apparent skill of this arm was the gold labels.
+
+So --history-mode defaults to `free`. `gold` is retained to reproduce the
+pre-2026-09-21 figure and must be labelled a teacher-forced diagnostic
+wherever it appears, never compared against an arm that gets text only.
 
 SKELETON -> FULL COMPOSE@1
 ----------------------------
@@ -46,11 +65,66 @@ import sys
 from collections import Counter, defaultdict
 
 
+# ---------------------------------------------------------------------------
+# The learned cache's (certified H5) skeleton@1 bar, carried WITH its population.
+# These are three DIFFERENT denominators and must never be stacked in one column:
+#   n=3985 -- the template-fully-covered turns this file calls "conditional".
+#             Source: outputs/probes/response/recall_at_k.json, block
+#             "ALL (conditional)", skeleton_recall@1 = 0.5821831869510665.
+#   n=8858 -- every test_seen turn that HAS a gold skeleton. This is H5's own
+#             eval set (probes/run_response_probe.py: rows filtered on
+#             gold_skeleton_id). Source: outputs/probes/response/select.json
+#             headline_test_seen.h5 accuracy.recall@1 = 0.431700158049221,
+#             n_eval = 8858.
+#   n=8889 -- all test_seen turns, i.e. this file's "unconditional" population.
+#             The 31 turns carrying no gold skeleton can never be hit, so the
+#             n=8858 rate rescales exactly: 0.431700158049221 * 8858 / 8889
+#             = 3824 hits / 8889 = 0.43019462256721785.
+# The entry that used to live here was {"conditional": 0.432} -- the n=8858
+# rate filed under the n=3985 label, which is what made the n-gram look 1.2
+# points behind the cache and the RNN look 9 points ahead of it. On matched
+# populations the cache leads on every one of the three.
+H5_SKELETON_BAR = {
+    "conditional_n3985": 0.5821831869510665,
+    "gold_skeleton_n8858": 0.431700158049221,
+    "unconditional_n8889": 0.43019462256721785,
+    "label_blind_constant_n8858": 0.2630390607360578,
+    "compare_like_with_like": (
+        "conditional_n3985 <-> conditional.skeleton_only; "
+        "gold_skeleton_n8858 <-> skeleton_population.skeleton_only; "
+        "unconditional_n8889 <-> unconditional.skeleton_only"
+    ),
+    "sources": [
+        "outputs/probes/response/recall_at_k.json -> blocks['ALL (conditional)'].skeleton_recall@1 (n=3985)",
+        "outputs/probes/response/select.json -> headline_test_seen.h5.accuracy['recall@1'] (n_eval=8858)",
+    ],
+}
+# ---------------------------------------------------------------------------
+
+
+def _argmax(counter):
+    """Deterministic argmax over a Counter.
+
+    Counter.most_common resolves a tie by INSERTION order, i.e. by the order
+    train rows happened to be parsed, so a tied prediction would depend on row
+    order rather than on any stated rule. Break ties lexicographically on the
+    key instead -- the same total-order key src/reflex/arm_b0.py already uses
+    for its constant label.
+    """
+    return sorted(counter.items(), key=lambda kv: (-kv[1], kv[0]))[0][0]
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--split", default="test_seen")
     ap.add_argument("--max-order", type=int, default=4)
+    ap.add_argument("--history-mode", choices=("free", "gold"), default="free",
+                    help="free (default): condition on the model's OWN previous predictions, "
+                         "which is all a deployed system has. gold: teacher-force on the test "
+                         "conversation's true skeletons -- the pre-2026-09-21 behaviour, kept "
+                         "only to reproduce the old figure. Free-running this model scores "
+                         "exactly the label-blind constant.")
     ap.add_argument("--out", default="outputs/probes/response/ngram_skeleton_baseline.json")
     args = ap.parse_args(argv)
 
@@ -101,9 +175,9 @@ def main(argv: list[str] | None = None) -> int:
             ctx = tuple(history[-n:])
             dist = counts[n].get(ctx)
             if dist:
-                return dist.most_common(1)[0][0], n
+                return _argmax(dist), n
         if order0:
-            return order0.most_common(1)[0][0], 0
+            return _argmax(order0), 0
         return None, -1
 
     # ---- modal template-tuple per skeleton (train) ----
@@ -116,8 +190,11 @@ def main(argv: list[str] | None = None) -> int:
         tids = tuple(p.gold_template_id for p in sorted(positions, key=lambda p: p.position))
         if tids and all(tids):
             skeleton_template_votes[row.gold_skeleton_id][tids] += 1
-    modal_templates = {sk: votes.most_common(1)[0][0]
-                       for sk, votes in skeleton_template_votes.items()}
+    modal_templates = {sk: _argmax(votes) for sk, votes in skeleton_template_votes.items()}
+    n_tied_modal = sum(1 for votes in skeleton_template_votes.values()
+                       if len(votes) > 1
+                       and sorted(votes.values(), reverse=True)[0]
+                       == sorted(votes.values(), reverse=True)[1])
 
     # ---- score on the test split ----
     test_by_convo: dict = defaultdict(list)
@@ -128,6 +205,7 @@ def main(argv: list[str] | None = None) -> int:
 
     n_cond = hit_cond = hit_skel_cond = 0
     n_total = hit_uncond = hit_skel_uncond = 0
+    n_skel = hit_skel_skelpop = 0
     order_used_counter = Counter()
     per_row = []
 
@@ -150,6 +228,14 @@ def main(argv: list[str] | None = None) -> int:
                             "full_hit": full_hit})
 
             n_total += 1
+            # Denominator note: n_skel counts turns that HAVE a gold skeleton
+            # (expected 8858) -- the population the certified H5 is scored on.
+            # It is neither the 3,985 template-fully-covered turns nor all
+            # 8,889 test turns, so it gets its own counter and its own key.
+            if row.gold_skeleton_id is not None:
+                n_skel += 1
+                if skel_hit:
+                    hit_skel_skelpop += 1
             if full_hit:
                 hit_uncond += 1
             if skel_hit:
@@ -161,8 +247,21 @@ def main(argv: list[str] | None = None) -> int:
                 if skel_hit:
                     hit_skel_cond += 1
 
-            if row.gold_skeleton_id is not None:
-                history.append(row.gold_skeleton_id)
+            # What the model is allowed to condition the NEXT turn on.
+            #
+            # free (default): its own prediction, which is all a deployed system has.
+            # gold: the test conversation's true skeleton -- teacher forcing. This was
+            #   the only behaviour until 2026-09-21 and it is why this arm looked
+            #   skilful: free-running, its conditional skeleton@1 is
+            #   0.3139272271016311, BIT-IDENTICAL to the label-blind constant, because
+            #   its own predicted history never matches a training context and backoff
+            #   falls through to the order-0 prior. Kept only so the old published
+            #   figure stays reproducible; it is a diagnostic, never a headline.
+            if args.history_mode == "gold":
+                if row.gold_skeleton_id is not None:
+                    history.append(row.gold_skeleton_id)
+            elif pred_sk is not None:
+                history.append(pred_sk)
 
     result = {
         "method": "n-gram Markov model over SKELETON SEQUENCES (not text), backoff "
@@ -170,14 +269,31 @@ def main(argv: list[str] | None = None) -> int:
                  "template-tuple for full compose@1 scoring",
         "split": args.split,
         "max_order": args.max_order,
+        "history_mode": args.history_mode,
+        "history_mode_note": (
+            "free: the model conditions on its OWN previous predictions, which is all a "
+            "deployed system has. gold: teacher-forced on the test conversation's true "
+            "skeleton ids -- a DIAGNOSTIC only; those labels do not exist at inference and "
+            "the arms this is compared against receive text alone. Free-running, this "
+            "model scores exactly the label-blind constant (0.3139272271016311 conditional)."
+        ),
         "conditional": {"n": n_cond, "compose@1": (hit_cond / n_cond) if n_cond else None,
                        "skeleton_only": (hit_skel_cond / n_cond) if n_cond else None},
         "unconditional": {"n": n_total, "compose@1": hit_uncond / n_total if n_total else None,
                           "skeleton_only": hit_skel_uncond / n_total if n_total else None},
+        "skeleton_population": {
+            "n": n_skel,
+            "skeleton_only": (hit_skel_skelpop / n_skel) if n_skel else None,
+            "note": "turns with a gold skeleton -- the SAME population the certified "
+                    "H5's 0.4317 is measured over (select.json h5.n_eval=8858). This is "
+                    "the only skeleton-only number directly comparable to it.",
+        },
+        "n_skeletons_with_tied_modal_tuple": n_tied_modal,
+        "n_skeletons_with_modal_tuple": len(modal_templates),
         "order_used_distribution": dict(order_used_counter),
         "compare_against": {
             "learned_cache_TFIDF_logreg": {"conditional": 0.2765370138017566, "unconditional": 0.12397345033187085},
-            "H5_skeleton_accuracy_D25": {"conditional": 0.432, "constant": 0.2632},
+            "H5_skeleton_accuracy_D25": H5_SKELETON_BAR,
             "1NN_TFIDF_D26": {"conditional": 0.05244667503136763},
         },
         "note": ("order_used=0 means backoff hit the unconditional train skeleton "

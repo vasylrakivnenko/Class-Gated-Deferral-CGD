@@ -12,3 +12,31 @@ data/cache/
 # ABCD corpus: re-clonable public dataset (scripts/download_abcd.sh), 122MB unzipped.
 # Kept out of /tmp after an OOM reboot wiped it; kept out of git because it is upstream data.
 data/abcd/
+
+# generated dashboard
+ocl_compare/results/dashboard.html
+
+# model weights: large binaries, re-derivable from training runs, not repo content
+*.safetensors
+*.ckpt
+*.onnx
+
+# HuggingFace hub cache and embedding cache: regenerable, not repo content
+legalbench_map/cache/
+legalbench_map/results_gate/emb_cache/
+
+# local Claude Code settings: machine-specific permissions
+.claude/
+
+# downloaded LegalBench test splits: re-downloadable
+legalbench_map/data/legalbench_test*.jsonl
+
+# Jev/Kev runs: request payloads and raw API responses are data; the run scripts stay tracked
+legalbench_map/results_jev_*/*.jsonl
+legalbench_map/results_jev_*/summary.json
+legalbench_map/results_kev_*/*.jsonl
+legalbench_map/results_kev_*/summary.json
+
+# CGD tables and the one-pager build: regenerable with legalbench_map/phase2/cgd_tables.py
+legalbench_map/results_cgd/
+legalbench_map/results_gate/paper/*.pdf

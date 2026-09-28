@@ -1132,6 +1132,14 @@ def _requested_fields(text: str, terms: "dict[str, str] | None") -> frozenset:
 
     Returns an empty set for text that requests no field; such templates are
     unconstrained and merge on cosine alone, as before.
+
+    SCOPE: this sees ONLY the surface phrases listed in
+    ``compile.merge_field_terms``. A field named by a phrase absent from that
+    map -- at the time of writing a bare "name", a bare "account", "password",
+    "security question/answer" -- is invisible here, so two forms that differ
+    only in such a field look field-identical and are free to merge. Any
+    wrong-field rate computed from this function is therefore a rate over the
+    mapped phrases, not over all identifiers.
     """
     if not terms:
         return frozenset()
@@ -1160,6 +1168,13 @@ def _union_find_clusters(
     SAME named fields. Field-set equality is an equivalence relation, so refusing
     mismatched pairwise unions is sufficient to make every resulting cluster
     field-homogeneous -- no post-hoc splitting is needed.
+
+    That homogeneity is only as wide as the field sets handed in. With the
+    ``compile.merge_field_terms`` sets built by :func:`_requested_fields`, a
+    cluster is homogeneous in the MAPPED fields only; two forms that differ in
+    an unmapped identifier carry equal field sets and still merge. Transitivity
+    buys completeness over the map, not over every identifier a form can ask
+    for.
     """
     import numpy as np
 
@@ -1381,6 +1396,7 @@ def _conversation_sources(
     turns: Sequence[NormalizedTurn],
     registry: SlotRegistry,
     cfg: dict[str, Any],
+    ontology: "dict[str, Any] | None" = None,
 ) -> SlotSources:
     """Every value this conversation is known to contain, bucketed by origin.
 
@@ -1388,8 +1404,24 @@ def _conversation_sources(
     compile time an unmasked value is a leak into the bank, so the safe error is
     to mask too much. :func:`reflex.fill.collect_slot_sources` is the
     inference-time function and keeps the guard.
+
+    ``ontology`` supplies the evidence :func:`_type_literal` needs; it is loaded
+    on demand when the caller does not already have it.
     """
-    ontology_enumerable: dict[str, list[str]] = {}
+    # D-3, second call site. Typing an action value with NO categories and an
+    # empty enumerable index lets the _SHAPE_PATTERNS fire unconstrained, so
+    # "in transit" and "calvin klein boots" both land as customer_name. Use the
+    # same two inputs compile_bank's take_action branch uses.
+    if ontology is None:
+        ontology = _data.load_ontology(cfg)
+    ontology_enumerable: dict[str, list[str]] = {
+        category: [str(v).lower() for v in values]
+        for category, values in ontology.get("values", {}).get("enumerable", {}).items()
+    }
+    action_categories: dict[str, list[str]] = {}
+    for _section, buttons in ontology.get("actions", {}).items():
+        for button, categories in buttons.items():
+            action_categories[button] = list(categories)
     from_scenario: dict[str, str] = {}
     for block_name in ("personal", "order"):
         block = scenario.get(block_name)
@@ -1417,7 +1449,9 @@ def _conversation_sources(
         if turn.nextstep != "take_action" or not turn.values:
             continue
         for value in turn.values:
-            slot = _type_literal(str(value), [], ontology_enumerable)
+            slot = _type_literal(
+                str(value), action_categories.get(turn.action or "", []), ontology_enumerable
+            )
             if slot and slot in registry.slots:
                 from_actions.setdefault(slot, str(value))
 
@@ -1555,7 +1589,7 @@ def compile_bank(cfg: dict[str, Any], fraction: float = 1.0) -> Bank:
             continue
         if convo_id not in sources_cache:
             sources_cache[convo_id] = _conversation_sources(
-                scenarios.get(convo_id, {}), train[convo_id], registry, cfg
+                scenarios.get(convo_id, {}), train[convo_id], registry, cfg, ontology
             )
         sources = sources_cache[convo_id]
         sentences: list[str] = []
@@ -1916,13 +1950,16 @@ def write_delex_check(bank: Bank, cfg: dict[str, Any]) -> str:
     population = list(bank.templates)
     weights = [max(t.count, 1) for t in population]
     sampled: list[Template] = []
-    if population:
-        indices = rng.choices(range(len(population)), weights=weights, k=min(sample_size, len(population)))
-        seen: set[int] = set()
-        for index in indices:
-            if index not in seen:
-                seen.add(index)
-                sampled.append(population[index])
+    # Count-weighted draw WITHOUT replacement. rng.choices is with-replacement,
+    # so drawing k=sample_size and then deduping used to hand the reviewer a
+    # sample 26% short of the configured size, and every denominator below is
+    # len(sampled).
+    remaining = list(range(len(population)))
+    remaining_weights = list(weights)
+    while remaining and len(sampled) < sample_size:
+        pick = rng.choices(range(len(remaining)), weights=remaining_weights, k=1)[0]
+        sampled.append(population[remaining.pop(pick)])
+        remaining_weights.pop(pick)
     slotted = [t for t in bank.templates if t.slots]
     slot_sample = slotted if len(slotted) <= sample_size else rng.sample(slotted, sample_size)
 
@@ -2038,13 +2075,14 @@ def write_act_check(bank: Bank, cfg: dict[str, Any]) -> str:
     population = list(bank.templates)
     weights = [max(t.count, 1) for t in population]
     sampled: list[Template] = []
-    if population:
-        indices = rng.choices(range(len(population)), weights=weights, k=min(sample_size, len(population)))
-        seen: set[int] = set()
-        for index in indices:
-            if index not in seen:
-                seen.add(index)
-                sampled.append(population[index])
+    # Count-weighted draw WITHOUT replacement; see write_delex_check. The old
+    # with-replacement draw plus dedup delivered 198 of the configured 300.
+    remaining = list(range(len(population)))
+    remaining_weights = list(weights)
+    while remaining and len(sampled) < sample_size:
+        pick = rng.choices(range(len(remaining)), weights=remaining_weights, k=1)[0]
+        sampled.append(population[remaining.pop(pick)])
+        remaining_weights.pop(pick)
 
     labeler = get_act_labeler(cfg)
     provenance: list[tuple[str, str]]
@@ -2093,7 +2131,16 @@ def write_act_check(bank: Bank, cfg: dict[str, Any]) -> str:
         "",
         "## Bank act distribution",
         "",
-        "| act | templates | share of train sentences |",
+        # The denominator is the summed count of BANKED templates, not train
+        # sentences: everything below compile.min_template_count was dropped
+        # before this table, and that tail is not act-uniform.
+        f"Denominator is **banked sentence occurrences** (n={sum(weighted.values()):,}) -- the",
+        f"summed `count` of the {len(bank.templates):,} templates that survived",
+        "`compile.min_template_count`. It is NOT the train sentence total; sentences whose",
+        "only template fell below the threshold are absent from both numerator and",
+        "denominator, so these shares are not shares of train.",
+        "",
+        "| act | templates | share of banked sentence occurrences |",
         "| --- | ---: | ---: |",
     ]
     for act in ACT_INVENTORY:

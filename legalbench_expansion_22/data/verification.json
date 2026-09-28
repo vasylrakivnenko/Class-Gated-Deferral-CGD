@@ -1,0 +1,23 @@
+{
+  "verified_on": "2026-09-20",
+  "cohort": "legalbench_expansion_22",
+  "tasks_validated": 22,
+  "original_cohort_tasks": 37,
+  "task_overlap": 0,
+  "isolation_and_deduplication_tests_passed": 8,
+  "smoke_run": "smoke_results/install-check",
+  "smoke_status": "complete",
+  "smoke_task": "function_of_decision_section",
+  "smoke_test_items": 42,
+  "smoke_candidates": [
+    "majority",
+    "tfidf_logreg"
+  ],
+  "full_22_task_run_started": false,
+  "original_file_sha256": {
+    "/Users/vasyl/zadumai/legalbench_map/data/task_registry.json": "6d1fc5fe6d4075c462a9b2efaf39057919b03ac2e82ed7f5e8c1e9722e017f2c",
+    "/Users/vasyl/zadumai/legalbench_map/results/tasks.csv": "126d584ed1bddf852df926bfa6594369b0c045edc36351eafc949bcec42019de",
+    "/Users/vasyl/zadumai/legalbench_map/results/summary.md": "f4974b7024fc9b27fdcffa15c08402c73a7883bc154e1974ecb5cde5ffcc6688",
+    "/Users/vasyl/zadumai/legalbench_map/data/prompt_placeholders.json": "95df5494b7d3f5f103497b7b41c086d4a5e32787cba7f70a792749b6ba87fa73"
+  }
+}

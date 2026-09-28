@@ -381,19 +381,27 @@ def _templates_for(selection: Selection, bank: Any) -> list[Any]:
 
 def _sidecar_row(
     scores: SelectorScores,
-    gate_output: GateOutput,
+    selection: Selection,
     turn: NormalizedTurn,
     class_orders: dict[str, list[str]],
     calibration: Calibration,
+    quantiles: dict[str, float],
     gold_skeleton: Optional[str],
+    cfg: dict[str, Any],
 ) -> dict[str, Any]:
     """One ``eval.probs_filename`` row: max prob, correctness and gold-in-set per head.
 
     ``decisions.jsonl`` logs prediction-set SIZES and no probabilities, so spec
     8.5's ECE and exact per-head coverage are not derivable from it. This sidecar
     is the only thing that makes them exact instead of bounded.
+
+    ``gold_in_set`` is built with the gate's OWN set rule and the quantiles the
+    gate resolved for this run, not with a locally re-derived conformal set:
+    under ``gate.confidence_mode: softmax_threshold`` (E3b) or a swept
+    ``gate.alpha`` the two differ, and a coverage number for a prediction set
+    the run never routed on is worse than no coverage number at all.
     """
-    from reflex.select import prediction_set
+    from reflex.gate import _confidence_set, _quantile
 
     gold_by_head = {
         "nextstep": turn.nextstep,
@@ -407,29 +415,64 @@ def _sidecar_row(
         "action": scores.action_probs,
         "skeleton": scores.skeleton_probs,
     }
+    # Applicability is re-derived here exactly as gate.evaluate_gate derives it,
+    # because GateOutput.set_sizes cannot answer the question: it reports 0 for
+    # BOTH "head does not apply to this turn" and "head applied and its
+    # prediction set came out EMPTY" (schemas.GateOutput). Only the second is a
+    # coverage FAILURE, and it must stay in the denominator -- an empty set can
+    # never contain the gold, so dropping those rows biases coverage upward.
+    applicable = {
+        "nextstep": True,
+        "intent": True,
+        "action": str(selection.nextstep) == NEXT_STEPS[1],  # take_action
+        "skeleton": str(selection.nextstep) == NEXT_STEPS[0],  # retrieve_utterance
+    }
+    # A turn HAS a gold on a branch head only when its GOLD next step is that
+    # branch. A turn mis-routed into the other branch has no gold there at all
+    # (the nextstep head's row already carries that miss), so it stays out --
+    # the same denominator rule `calibrate` applies to its value/template rows.
+    has_gold = {
+        "nextstep": True,
+        "intent": True,
+        "action": str(turn.nextstep) == NEXT_STEPS[1],
+        "skeleton": str(turn.nextstep) == NEXT_STEPS[0],
+    }
     max_prob: dict[str, float] = {}
     correct: dict[str, bool] = {}
     gold_in_set: dict[str, bool] = {}
+    gold_oov: dict[str, bool] = {}
     for head in _SIDECAR_HEADS:
         probs = list(probs_by_head[head] or [])
-        if not probs or not gate_output.set_sizes.get(head):
+        if not applicable[head] or not has_gold[head] or not probs:
             continue
         order = class_orders.get(head, [])
         gold = gold_by_head.get(head)
-        if gold is None or gold not in order:
-            continue
-        gold_index = order.index(gold)
         best = max(range(len(probs)), key=lambda i: probs[i])
         max_prob[head] = float(probs[best])
+        if gold is None or gold not in order:
+            # The head applies and the turn has a gold it CANNOT EMIT (e.g. a gold
+            # act-tuple with no bank skeleton). That is a coverage failure, not
+            # an absent row: no prediction set can contain it, so dropping the
+            # row biases coverage upward. `gold_oov` keeps the structural share
+            # of the denominator visible to the reader.
+            correct[head] = False
+            gold_in_set[head] = False
+            gold_oov[head] = True
+            continue
+        gold_index = order.index(gold)
         correct[head] = bool(best == gold_index)
-        q = float((calibration.quantiles or {}).get(head, 0.0))
-        gold_in_set[head] = bool(gold_index in prediction_set(probs, q))
+        # `gate._quantile` refuses to invent a missing q_h rather than defaulting
+        # it to 0.0 (which would make the set ``{i : p_i >= 1}``).
+        gold_in_set[head] = bool(
+            gold_index in _confidence_set(probs, _quantile(calibration, quantiles, head), cfg)
+        )
     return {
         "convo_id": int(turn.convo_id),
         "turn_index": int(turn.turn_index),
         "max_prob": max_prob,
         "correct": correct,
         "gold_in_set": gold_in_set,
+        "gold_oov": gold_oov,
     }
 
 
@@ -493,31 +536,76 @@ def run_arm(
     )
 
 
-def _resolve_calibration(cfg: dict[str, Any], alpha: Optional[float]) -> Calibration:
-    """Load the calibration and, for E5, swap in the sweep quantiles for ``alpha``."""
+def _resolve_calibration(
+    cfg: dict[str, Any],
+    *,
+    checkpoint_path: str,
+    seed: int,
+) -> Calibration:
+    """Load this checkpoint's calibration and swap in ``gate.alpha``'s quantiles.
+
+    ``cfg["gate"]["alpha"]`` is the single source of the run's alpha: it is what
+    :func:`reflex.gate._quantiles_for_alpha` resolves the gate's quantiles from.
+    So the alpha carried by the returned :class:`Calibration` is always cfg's,
+    whether it arrived via ``--alpha`` (folded into cfg by :func:`_run_arm_b`)
+    or via ``--set gate.alpha=``. E5's sweep needs no recalibration because
+    ``alpha_sweep_quantiles`` already holds every alpha in ``gate.alpha_sweep``.
+    """
+    import dataclasses
+
     from reflex.calibrate import load_calibration
 
-    calibration = load_calibration(cfg, None)
-    if alpha is None:
+    # `paths.calibration_path` may be the per-seed template calibrate.py tells a
+    # second seed to use ("...gate_seed{seed}.json"). `load_calibration` carries
+    # no seed and refuses an unformatted template, so format it here exactly as
+    # `write_calibration` does -- this caller is the one that knows the seed.
+    calibration_path = resolve_path(cfg, "paths.calibration_path")
+    calibration = load_calibration(
+        cfg,
+        calibration_path.format(seed=int(seed)) if "{seed}" in calibration_path else None,
+    )
+
+    # The default `paths.calibration_path` is ONE un-templated file, but quantiles and the
+    # novelty index belong to exactly one checkpoint and one seed (calibrate's
+    # own contract) and nothing downstream re-checks -- so without this a seed-2
+    # run gates on seed 1's quantiles and measures novelty in seed 1's index.
+    stored_checkpoint = str(calibration.checkpoint_path or "")
+    if os.path.abspath(stored_checkpoint) != os.path.abspath(str(checkpoint_path)):
+        raise ContractViolation(
+            f"calibration was computed for {stored_checkpoint or '<unrecorded>'!r} but this "
+            f"run uses {str(checkpoint_path)!r}; quantiles and the novelty index are not "
+            f"transferable across checkpoints. Run `reflex calibrate --checkpoint "
+            f"{str(checkpoint_path)} --seed {int(seed)}` first."
+        )
+    if int(calibration.seed) != int(seed):
+        raise ContractViolation(
+            f"calibration carries seed {int(calibration.seed)} but this run is seed "
+            f"{int(seed)}; quantiles are not transferable across seeds. Recalibrate this "
+            f"checkpoint at --seed {int(seed)} before running it."
+        )
+
+    alpha = float(get_dotted(cfg, "gate.alpha"))
+    if alpha == float(calibration.alpha):
         return calibration
-    key = repr(float(alpha))
     sweep = calibration.alpha_sweep_quantiles or {}
-    quantiles = sweep.get(key)
+    quantiles = sweep.get(repr(alpha))
     if quantiles is None:
         # Try the other float spellings JSON round-tripping can produce.
         for candidate, value in sweep.items():
-            if abs(float(candidate) - float(alpha)) < 1e-12:
+            try:
+                matches = abs(float(candidate) - alpha) < 1e-12
+            except (TypeError, ValueError):  # pragma: no cover - defensive
+                continue
+            if matches:
                 quantiles = value
                 break
     if quantiles is None:
         raise ContractViolation(
-            f"alpha={alpha} was requested but the calibration carries no quantiles for it "
-            f"(has {sorted(sweep)}). Add it to gate.alpha_sweep and re-run `reflex calibrate`; "
-            "quantiles are not interpolable."
+            f"gate.alpha={alpha} was requested but the calibration carries no quantiles for "
+            f"it (has {sorted(sweep)}). Add it to gate.alpha_sweep and re-run `reflex "
+            f"calibrate`; quantiles are not interpolable."
         )
-    import dataclasses
-
-    return dataclasses.replace(calibration, alpha=float(alpha), quantiles=dict(quantiles))
+    return dataclasses.replace(calibration, alpha=alpha, quantiles=dict(quantiles))
 
 
 def _run_arm_b(
@@ -531,7 +619,7 @@ def _run_arm_b(
     forced_reflex: bool,
 ) -> str:
     """Arm B: select -> gate -> (fill | escalate), one turn at a time, batch 1, CPU."""
-    from reflex.compile import load_bank, load_turn_labels
+    from reflex.compile import load_bank
     from reflex.data import (
         action_list,
         build_partitions,
@@ -545,7 +633,7 @@ def _run_arm_b(
     )
     from reflex.data import build_context
     from reflex.fill import check_availability, collect_slot_sources, compose_utterance
-    from reflex.gate import evaluate_gate
+    from reflex.gate import _quantiles_for_alpha, evaluate_gate
     from reflex.llm_agent import build_llm_agent, llm_decide
     from reflex.select import (
         build_selector,
@@ -554,6 +642,21 @@ def _run_arm_b(
         select_from_scores,
     )
 
+    # `--alpha` and `--set gate.alpha=` must not be able to disagree. The gate
+    # resolves its quantiles from cfg (gate._quantiles_for_alpha), so cfg is the
+    # single source of this run's alpha: fold `--alpha` into cfg HERE, before
+    # anything -- calibration, gate, manifest -- reads it back.
+    # Set structurally, NOT through `apply_overrides`: that parses the value with
+    # yaml.safe_load, and YAML 1.1 reads Python's `1e-05` float spelling as the
+    # STRING '1e-05', which would then sit in the manifest's config snapshot.
+    if alpha is not None:
+        import copy
+
+        cfg = copy.deepcopy(cfg)
+        cfg["gate"]["alpha"] = float(alpha)
+        cfg["_overrides"] = list(cfg.get("_overrides") or []) + [f"gate.alpha={float(alpha)}"]
+    run_alpha = float(get_dotted(cfg, "gate.alpha"))
+
     _apply_runtime(cfg)
 
     ontology = load_ontology(cfg)
@@ -561,7 +664,14 @@ def _run_arm_b(
     partitions = build_partitions(cfg)
     raw = load_raw_abcd(cfg)
     utterances = load_utterances(cfg)
-    calibration = _resolve_calibration(cfg, alpha)
+    calibration = _resolve_calibration(cfg, checkpoint_path=checkpoint_path, seed=seed)
+    if run_alpha != float(calibration.alpha):  # pragma: no cover - defensive
+        raise ContractViolation(
+            f"gate.alpha={run_alpha} but the resolved calibration is at "
+            f"{float(calibration.alpha)}. The gate reads cfg and the manifest reads the "
+            "calibration, so the two drifting apart gates at one alpha and labels the run "
+            "with another."
+        )
 
     # Arm B answers its own escalations when the kill switch is on: build the
     # agent handle ONCE (it carries the response cache and the running spend
@@ -587,12 +697,28 @@ def _run_arm_b(
         "action": list(action_list(ontology)),
         "skeleton": [s.skeleton_id for s in bank.skeletons],
     }
-    try:
-        gold_skeletons = {
-            label.turn_id: label.skeleton_id for label in load_turn_labels(split, cfg)
-        }
-    except FileNotFoundError:
-        gold_skeletons = {}
+    # The sidecar's skeleton (H5) column needs a gold skeleton per turn, and
+    # `compile` persists labels/train.jsonl ONLY -- so for dev/test splits they
+    # have to be derived, exactly as train.py derives dev's. Swallowing the
+    # missing file into {} dropped H5 out of spec 8.5 ECE and coverage entirely
+    # while metrics.json still reported source "probs_sidecar", which reads as
+    # "measured and fine" rather than "never measured".
+    #
+    # ALWAYS DERIVED, NEVER READ OFF OR WRITTEN TO DISK -- the invariant
+    # `calibrate._dev_labels` spells out. Skeleton ids are positional and
+    # `labels/<split>.jsonl` carries no bank hash, so a file left by an earlier
+    # bank still resolves every id, to a different skeleton. `train._labels_for`
+    # loads that file first, and with `persist=True` this run used to CREATE it,
+    # after which `probes/run_response_probe.py` (which reads it before deriving)
+    # silently stopped deriving its own golds. The sidecar needs the labels in
+    # memory for one pass and nothing else.
+    write_sidecar = bool(get_dotted(cfg, "run.write_probs_sidecar"))
+    gold_skeletons: dict[str, Optional[str]] = {}
+    if write_sidecar:
+        from reflex.train import _derive_turn_labels
+
+        labels = _derive_turn_labels(partition, bank, cfg, split)
+        gold_skeletons = {label.turn_id: label.skeleton_id for label in labels}
 
     selector = build_selector(cfg, checkpoint_path, bank, ontology, calibration)
 
@@ -606,7 +732,7 @@ def _run_arm_b(
         model_id=_resolved_model_id(cfg, "B", model_key),
         split=split,
         seed=int(seed),
-        alpha=float(calibration.alpha),
+        alpha=run_alpha,  # the alpha the GATE applies (cfg), not whatever was calibrated
         config={k: v for k, v in cfg.items() if not str(k).startswith("_")},
         overrides=[str(o) for o in (cfg.get("_overrides") or [])],
         prompt_hashes=_prompt_hashes(cfg),
@@ -631,8 +757,10 @@ def _run_arm_b(
 
     flush_every = max(1, int(get_dotted(cfg, "run.flush_every")))
     progress_every = int(get_dotted(cfg, "run.progress_every"))
-    write_sidecar = bool(get_dotted(cfg, "run.write_probs_sidecar"))
     sidecar_path = os.path.join(_run_dir(cfg, run_id), str(get_dotted(cfg, "eval.probs_filename")))
+    # The quantile map the GATE resolves for this run, hoisted out of the turn
+    # loop, so the sidecar scores the prediction set the gate actually built.
+    sidecar_quantiles = _quantiles_for_alpha(calibration, cfg) if write_sidecar else {}
     registry = bank.slot_registry
 
     buffer: list[EvalRecord] = []
@@ -741,11 +869,13 @@ def _run_arm_b(
             sidecar_buffer.append(
                 _sidecar_row(
                     scores,
-                    gate_output,
+                    selection,
                     turn,
                     class_orders,
                     calibration,
+                    sidecar_quantiles,
                     gold_skeletons.get(turn_key(split, convo_id, turn_index)),
+                    cfg,
                 )
             )
         if len(buffer) >= flush_every:

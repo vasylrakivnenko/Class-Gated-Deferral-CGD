@@ -11,12 +11,20 @@ H5 -- SKELETON: top-1 accuracy. recall@3 as a secondary. NEVER recall@10.
 --------------------------------------------------------------------------
 570 classes, but the prior is brutally concentrated: on the train labels of bank
 ``c270df0e249444bb`` the four single-act skeletons ASK / ACK / OFFER / CLOSE
-cover 59.6% of turns. Computed from that label file, a label-blind constant
-scores:
+cover 59.6% of turns. Computed from that label file, the FIT-split PRIOR (the
+cumulative train share of the most frequent skeletons; 18181/71133 for S0000,
+``outputs/compile/compile_summary.md``) is:
 
     recall@1 0.2556 | recall@3 0.5174 | recall@5 0.6474 | recall@10 0.8229
 
-so **recall@10 is 82 points for a predictor that has not looked at the input**.
+That row is the prior, NOT the constant's score. APPLIED to test_seen -- the
+quantity the rule above defines -- the label-blind constant SCORES
+(``outputs/probes/response/select.json`` ``headline_test_seen.h5.constant``):
+
+    recall@1 0.2630 | recall@3 0.5269 | recall@5 0.6543 | recall@10 0.8336
+
+D5's bar is the applied row, never the prior row,
+so **recall@10 is 83 points for a predictor that has not looked at the input**.
 Reporting it would be exactly the ``nextstep`` trap D5 names. top-1 is the
 headline because it has the most room (a 74-point gap to a perfect score);
 recall@3 is reported because the gate consumes a conformal SET, and the
@@ -545,6 +553,7 @@ def order_sensitivity_headroom(
     vectorizer: Any,
     natural_texts: Sequence[str],
     shuffled_texts: Sequence[str],
+    min_headroom: float = 0.01,
 ) -> dict:
     """How much of the representation CAN respond to a line permutation at all.
 
@@ -568,7 +577,9 @@ def order_sensitivity_headroom(
     is the opposite of D7's finding and is an artefact of the shortcut.
 
     Returns ``headroom`` in [0, 1]. A control run below
-    ``probe.min_order_headroom`` must be reported as VACUOUS, not as a null.
+    ``probe.min_order_headroom`` must be reported as VACUOUS, not as a null:
+    the caller passes that config value as ``min_headroom`` (the default mirrors
+    probes/probe.yaml) and the threshold used is echoed in the result.
     Expect roughly D7's 5.5% for plain uni+bigrams (only the bigrams straddling
     turn junctions can move) and much more under tagging.
     """
@@ -589,7 +600,8 @@ def order_sensitivity_headroom(
         "headroom": headroom,
         "n_sampled": len(natural),
         "n_rows_shuffle_was_a_no_op": identical,
-        "vacuous": headroom < 1e-6,
+        "vacuous": headroom < float(min_headroom),
+        "min_headroom": float(min_headroom),
         "note": (
             "share of TF-IDF mass that moves between the natural and the featurizer's "
             "shuffled rendering. 0 means the representation is permutation-invariant and "

@@ -34,11 +34,64 @@ import sys
 from collections import Counter, defaultdict
 
 
+# ---------------------------------------------------------------------------
+# The learned cache's (certified H5) skeleton@1 bar, carried WITH its population.
+# These are three DIFFERENT denominators and must never be stacked in one column:
+#   n=3985 -- the template-fully-covered turns this file calls "conditional".
+#             Source: outputs/probes/response/recall_at_k.json, block
+#             "ALL (conditional)", skeleton_recall@1 = 0.5821831869510665.
+#   n=8858 -- every test_seen turn that HAS a gold skeleton. This is H5's own
+#             eval set (probes/run_response_probe.py: rows filtered on
+#             gold_skeleton_id). Source: outputs/probes/response/select.json
+#             headline_test_seen.h5 accuracy.recall@1 = 0.431700158049221,
+#             n_eval = 8858.
+#   n=8889 -- all test_seen turns, i.e. this file's "unconditional" population.
+#             The 31 turns carrying no gold skeleton can never be hit, so the
+#             n=8858 rate rescales exactly: 0.431700158049221 * 8858 / 8889
+#             = 3824 hits / 8889 = 0.43019462256721785.
+# The entry that used to live here was {"conditional": 0.432} -- the n=8858
+# rate filed under the n=3985 label, which is what made the n-gram look 1.2
+# points behind the cache and the RNN look 9 points ahead of it. On matched
+# populations the cache leads on every one of the three.
+H5_SKELETON_BAR = {
+    "conditional_n3985": 0.5821831869510665,
+    "gold_skeleton_n8858": 0.431700158049221,
+    "unconditional_n8889": 0.43019462256721785,
+    "label_blind_constant_n8858": 0.2630390607360578,
+    "compare_like_with_like": (
+        "conditional_n3985 <-> conditional.skeleton_only; "
+        "gold_skeleton_n8858 <-> skeleton_population.skeleton_only; "
+        "unconditional_n8889 <-> unconditional.skeleton_only"
+    ),
+    "sources": [
+        "outputs/probes/response/recall_at_k.json -> blocks['ALL (conditional)'].skeleton_recall@1 (n=3985)",
+        "outputs/probes/response/select.json -> headline_test_seen.h5.accuracy['recall@1'] (n_eval=8858)",
+    ],
+}
+# ---------------------------------------------------------------------------
+
+
+def _argmax(counter):
+    """Deterministic argmax over a Counter.
+
+    Counter.most_common resolves a tie by INSERTION order, i.e. by the order
+    train rows happened to be parsed, so a tied prediction would depend on row
+    order rather than on any stated rule. Break ties lexicographically on the
+    key instead -- the same total-order key src/reflex/arm_b0.py already uses
+    for its constant label.
+    """
+    return sorted(counter.items(), key=lambda kv: (-kv[1], kv[0]))[0][0]
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--split", default="test_seen")
     ap.add_argument("--max-order", type=int, default=4)
+    ap.add_argument("--history-mode", choices=("free", "gold"), default="free",
+                    help="free (default): condition on the model's OWN previous predictions. "
+                         "gold: teacher-force on the test conversation's true skeletons -- the "
+                         "pre-2026-09-21 behaviour, kept only to reproduce the old figure.")
     ap.add_argument("--select-json", default="outputs/probes/response/select.json")
     ap.add_argument("--out", default="outputs/probes/response/ngram_skeleton_plus_h7.json")
     args = ap.parse_args(argv)
@@ -103,8 +156,8 @@ def main(argv: list[str] | None = None) -> int:
                 continue
             dist = counts[n].get(tuple(history[-n:]))
             if dist:
-                return dist.most_common(1)[0][0]
-        return order0.most_common(1)[0][0] if order0 else None
+                return _argmax(dist)
+        return _argmax(order0) if order0 else None
 
     # ---- certified per-act H7 template classifiers, fit once on full train ----
     print("fitting per-act H7 classifiers on full train...", file=sys.stderr)
@@ -124,6 +177,7 @@ def main(argv: list[str] | None = None) -> int:
 
     n_cond = hit_cond = hit_skel_cond = 0
     n_total = hit_uncond = hit_skel_uncond = 0
+    n_skel = hit_skel_skelpop = 0
     per_row = []
 
     for convo_id, rows in test_by_convo.items():
@@ -150,6 +204,13 @@ def main(argv: list[str] | None = None) -> int:
                             "full_hit": full_hit})
 
             n_total += 1
+            # Denominator note: n_skel counts turns that HAVE a gold skeleton
+            # (expected 8858) -- the population the certified H5 is scored on,
+            # distinct from both the 3,985 fully-covered and the 8,889 total.
+            if row.gold_skeleton_id is not None:
+                n_skel += 1
+                if skel_hit:
+                    hit_skel_skelpop += 1
             if full_hit:
                 hit_uncond += 1
             if skel_hit:
@@ -161,8 +222,15 @@ def main(argv: list[str] | None = None) -> int:
                 if skel_hit:
                     hit_skel_cond += 1
 
-            if row.gold_skeleton_id is not None:
-                history.append(row.gold_skeleton_id)
+            # See ngram_skeleton_baseline.py for why this defaults to the model's own
+            # prediction: teacher-forcing on the test conversation's gold skeletons is
+            # information a deployed system does not have, and it is the sole source of
+            # this arm's apparent skill.
+            if args.history_mode == "gold":
+                if row.gold_skeleton_id is not None:
+                    history.append(row.gold_skeleton_id)
+            elif pred_sk is not None:
+                history.append(pred_sk)
 
     result = {
         "method": "n-gram skeleton Markov model + certified per-act TF-IDF H7 template "
@@ -170,14 +238,33 @@ def main(argv: list[str] | None = None) -> int:
                  "ngram_skeleton_baseline.py with the same text-based selector D25 used)",
         "split": args.split,
         "max_order": args.max_order,
+        "history_mode": args.history_mode,
+        "history_mode_note": (
+            "free: the model conditions on its OWN previous predictions, which is all a "
+            "deployed system has. gold: teacher-forced on the test conversation's true "
+            "skeleton ids -- a DIAGNOSTIC only; those labels do not exist at inference and "
+            "the arms this is compared against receive text alone. Free-running, this "
+            "model scores exactly the label-blind constant (0.3139272271016311 conditional)."
+        ),
         "conditional": {"n": n_cond, "compose@1": (hit_cond / n_cond) if n_cond else None,
                        "skeleton_only": (hit_skel_cond / n_cond) if n_cond else None},
         "unconditional": {"n": n_total, "compose@1": hit_uncond / n_total if n_total else None,
                           "skeleton_only": hit_skel_uncond / n_total if n_total else None},
+        "skeleton_population": {
+            "n": n_skel,
+            "skeleton_only": (hit_skel_skelpop / n_skel) if n_skel else None,
+            "note": "turns with a gold skeleton -- the SAME population the certified "
+                    "H5's 0.4317 is measured over (select.json h5.n_eval=8858). This is "
+                    "the only skeleton-only number directly comparable to it.",
+        },
         "compare_against": {
             "learned_cache_TFIDF_logreg_D25": {"conditional": 0.2765370138017566, "unconditional": 0.12397345033187085},
-            "ngram_skeleton_plus_modal_template": {"conditional": 0.10514429109159347, "unconditional": 0.04713691078861514},
-            "H5_skeleton_accuracy_D25": {"conditional": 0.432},
+            "ngram_skeleton_plus_modal_template": {
+                "conditional": 0.10514429109159347, "unconditional": 0.04713691078861514,
+                "stale": "measured before the argmax tie-break fix; re-run "
+                         "sft.eval.ngram_skeleton_baseline to refresh",
+            },
+            "H5_skeleton_accuracy_D25": H5_SKELETON_BAR,
         },
     }
     os.makedirs(os.path.dirname(args.out), exist_ok=True)

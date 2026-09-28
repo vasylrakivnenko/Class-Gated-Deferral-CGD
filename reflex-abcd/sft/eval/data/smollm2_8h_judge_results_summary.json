@@ -1,0 +1,16 @@
+{
+  "model": "accounts/fireworks/models/gpt-oss-120b",
+  "n_total": 100,
+  "counts": {
+    "appropriate": 79,
+    "borderline": 8,
+    "wrong": 13
+  },
+  "n_scored": 100,
+  "share_appropriate_of_scored": 0.79,
+  "share_borderline_of_scored": 0.08,
+  "share_wrong_of_scored": 0.13,
+  "elapsed_s": 26.6,
+  "caveat": "LLM-judge leniency bias is a known phenomenon -- treat these shares as a directional read on compose@1's misses, not a validated accuracy. Not human-audited (same open-caveat status as the act labeller, DECISIONS D24).",
+  "note": "These 'wrong'/'borderline'/'appropriate' turns are ALL compose@1 MISSES by the mechanical metric -- this only asks how bad the misses are, it does not change the headline 27.7%/12.4% compose@1 numbers."
+}

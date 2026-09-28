@@ -11,10 +11,12 @@ existed and was already unit-tested in isolation
 called it. Setting `llm.enabled=True` and filling the price table did not
 complete the cascade — an enabled LLM was a dead end.
 
-Separately confirmed and explicitly **not** part of this fix: Arm A's raise
-(`run.py` ~463-471) is intentional, tested, correct behavior (the
-zero-paid-API-calls safety rail; asserted by
-`test_run_report.py::test_arm_a_refuses_before_loading_any_data`). Not touched.
+Separately confirmed and explicitly **not** part of this fix: Arm A's raise is
+intentional, tested, correct behavior (the zero-paid-API-calls safety rail;
+asserted by `test_run_report.py::test_arm_a_refuses_before_loading_any_data`).
+Not touched. **Line reference refreshed 2026-09-20: it is now `run.py:514-522`**
+(`build_llm_agent(cfg, model_key)` at line 519, followed by a
+`ContractViolation`); this note originally said ~463-471.
 
 ## The fix
 
@@ -85,18 +87,32 @@ defect, not just describe the fix.
 
 ## Test-suite status
 
+**Superseded 2026-09-20.** This note recorded "49 passed" for
 `pytest tests/test_arm_b_escalation.py tests/test_run_report.py
-tests/test_no_paid_calls.py` — 49 passed, 0 failed (run after a concurrent
-sibling fix touched `src/reflex/schemas.py`; re-ran and still green).
-Full-suite run was intentionally skipped here because three other fixes were
-landing in parallel in `calibrate.py`/`gate.py`/`select.py` at the time this
-note was written — the coordinator should run the full suite once after all
-four parallel fixes are merged.
+tests/test_no_paid_calls.py` and deferred the full-suite run to a coordinator.
+Both are now settled:
+
+- those three modules collect **47** tests, not 49 — `test_arm_b_escalation.py`
+  4 + `test_run_report.py` 24 + `test_no_paid_calls.py` 19 (counted with
+  `pytest --collect-only -q` on 2026-09-20). All 47 pass.
+- the deferred full-suite run **has been done**, after all four parallel fixes
+  landed: `python -m pytest -p no:warnings` → **561 passed, 0 failed, 0 errors**.
+
+The four `_build_decision` tests and the `llm_decision` keyword argument they
+exercise are all present: `run.py:905-915` shows the current signature carrying
+`llm_decision: Optional[LLMDecision] = None`, and the wiring described above is
+at `run.py:681-682` (handle built once) and `run.py:824-831` (`llm_decide`
+called on escalation).
 
 ## Left for later, deliberately
 
-- Full `_run_arm_b` end-to-end exercise (needs a real checkpoint + compiled
-  bank + calibration — none exist in this checkout).
+- Full `_run_arm_b` end-to-end exercise. **Still open, and only partly for the
+  reason given.** Re-checked 2026-09-20: the compiled bank DOES exist
+  (`outputs/compile/bank/`, bank hash `c270df0e249444bb`, 4,489 templates); the
+  checkpoint and the calibration do not (`outputs/checkpoints/` is absent,
+  `outputs/calibration/` is empty), and `faiss-cpu` is not installed, which the
+  spec 6.6 novelty index needs. So the blocker is train + calibrate + faiss, not
+  the bank.
 - Whether `llm.enabled=True` together with `run.forced_reflex=True` should
   warn (forced_reflex's whole point is a $0 run; this fix makes `llm.enabled`
   take priority when both are set, silently ignoring `forced_reflex` in that

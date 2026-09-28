@@ -86,6 +86,20 @@ def _store_one(session, base, headers, turn_id, context_text, composed_text, tid
     return r.json()["entryId"]
 
 
+# Between the two 3,800/800 reruns a row's similarity moved by at most 6.6e-5,
+# while byte-identical prompts came back at exactly 1.0 (148 of the 151 matches
+# >= 0.999999). 1e-6 groups those without merging different neighbours.
+TIE_EPS = 1e-6
+
+
+def _stored_turn_id(entry) -> str:
+    """The train turn_id this script packed into `response` at store time."""
+    try:
+        return str(json.loads(entry["response"]).get("turn_id", ""))
+    except Exception:
+        return ""
+
+
 def _search_one(session, base, headers, context_text, threshold):
     r = session.post(
         f"{base}/entries/search",
@@ -97,8 +111,54 @@ def _search_one(session, base, headers, context_text, threshold):
     data = r.json().get("data", [])
     if not data:
         return None
-    best = max(data, key=lambda d: d["similarity"])
+    # Explicit tie-break. This corpus has many byte-identical prompts (e.g.
+    # every turn-0 context), so several stored entries sit at similarity 1.0
+    # carrying DIFFERENT answers. A bare max() returns whichever of them the
+    # service happened to list first. Two reruns of the identical 3,800/800
+    # configuration scored compose@1 0.0825 and 0.0275: every row below
+    # similarity 1.0 agreed (19 full / 90 skeleton hits in both) and all 44
+    # flipped rows were at similarity exactly 1.0. NEITHER value is "the"
+    # answer -- that cell is unstable in [0.0275, 0.0825].
+    #
+    # Ties are ordered by the STORED train turn_id (lowest, string order -- the
+    # same rule as retrieval_baseline.py), not by entryId: entryIds are
+    # assigned by the service at store time, so they change on every
+    # flush-and-restore and would not reproduce across reruns. This only
+    # orders the candidates the service RETURNED; if it returns fewer than the
+    # full tie set, which ones it returns is still its choice, so the summary
+    # records how many rows were tie-decided and how many candidates came back.
+    top = max(d["similarity"] for d in data)
+    tied = [d for d in data if d["similarity"] >= top - TIE_EPS]
+    best = dict(min(tied, key=lambda d: (_stored_turn_id(d),
+                                         str(d.get("entryId", d.get("id", ""))))))
+    best["_n_tied"] = len(tied)
+    best["_n_returned"] = len(data)
     return best
+
+
+def _cache_entry_count(session, base, headers):
+    """Best-effort read of how many entries the cache ACTUALLY holds right now.
+
+    `n_train_stored` only counts what this process sent; leftovers from an
+    earlier run are invisible to it, and a 1-NN hit rate is monotone in pool
+    size, so the pool has to be observed, not assumed. LangCache documents no
+    entry-count endpoint, so this probes the cache resource itself and returns
+    (None, reason) rather than guessing when it does not report one.
+    """
+    try:
+        r = session.get(base, headers=headers, timeout=30)
+        r.raise_for_status()
+        info = r.json()
+    except Exception as e:
+        return None, f"cache-info probe failed: {e}"
+    if not isinstance(info, dict):
+        return None, f"cache-info returned {type(info).__name__}, not an object"
+    for field in ("entryCount", "numEntries", "entries", "count", "size"):
+        value = info.get(field)
+        if isinstance(value, int) and not isinstance(value, bool):
+            return value, f"from GET {{cache}} field '{field}'"
+    return None, ("cache-info reports no entry count; fields seen: "
+                  + ",".join(sorted(info)[:12]))
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -112,8 +172,10 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--max-prompt-chars", type=int, default=1000,
                     help="LangCache caps `prompt` at 1024 chars; truncate to the "
                          "TAIL (most recent turns) of context before sending")
-    ap.add_argument("--flush-first", action="store_true",
-                    help="wipe the cache before storing (use if a prior run left entries)")
+    ap.add_argument("--no-flush", action="store_true",
+                    help="do NOT wipe the cache before storing. The default is to "
+                         "flush, because leftover entries from an earlier run silently "
+                         "enlarge the candidate pool this run's score is measured over")
     ap.add_argument("--out", default="outputs/probes/response/langcache_baseline.json")
     args = ap.parse_args(argv)
 
@@ -123,9 +185,15 @@ def main(argv: list[str] | None = None) -> int:
               "Authorization": f"Bearer {key}"}
 
     session = requests.Session()
-    if args.flush_first:
-        session.post(f"{base}/flush", headers=headers, timeout=30)
+    flushed = False
+    if not args.no_flush:
+        resp = session.post(f"{base}/flush", headers=headers, timeout=30)
+        resp.raise_for_status()
+        flushed = True
         print("flushed cache", file=sys.stderr)
+    else:
+        print("NOT flushing (--no-flush): the candidate pool may contain entries "
+              "from earlier runs", file=sys.stderr)
 
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     from reflex.config import load_config
@@ -192,10 +260,15 @@ def main(argv: list[str] | None = None) -> int:
                       f"errors={n_store_err}  {rate:.0f}/s", file=sys.stderr)
     print(f"  stored in {time.time()-t0:.1f}s, {n_store_err} errors", file=sys.stderr)
 
+    n_entries_at_query_time, entry_count_note = _cache_entry_count(session, base, headers)
+    print(f"  entries in cache at query time: {n_entries_at_query_time} "
+          f"({entry_count_note})", file=sys.stderr)
+
     print(f"searching {len(test_sample)} test_seen turns "
           f"(threshold={args.similarity_threshold})...", file=sys.stderr)
     t1 = time.time()
     n_search_err = 0
+    search_errored = set()
     results = {}
     with ThreadPoolExecutor(max_workers=args.concurrency) as ex:
         futs = {}
@@ -211,7 +284,12 @@ def main(argv: list[str] | None = None) -> int:
             try:
                 results[turn_id] = (fut.result(), gold_tids, gold_acts)
             except Exception as e:
+                # A failed search can never be a hit. Keep the turn in the
+                # denominator (scored as a miss) instead of dropping it, or a
+                # run with more transient failures reports a HIGHER rate.
                 n_search_err += 1
+                search_errored.add(turn_id)
+                results[turn_id] = (None, gold_tids, gold_acts)
                 print(f"  search error {turn_id}: {e}", file=sys.stderr)
             if n_done % 1000 == 0 or n_done == len(futs):
                 rate = n_done / (time.time() - t1)
@@ -225,10 +303,17 @@ def main(argv: list[str] | None = None) -> int:
     n_scored = hit = hit_skel = 0
     sims = []
     n_no_match = 0
+    n_tied_rows = 0
+    max_returned = 0
     per_row = []
     for turn_id, (best, gold_tids, gold_acts) in results.items():
         n_scored += 1
         gold_text = " ".join(bank_text.get(t, "") for t in test_gold_tids_by_turn.get(turn_id, []))
+        if turn_id in search_errored:
+            per_row.append({"turn_id": turn_id, "matched": False, "search_error": True,
+                            "context": test_context_by_turn.get(turn_id, ""),
+                            "gold_text": gold_text, "predicted_text": "(search failed)"})
+            continue
         if best is None:
             n_no_match += 1
             per_row.append({"turn_id": turn_id, "matched": False,
@@ -236,6 +321,9 @@ def main(argv: list[str] | None = None) -> int:
                             "gold_text": gold_text, "predicted_text": "(no match found)"})
             continue
         sims.append(best["similarity"])
+        if best.get("_n_tied", 1) > 1:
+            n_tied_rows += 1
+        max_returned = max(max_returned, best.get("_n_returned", 1))
         payload = json.loads(best["response"])
         pred_tids = payload["template_ids"]
         pred_acts = payload["acts"]
@@ -246,6 +334,8 @@ def main(argv: list[str] | None = None) -> int:
         if skel_hit:
             hit_skel += 1
         per_row.append({"turn_id": turn_id, "matched": True,
+                        "nearest_train_turn_id": payload.get("turn_id"),
+                        "n_tied_candidates": best.get("_n_tied", 1),
                         "similarity": best["similarity"],
                         "skeleton_hit": skel_hit, "full_hit": full_hit,
                         "context": test_context_by_turn.get(turn_id, ""),
@@ -257,9 +347,26 @@ def main(argv: list[str] | None = None) -> int:
                  "search, via REST API) -- same 'copy nearest neighbor's answer' "
                  "rule as D26's TF-IDF 1-NN baseline",
         "n_train_stored": len(train_sample) - n_store_err,
+        "n_store_errors": n_store_err,
+        # n_train_stored is what THIS process sent; the retrieval pool is
+        # whatever the cache actually held when the queries ran.
+        "cache_flushed_before_store": flushed,
+        "n_entries_in_cache_at_query_time": n_entries_at_query_time,
+        "n_entries_in_cache_probe": entry_count_note,
+        "n_test_sampled": len(test_sample),
         "n_test_queried": n_scored,
+        # errored searches are IN n_test_queried (scored as misses) and are
+        # not counted in n_no_match_above_threshold.
+        "n_search_errors": n_search_err,
         "similarity_threshold": args.similarity_threshold,
         "n_no_match_above_threshold": n_no_match,
+        # How much of the score rests on the tie-break rule rather than on
+        # similarity, and whether the service returns enough candidates for a
+        # client-side rule to see the whole tie set at all.
+        "n_rows_with_tied_nearest_neighbour": n_tied_rows,
+        "max_candidates_returned_per_search": max_returned,
+        "tie_break": (f"lowest stored train turn_id (string order) among RETURNED "
+                      f"candidates within {TIE_EPS} of the best similarity"),
         "mean_similarity_of_matches": (sum(sims) / len(sims)) if sims else None,
         "median_similarity_of_matches": (sorted(sims)[len(sims) // 2] if sims else None),
         "compose@1_of_queried": (hit / n_scored) if n_scored else None,
@@ -267,7 +374,10 @@ def main(argv: list[str] | None = None) -> int:
         "compare_against_D26": {
             "learned_cache_TFIDF_logreg": {"conditional": 0.2765370138017566},
             "1NN_TFIDF_no_rerank": {"conditional": 0.05244667503136763,
-                                    "median_similarity": 0.47},
+                                    "median_similarity": 0.47,
+                                    "stale": "measured before the retrieval_baseline "
+                                             "nearest-neighbour tie-break fix; re-run "
+                                             "sft.eval.retrieval_baseline to refresh"},
         },
         "caveat": ("SMALL-SCALE probe (n_train stored / n_test queried are far below "
                   "D26's full 43,159/3,985) -- meant to show DIRECTION only: does a "

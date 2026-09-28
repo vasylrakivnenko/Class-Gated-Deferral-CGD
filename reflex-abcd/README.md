@@ -7,12 +7,42 @@ template** per act, fills the template slots from known values — or picks an
 **action** (a button call) with values instead of speaking — and, when it is not
 confident, **escalates** the turn to an LLM.
 
-Success is a two-arm experiment on identical turns: Arm A = LLM only, Arm B =
-fast path + escalation to the same LLM. The headline result is the reflex rate
-(share of turns handled without the LLM) and the quality gap between arms.
+Success was *designed* as a two-arm experiment on identical turns: Arm A = LLM
+only, Arm B = fast path + escalation to the same LLM. The headline would be the
+reflex rate (share of turns handled without the LLM) and the quality gap between
+arms.
 
 Implementation spec: REFLEXIVE v1, sections referenced throughout as "spec 6.2",
 "spec 11.3" and so on.
+
+---
+
+## STATUS — read this before any number in this file (2026-09-20)
+
+**The `run → calibrate → gate → evaluate → report` pipeline has never been
+executed.** `outputs/runs/` holds only `.gitkeep`; `outputs/calibration/` is
+empty; `outputs/checkpoints/` does not exist. There is **no reflex rate, no
+Arm A/Arm B comparison, no containment number and no spec 9 verdict** anywhere in
+this repository, and nothing in this README should be read as reporting one. The
+only stage of that pipeline that has ever run is `reflex compile`, whose output
+is in `outputs/compile/`.
+
+**Every published result in this repo comes from two side tracks, not from
+`src/reflex/`:**
+
+| where | what it produced |
+|---|---|
+| `probes/run_response_probe.py`, `outputs/probes/` | the TF-IDF+logreg "learned cache" head probes (H5 skeleton, H7 template), the committee gate, recall@k |
+| `sft/eval/`, `sft/eval/data/` | the SFT arms (Qwen3-4B, qwen3-0.6B, SmolLM2), the retrieval / n-gram / RNN / LangCache baselines and every LLM-judge sample |
+
+The results table is **`Chat_Leaderboard.md`** (verified 2026-09-20 against the
+artifacts on disk). `DECISIONS.md` is a running log whose prose has repeatedly
+disagreed with the artifacts — where the two differ, `Chat_Leaderboard.md` and
+the JSON under `outputs/` are correct.
+
+The `src/reflex/` modules below are implemented and unit-tested (561 tests pass),
+but "implemented and tested" here means *will not crash on first run*, not
+*has produced a measured result*.
 
 ---
 
@@ -23,10 +53,17 @@ Implementation spec: REFLEXIVE v1, sections referenced throughout as "spec 6.2",
 | `src/reflex/contracts.py` | **The frozen module-boundary contract.** Every public function of every spec Section 4 module, with full type hints, the MECE ownership map, and three boundary rulings. Read it before writing any code. |
 | `src/reflex/schemas.py` | Spec Section 5 schemas as frozen dataclasses. Field names are normative. |
 | `configs/default.yaml` | Spec Section 12 verbatim, plus marked additions. Spec 10: no threshold, model id, path or price may appear in code. |
-| `tests/test_contracts.py` | Mechanically enforces the contract. Passes while modules are stubs; keeps passing as they land. |
+| `tests/test_contracts.py` | Mechanically enforces the contract: every module defines exactly the public names it owns, with byte-identical signatures. 228 of the suite's 561 tests. |
+| `Chat_Leaderboard.md` | **The results.** Every measured number this project has. Verified 2026-09-20 against the artifacts. |
 
-Twelve modules are stubs that re-export from `contracts.py`. `src/reflex/config.py`
-is **already implemented**, because all twelve need it on day one.
+All twelve spec Section 4 modules are **implemented** — `data`, `compile`,
+`models`, `train`, `calibrate`, `select`, `gate`, `fill`, `llm_agent`, `run`,
+`evaluate`, `report`; none is a stub any more. Two more exist beyond them:
+`src/reflex/featurize.py` (the shared feature builder the probes and the runtime
+both use) and `src/reflex/arm_b0.py` (the bank-only Arm B0 variant). With
+`config.py`, `contracts.py` and `schemas.py` that is 21,107 lines under
+`src/reflex/`. `config.py` was implemented first, because every other module
+needs it.
 
 ## Two hard rules
 
@@ -37,8 +74,8 @@ is the only place that may call a hosted model, and it must raise
 sits behind the same interface, off. `llm.strong`, `llm.cheap`, the price table
 and `price_list_date` ship as `<fill: ...>` placeholders — **do not invent model
 ids or prices**; `config.require_filled` raises rather than guessing.
-`tests/test_no_paid_calls.py` enforces all of this and starts biting the moment
-`llm_agent` is implemented.
+`tests/test_no_paid_calls.py` (19 tests) enforces all of this. `llm_agent.py` is
+now fully implemented, so those tests are load-bearing, not aspirational.
 
 **2. Config-driven and deterministic.** Read `cfg`, never a literal (spec 10).
 Same context → same Decision, always.
@@ -56,11 +93,16 @@ export PYTHONPATH=src
 # Option B — editable install, gives you the `reflex` console script
 pip install -e .
 
-# Dependencies are pinned in requirements.txt. Two are NOT in the venv yet
-# and must be installed before `reflex compile` or anything touching the
-# novelty index:
-pip install faiss-cpu==1.12.0 pysbd==0.3.4
+# Dependencies are pinned in requirements.txt. As of 2026-09-20, pysbd 0.3.4 IS
+# installed in that venv; faiss-cpu is still MISSING and must be installed before
+# anything touches the spec 6.6 novelty index (calibrate / run / sweep):
+pip install faiss-cpu==1.12.0
 ```
+
+Checked 2026-09-20 in `/Users/vasyl/zadumai/.venv`: `import pysbd` → 0.3.4 OK,
+`import faiss` → `ModuleNotFoundError`. `reflex compile` therefore runs today
+(it needs only pysbd) and has been run; anything that builds the novelty index
+has not.
 
 ABCD is already downloaded; `data.abcd_dir` in `configs/default.yaml` points at
 it. To fetch from scratch: `scripts/download_abcd.sh <dest>`, then update
@@ -70,51 +112,92 @@ it. To fetch from scratch: `scripts/download_abcd.sh <dest>`, then update
 
 Spec 7 fixes the execution order: **E0 → E1 → E2 → E5 → E3 → E4 → E6.**
 
+**Only the first two steps below have ever been run.** Everything from `train`
+onwards is the intended sequence, not a record of one; see STATUS above. The
+commands were re-checked against `src/reflex/__main__.py` on 2026-09-20 and the
+flags shown are the ones argparse actually accepts.
+
 ```bash
-# E0 sanity — the mandatory spec 3.3 verification (this is what produced the
-# "Dataset notes" output below)
+# [RUN] E0 sanity — the mandatory spec 3.3 verification (this is what produced
+# the "Dataset notes" output below)
 python scripts/inspect_abcd.py            # or: python -m reflex inspect
 
-# Build the BANK from train only (spec 6.2) -> outputs/compile/
+# [RUN] Build the BANK from train only (spec 6.2) -> outputs/compile/
 python -m reflex compile
 
-# Train all three seeds (spec 6.4 requires the mean and spread of all three)
+# [NEVER RUN] Train all three seeds (spec 6.4 requires all of train.seeds = [1,2,3]).
+# Writes train.checkpoint_dir = outputs/checkpoints/seed<N>.pt, which does not exist.
 for s in 1 2 3; do python -m reflex train --seed "$s"; done
 
-# Gate thresholds from dev, seen subflows only (spec 6.8)
+# [NEVER RUN] Gate thresholds from dev, seen subflows only (spec 6.8).
+# outputs/calibration/ is empty. gate.py needs six quantiles including the H4
+# "value" head (see outputs/REQUIRED_SLOTS_GATE_FIX_NOTE.md); calibrate.py:135
+# now emits all six, so this no longer blocks a run.
 python -m reflex calibrate --checkpoint outputs/checkpoints/seed1.pt --seed 1
 
-# E2 Arm B. (E1 Arm A needs llm.enabled: true and a filled price table, so it
-# cannot run under the zero-paid-calls rule as shipped.)
-python -m reflex run --arm B --model strong --split test_seen --alpha 0.02
-python -m reflex run --arm B --model strong --split test_novel
+# [NEVER RUN] E2 Arm B. --checkpoint is REQUIRED for --arm B (the CLI exits 1
+# without it). E1 Arm A needs llm.enabled: true and a filled price table, so it
+# cannot run under the zero-paid-calls rule as shipped.
+python -m reflex run --arm B --model strong --split test_seen --alpha 0.02 \
+    --checkpoint outputs/checkpoints/seed1.pt
+python -m reflex run --arm B --model strong --split test_novel \
+    --checkpoint outputs/checkpoints/seed1.pt
 
-# Score and report
+# [NEVER RUN] THE $0 MODE: the gate's real verdict is logged but escalated turns
+# are recorded UNANSWERED, so spec 8.1 routing / 8.4 novelty come out with
+# llm.enabled still false. It cannot produce arm quality or spec 8.7 parity.
+python -m reflex run --arm B --split test_seen --forced-reflex \
+    --checkpoint outputs/checkpoints/seed1.pt
+
+# [NEVER RUN] Score and report
 python -m reflex evaluate --run-id <run_id> --baseline-run-id <armA_run_id>
 python -m reflex report --run-ids <run_id> ... --out report.md
 
-# E5 / E3 / E4 / E6 matrices
-python -m reflex sweep --experiment E5
+# [NEVER RUN] E5 only. run_sweep raises NotImplementedError for E3, E4 and E6
+# (they need ablation checkpoints / a learning curve / a passing E2), and E5
+# reads the checkpoint from the REFLEX_CHECKPOINT environment variable.
+REFLEX_CHECKPOINT=outputs/checkpoints/seed1.pt python -m reflex sweep --experiment E5
 
 # Any config value is overridable, repeatably (spec 10)
-python -m reflex run --arm B --split test_seen --set gate.alpha=0.05 --set data.context_turns_K=10
+python -m reflex run --arm B --split test_seen --checkpoint outputs/checkpoints/seed1.pt \
+    --set gate.alpha=0.05 --set data.context_turns_K=10
 
-pytest
+pytest        # 561 passed, 0 failed (2026-09-20)
 ```
+
+The probe and SFT tracks that produced every published number are run
+separately: `PYTHONPATH=src python -m probes.run_response_probe
+{conformance|audit|validate|measure|select}` and the scripts under `sft/eval/`.
+See `Chat_Leaderboard.md` for which artifact backs which row.
+
+> **Do not re-run `probes.run_response_probe validate` yet.** A 2026-09-20 code
+> review found a half-applied edit at `probes/run_response_probe.py:548` (the
+> winner-ranking key was changed to `(cells_in_band, headline_in_band)` while the
+> certification predicate at line 563 still reads `best["headline_in_band"]`).
+> Replayed against the committed `outputs/probes/response/validate.json` it now
+> picks a different vectorizer and writes `certified: false`, after which
+> `measure` and `select` refuse unless `--force-uncertified` is passed. The
+> committed `certification.json` (`certified: true`, `min_df=1`,
+> `sublinear_tf=true`) is what every published probe number was produced with.
 
 ---
 
 ## License
 
-**ABCD data and official code: MIT** (ASAPP Research), per the project brief.
+**ABCD data and official code: MIT** — `Copyright (c) 2021 ASAPP Research`.
 
-Recorded per spec 3.5, with one caveat stated plainly: **the local download does
-not contain a LICENSE file**, and the vendored `README.md` has no license
-section — only a citation block. So the MIT attribution above is taken from the
-brief and from the upstream GitHub repository page, and was **not verifiable from
-the downloaded artifact**. Before any public use of results, read the LICENSE in
-a full clone of `github.com/asappresearch/abcd` and replace this paragraph with
-the verified text.
+Recorded per spec 3.5. **Verified 2026-09-20 from the artifact, not from the
+brief:** the clone at `data.abcd_dir` (`/Users/vasyl/zadumai/data/abcd`, a full
+`git clone` of `github.com/asappresearch/abcd` at commit `6b8700c`) contains a
+21-line `LICENSE` whose first two lines are `MIT License` /
+`Copyright (c) 2021 ASAPP Research`. The vendored `README.md` still has no
+license section — only a citation block — but the LICENSE file settles it.
+
+(An earlier version of this section said the download had no LICENSE and that the
+MIT attribution was "not verifiable from the downloaded artifact". Whatever was
+true of the 2026-09-16 download, it is not true of the clone `data.abcd_dir`
+resolves to today — `git remote -v` there is
+`https://github.com/asappresearch/abcd`, and the LICENSE is present.)
 
 Cite the dataset:
 
@@ -133,6 +216,12 @@ output** of `python scripts/inspect_abcd.py --sample 20 --seed 0`, which checks
 every structural assumption of spec 3.2 over all 220,983 turns rather than
 sampling. The only edit is to section 7, where 17 of the 20 sampled turns are
 omitted for length — rerun the command for the full listing.
+
+**Re-run 2026-09-20 and diffed line by line against the block below: every
+number, count and percentage is unchanged.** The only difference was section 0's
+five file paths, which had been captured from a temporary 2026-09-16 download
+directory; they have been replaced with the paths `data.abcd_dir` resolves to
+today. Sizes and all downstream counts are identical, so it is the same corpus.
 
 ### The eight deviations, in one table
 
@@ -157,23 +246,34 @@ are pipe-character artifacts in `original` — ABCD replaced `"...now. |What
 product is it"` with `"...now. andwhat product is it"`. So the rank reading is
 not "mostly right"; it is right, and D5 explains every apparent exception.
 
-### A ninth finding: the official metrics do not import as downloaded
+### A ninth finding: the official metrics still do not import bare — but not for the reason first recorded
 
 Spec 13 forbids reimplementing the official AST/CDS metrics, and spec 8.2 says
-to use them. But `utils/evaluate.py` opens with
-`from components.systems import Application`, and **the local download contains
-only `data/` and `utils/` — there is no `components/` package**, so a bare import
-raises `ModuleNotFoundError`.
+to use them. `utils/evaluate.py` opens with
+`from components.systems import Application`.
 
-Resolved without a rewrite: `evaluate.load_official_metrics` installs stub
-`components.*` modules into `sys.modules` before importing, where
-`Application.prepare_masks` raises. All four report functions only touch
-`Application` on the `kb_labels is not None` path, so every metric this project
-needs works untouched. **Verified: `ast_report` and `cds_report` both run to
-completion under the shim.** The cost is that the KB-masked variant is
-unavailable, so `eval.use_kb_labels` must stay `false` and the report must say
-the numbers are unmasked. Vendoring `components/` from a full clone would lift
-this.
+**Corrected 2026-09-20.** This section used to say the download contained only
+`data/` and `utils/` and had no `components/` package. That is no longer true:
+the full clone at `/Users/vasyl/zadumai/data/abcd` **does** ship
+`components/{__init__,datasets,features,models,systems,tools}.py`. A bare import
+of `utils/evaluate.py` nevertheless still raises — verified by execution —
+`ModuleNotFoundError: No module named 'tensorboardX'`, because
+`components/tools.py:5` does `from tensorboardX import SummaryWriter` and
+`tensorboardX` is not in the venv and is not in `requirements.txt`.
+
+The resolution is unchanged and still in force:
+`evaluate.load_official_metrics` installs stub `components.*` modules into
+`sys.modules` before importing, so the real `components/` (and therefore
+`tensorboardX`) is never touched; the stub's `Application.prepare_masks` raises.
+All four report functions only touch `Application` on the `kb_labels is not None`
+path. **Verified 2026-09-20 by execution: `load_official_metrics(cfg)` returns
+the four real functions from `/Users/vasyl/zadumai/data/abcd/utils/evaluate.py`.**
+The cost is that the KB-masked variant is unavailable, so `eval.use_kb_labels`
+must stay `false` (`evaluate.py:218` raises `ContractViolation` if it is true)
+and the report must say the numbers are unmasked. Lifting this now needs
+`pip install tensorboardX` plus dropping the shim, not vendoring — and
+`configs/default.yaml:388`'s comment "components/ is not vendored (README)"
+should be corrected when someone owns that file.
 
 ### Verbatim output
 
@@ -182,11 +282,11 @@ this.
 ==============================================================================
 0. FILES
 ==============================================================================
-raw             121.55 MB  /private/tmp/claude-501/-Users-vasyl-zadumai/12e40f00-be9f-4f43-9226-7a491b668aef/scratchpad/abcd/data/abcd_v1.1.json
-utterances        5.23 MB  /private/tmp/claude-501/-Users-vasyl-zadumai/12e40f00-be9f-4f43-9226-7a491b668aef/scratchpad/abcd/data/utterances.json
-ontology          0.01 MB  /private/tmp/claude-501/-Users-vasyl-zadumai/12e40f00-be9f-4f43-9226-7a491b668aef/scratchpad/abcd/data/ontology.json
-kb                0.01 MB  /private/tmp/claude-501/-Users-vasyl-zadumai/12e40f00-be9f-4f43-9226-7a491b668aef/scratchpad/abcd/data/kb.json
-guidelines        0.10 MB  /private/tmp/claude-501/-Users-vasyl-zadumai/12e40f00-be9f-4f43-9226-7a491b668aef/scratchpad/abcd/data/guidelines.json
+raw             121.55 MB  /Users/vasyl/zadumai/data/abcd/data/abcd_v1.1.json
+utterances        5.23 MB  /Users/vasyl/zadumai/data/abcd/data/utterances.json
+ontology          0.01 MB  /Users/vasyl/zadumai/data/abcd/data/ontology.json
+kb                0.01 MB  /Users/vasyl/zadumai/data/abcd/data/kb.json
+guidelines        0.10 MB  /Users/vasyl/zadumai/data/abcd/data/guidelines.json
 
 config     : /Users/vasyl/zadumai/reflex-abcd/configs/default.yaml
 turn list  : conversation['delexed']  (spec 3.2 does not name it)
@@ -422,40 +522,67 @@ reflex-abcd/
   src/reflex/schemas.py          # Section 5 — FROZEN
   src/reflex/contracts.py        # the module-boundary contract — FROZEN
   src/reflex/config.py           # + not in 11.1; IMPLEMENTED
-  src/reflex/data.py             # 4.1      stub
-  src/reflex/compile.py          # 4.2 + 6.3 stub
-  src/reflex/models.py           # 6.4      stub
-  src/reflex/train.py            # 4.3      stub
-  src/reflex/calibrate.py        # 4.4      stub
-  src/reflex/select.py           # 4.5      stub
-  src/reflex/gate.py             # 4.6      stub
-  src/reflex/fill.py             # 4.7      stub
-  src/reflex/llm_agent.py        # 4.8      stub
-  src/reflex/run.py              # arm orchestration  stub
-  src/reflex/evaluate.py         # 4.9      stub
-  src/reflex/report.py           # 4.10     stub
-  tests/
+  src/reflex/data.py             # 4.1      IMPLEMENTED
+  src/reflex/compile.py          # 4.2 + 6.3 IMPLEMENTED
+  src/reflex/models.py           # 6.4      IMPLEMENTED
+  src/reflex/train.py            # 4.3      IMPLEMENTED
+  src/reflex/calibrate.py        # 4.4      IMPLEMENTED
+  src/reflex/select.py           # 4.5      IMPLEMENTED
+  src/reflex/gate.py             # 4.6      IMPLEMENTED
+  src/reflex/fill.py             # 4.7      IMPLEMENTED
+  src/reflex/llm_agent.py        # 4.8      IMPLEMENTED (inert: llm.enabled false)
+  src/reflex/run.py              # arm orchestration  IMPLEMENTED
+  src/reflex/evaluate.py         # 4.9      IMPLEMENTED
+  src/reflex/report.py           # 4.10     IMPLEMENTED
+  src/reflex/featurize.py        # + not in 11.1; shared feature builder
+  src/reflex/arm_b0.py           # + not in 11.1; bank-only Arm B0 variant
+  tests/                         # 16 test modules, 561 tests
+  probes/                        # + not in 11.1; run_response_probe.py + probe.yaml
+  sft/                           # + not in 11.1; SFT data builders and sft/eval/ arms
+  DECISIONS.md                   # + running decision log (prose; superseded by the artifacts)
+  Chat_Leaderboard.md            # + THE RESULTS, verified 2026-09-20
+  AUDIT_2026-09-19.md            # + the 187-defect audit
+  DEFECTS_OPEN.md                # + open-defect register
+  PROPOSED_CONFIG_B0.yaml        # + Arm B0 proposal; not in configs/, but tests/test_arm_b0.py
+                                 #   loads it so it cannot drift from arm_b0.py
   outputs/
-    compile/                     # bank/, labels/, delex_check.md, act_check.md
-    calibration/gate.json
-    runs/<run_id>/               # manifest.json, decisions.jsonl, metrics.json, report.md, figures/
+    compile/                     # bank/, labels/train.jsonl, compile_summary.md,
+                                 #   delex_check.md, act_check.md   [POPULATED]
+    probes/response/             # every probe artifact behind the leaderboard [POPULATED]
+    probes/analysis/             # coverage_gap.json, min_count_elasticity.json [POPULATED]
+    act_audit/                   # act_audit_sample.md (UNFILLED), key, scorer
+    *_FIX_NOTE.md                # three fix notes for src/reflex/ defects
+    calibration/                 # EMPTY — gate.json has never been written
+    runs/                        # EMPTY except .gitkeep — no run has ever happened
+    checkpoints/                 # DOES NOT EXIST — no model has ever been trained
 ```
 
 ## Implementation status
 
-| module | spec | status |
-|---|---|---|
-| `schemas.py` | 5 | **frozen** |
-| `contracts.py` | 4 | **frozen** |
-| `config.py` | — | **implemented** |
-| `__main__.py` | 11.2 | **implemented** (dispatches to contracts; unimplemented commands exit 3) |
-| `scripts/inspect_abcd.py` | 3.3 | **implemented, run, output above** |
-| `tests/test_contracts.py`, `tests/test_no_paid_calls.py` | 10 | **implemented** |
-| `data` `compile` `models` `train` `calibrate` `select` `gate` `fill` `llm_agent` `run` `evaluate` `report` | 4.1–4.10 | stubs re-exporting `contracts.py` |
+"Implemented" below means the code exists and its unit tests pass. It does **not**
+mean the module has ever produced a result on real data — see STATUS.
 
-Each stub lists its owned names in `__all__`. To implement one: delete the
-`from reflex.contracts import ...` block and write real functions with
-**byte-identical signatures**. `pytest tests/test_contracts.py` enforces it.
+| module | spec | code | has it ever run on real data? |
+|---|---|---|---|
+| `schemas.py` | 5 | **frozen** | n/a |
+| `contracts.py` | 4 | **frozen** | n/a |
+| `config.py` | — | implemented | yes |
+| `__main__.py` | 11.2 | implemented | yes (`inspect`, `compile`) |
+| `scripts/inspect_abcd.py` | 3.3 | implemented | **yes** — output above, re-run 2026-09-20 |
+| `data` | 4.1 | implemented | yes (loaded by `compile` and the probes) |
+| `compile` | 4.2 + 6.3 | implemented | **yes** — `outputs/compile/` |
+| `featurize` | — (added) | implemented | yes (the probes use it) |
+| `models` `train` | 6.4, 4.3 | implemented | **no** — `outputs/checkpoints/` does not exist |
+| `calibrate` | 4.4 | implemented | **no** — `outputs/calibration/` is empty |
+| `select` `gate` `fill` | 4.5–4.7 | implemented | **no** — reachable only from a run |
+| `llm_agent` | 4.8 | implemented | **no**, by design (`llm.enabled: false`) |
+| `run` `arm_b0` | — | implemented | **no** — `outputs/runs/` is empty |
+| `evaluate` `report` | 4.9, 4.10 | implemented | **no** — no `metrics.json` exists |
+| `tests/` | 10 | 16 modules, 561 tests | **yes — 561 passed, 0 failed (2026-09-20)** |
+
+Every module still imports its types from `contracts.py`, and
+`pytest tests/test_contracts.py` (228 tests) enforces byte-identical signatures
+against the frozen contract.
 
 ## Deviations from the spec
 
@@ -464,24 +591,32 @@ Recorded rather than silently absorbed.
 1. **Python 3.12.8, not 3.11.** Spec 10 asks for 3.11; `/Users/vasyl/zadumai/.venv`
    is 3.12.8. `requirements.txt` pins to that venv's versions to avoid churn.
    `pyproject.toml` declares `>=3.11`.
-2. **Two files added beyond spec 11.1.** `src/reflex/config.py` — every module
-   needs `cfg` and spec 10 bans literals, so config loading had to live
-   somewhere; spec Section 4 assigns it to no module. `pyproject.toml` — so
-   `python -m reflex` works (spec 11.2) without `PYTHONPATH`.
-3. **`faiss-cpu` and `pysbd` are not installed** in that venv. Both are required
-   (spec 10 lists them; `compile.sentence_splitter: pysbd`, and the spec 6.6
-   novelty index is FAISS). Pinned in `requirements.txt`; install before
-   `compile`.
-4. **`eval.use_kb_labels` is forced `false`** — the `components/` package is
-   missing from the download, so the KB-masked official metrics are unreachable.
-   See "A ninth finding" above.
+2. **Files added beyond spec 11.1.** `src/reflex/config.py` — every module needs
+   `cfg` and spec 10 bans literals, so config loading had to live somewhere;
+   spec Section 4 assigns it to no module. `pyproject.toml` — so
+   `python -m reflex` works (spec 11.2) without `PYTHONPATH`. Since then,
+   `src/reflex/featurize.py` and `src/reflex/arm_b0.py`, plus the whole
+   `probes/` and `sft/` trees, which are where the published results come from.
+3. **`faiss-cpu` is not installed** in that venv (checked 2026-09-20). It backs
+   the spec 6.6 novelty index and is pinned in `requirements.txt`; install it
+   before `calibrate` / `run` / `sweep`. `pysbd` 0.3.4 (the spec 12
+   `compile.sentence_splitter`) **is** installed, which is why `reflex compile`
+   has been able to run.
+4. **`eval.use_kb_labels` is forced `false`.** The reason changed: the full clone
+   now *does* ship `components/`, but `components/tools.py` imports
+   `tensorboardX`, which is absent, so `evaluate.load_official_metrics` still
+   shims `components.*` and the shim's `Application.prepare_masks` raises. The
+   KB-masked official metrics remain unreachable. See "A ninth finding" above.
+   (`configs/default.yaml:388` still carries the old "components/ is not
+   vendored" comment and is wrong.)
 5. **Arm A cannot run as shipped.** `llm.enabled: false` and the model ids and
    prices are `<fill>` placeholders, so spec 7's E1 — and therefore the spec 9
    parity criterion, which is defined against E1 — cannot be produced without a
    deliberate, funded change. Arm B, the reflex rate, the fast-path error rates
-   and the novelty numbers are all measurable for free. **This is a real limit on
-   what v1 can conclude, not a bug:** spec 9's PASS requires a parity comparison
-   against an arm that costs money.
+   and the novelty numbers are all measurable for free (`--forced-reflex`) —
+   **but none of them has been measured: no Arm B run exists.** **This is a real
+   limit on what v1 can conclude, not a bug:** spec 9's PASS requires a parity
+   comparison against an arm that costs money.
 6. **`prompts/agent_A.txt` is a draft, not frozen.** Spec 6.9 step 3 allows two
    revisions on dev before freezing. Revisions used: 0. It cannot be revised on
    dev without running the LLM, so freezing is blocked by item 5.
@@ -490,9 +625,11 @@ Recorded rather than silently absorbed.
    `is_synthetic_end` (D3). `Decision` adds `candidate_rank`,
    `exact_template_match` (required by spec 6.5 step 5 but absent from spec 5.5)
    and `cache_hit`. All spec-5 field names are unchanged.
-8. **Eleven schemas added** that the spec describes in prose but never gives a
-   JSON shape (`ContextWindow`, `SlotRegistry`, `Bank`, `Calibration`, …), so
-   twelve modules agree on them. Each is marked `REFLEX-ADDED`.
+8. **Twelve schemas added** that the spec describes in prose but never gives a
+   JSON shape — `ContextWindow`, `SlotSpec`, `SlotRegistry`, `Bank`, `TurnLabel`,
+   `SelectorScores`, `Selection`, `Calibration`, `SlotSources`, `LLMDecision`,
+   `Partitions`, `RunManifest` (counted from `src/reflex/schemas.py`, which lists
+   exactly these; the README used to say eleven). Each is marked `REFLEX-ADDED`.
 
 ## Three boundary rulings
 

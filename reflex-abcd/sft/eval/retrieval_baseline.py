@@ -92,10 +92,40 @@ def main(argv: list[str] | None = None) -> int:
     print(f"  TF-IDF fit+transform: {time.time()-t1:.1f}s, vocab={len(vec.vocabulary_):,}", file=sys.stderr)
 
     t2 = time.time()
-    nn = NearestNeighbors(n_neighbors=1, metric="cosine", algorithm="brute", n_jobs=-1)
+    # Ties are not rare here: ~10% of test rows sit at cosine distance 0 from a
+    # train context (identical opening turns repeat across conversations), and
+    # the tied candidates carry DIFFERENT gold skeletons/templates. With
+    # n_neighbors=1 the winner was whichever index sklearn's argmin reached
+    # first, i.e. corpus order -- so retrieve a window, then break ties by an
+    # explicit total order over the candidates themselves (lowest train
+    # turn_id), which is independent of how the rows happen to be ordered.
+    import numpy as np
+
+    TIE_EPS = 1e-9
+    k = min(10, Xtr.shape[0])
+    nn = NearestNeighbors(n_neighbors=k, metric="cosine", algorithm="brute", n_jobs=-1)
     nn.fit(Xtr)
     dist, idx = nn.kneighbors(Xte)
-    print(f"  1-NN search: {time.time()-t2:.1f}s", file=sys.stderr)
+    print(f"  {k}-NN search: {time.time()-t2:.1f}s", file=sys.stderr)
+
+    def _tied_candidates(i):
+        """Every train index within TIE_EPS of row i's best distance.
+
+        If the whole k-window is tied the true tie set may extend past k (the
+        duplicated opening contexts run to thousands of rows), and which k of
+        them kneighbors returned is itself corpus-order dependent -- so in that
+        case recompute the complete tie set exactly. Xtr/Xte are L2-normalised
+        by TfidfVectorizer, so the sparse dot product IS cosine similarity.
+        """
+        d0 = float(dist[i][0])
+        tied = [int(j) for j, d in zip(idx[i], dist[i]) if float(d) <= d0 + TIE_EPS]
+        if len(tied) >= k and k < Xtr.shape[0]:
+            sims_row = (Xte[i] @ Xtr.T).toarray().ravel()
+            tied = np.flatnonzero(sims_row >= (1.0 - d0) - TIE_EPS).tolist()
+        return tied
+
+    n_tied_rows = 0
+    n_tie_set_past_k = 0
 
     n_cond = hit_cond = hit_skel_cond = 0
     hit_uncond = hit_skel_uncond = 0
@@ -104,7 +134,13 @@ def main(argv: list[str] | None = None) -> int:
     per_row = []
 
     for i, trow in enumerate(test_h5):
-        neighbor = train_h5[idx[i][0]]
+        tied = _tied_candidates(i)
+        if len(tied) > 1:
+            n_tied_rows += 1
+            if len(tied) > k:
+                n_tie_set_past_k += 1
+        best_j = min(tied, key=lambda j: train_h5[j].turn_id)
+        neighbor = train_h5[best_j]
         sim = float(1.0 - dist[i][0])
         sims.append(sim)
 
@@ -142,6 +178,13 @@ def main(argv: list[str] | None = None) -> int:
         "n_total_turns": n_total,
         "mean_neighbor_similarity": sum(sims) / len(sims),
         "median_neighbor_similarity": sorted(sims)[len(sims) // 2],
+        # How much of this number rests on an arbitrary choice: rows where more
+        # than one train turn sat at the same best distance, so the answer
+        # copied is decided by the tie-break rule (lowest train turn_id) and
+        # not by similarity.
+        "n_rows_with_tied_nearest_neighbour": n_tied_rows,
+        "n_rows_tie_set_exceeded_k": n_tie_set_past_k,
+        "tie_break": f"lowest train turn_id (string order) among candidates within {TIE_EPS} of the best distance",
         "conditional": {
             "n": n_cond,
             "compose@1": (hit_cond / n_cond) if n_cond else None,
@@ -153,16 +196,13 @@ def main(argv: list[str] | None = None) -> int:
             "skeleton_only": hit_skel_uncond / n_total,
         },
         "compare_against": {
-            "learned_cache_TFIDF_logreg": {"conditional": 0.2765370138017566, "unconditional": 0.09764877939025762 + 0.02632801},
+            "learned_cache_TFIDF_logreg": {"conditional": 0.2765370138017566, "unconditional": 0.12397345033187085},
             "note": "learned_cache figures from outputs/probes/response/select.json headline_test_seen; "
                    "fireworks arms from DECISIONS D25. Same population (n=3985/8889), same bank, same "
                    "compose@1 predicate throughout.",
         },
         "elapsed_s": round(time.time() - t0, 1),
     }
-    # fix the accidental typo-prone inline calc above; recompute cleanly
-    result["compare_against"]["learned_cache_TFIDF_logreg"]["unconditional"] = 0.12397345033187085
-
     import os
     os.makedirs(os.path.dirname(args.out), exist_ok=True)
     with open(args.out, "w", encoding="utf-8") as fh:

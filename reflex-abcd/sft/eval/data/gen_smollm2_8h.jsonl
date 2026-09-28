@@ -1,0 +1,500 @@
+{"turn_id": "test_seen:4512:0", "generation": "hello, how can i help you today?", "error": null}
+{"turn_id": "test_seen:4512:2", "generation": "i'm sorry to hear that. let me look into this for you.", "error": null}
+{"turn_id": "test_seen:4512:5", "generation": "thank you.", "error": null}
+{"turn_id": "test_seen:4512:8", "generation": "thank you.", "error": null}
+{"turn_id": "test_seen:4512:11", "generation": "i will send a reset code to your email address.", "error": null}
+{"turn_id": "test_seen:4512:14", "generation": "i see, it looks like the system is showing the wrong amount.", "error": null}
+{"turn_id": "test_seen:4512:16", "generation": "yes, i'm sorry.", "error": null}
+{"turn_id": "test_seen:4512:17", "generation": "i apologize for the inconvenience.", "error": null}
+{"turn_id": "test_seen:4512:19", "generation": "i apologize for the inconvenience.", "error": null}
+{"turn_id": "test_seen:4512:21", "generation": "have a great day!", "error": null}
+{"turn_id": "test_seen:5063:0", "generation": "hello, how can i help you today?", "error": null}
+{"turn_id": "test_seen:5063:2", "generation": "sure, what would you like to know?", "error": null}
+{"turn_id": "test_seen:5063:4", "generation": "okay. can i have your full name or account id?", "error": null}
+{"turn_id": "test_seen:5063:6", "generation": "okay. i can help you with that.", "error": null}
+{"turn_id": "test_seen:5063:10", "generation": "the shirt is 32 inches long.", "error": null}
+{"turn_id": "test_seen:5063:12", "generation": "ok. i can find that out for you.", "error": null}
+{"turn_id": "test_seen:5063:14", "generation": "great. i can also help you with the price.", "error": null}
+{"turn_id": "test_seen:5063:15", "generation": "is there anything else i can help you with today?", "error": null}
+{"turn_id": "test_seen:5063:17", "generation": "have a great day!", "error": null}
+{"turn_id": "test_seen:1694:0", "generation": "hello, how can i help you today?", "error": null}
+{"turn_id": "test_seen:1694:2", "generation": "let me check on that for you.", "error": null}
+{"turn_id": "test_seen:1694:4", "generation": "i'm sorry to hear that. i can help you with that.", "error": null}
+{"turn_id": "test_seen:1694:8", "generation": "alright let me look into that for you.", "error": null}
+{"turn_id": "test_seen:1694:10", "generation": "yes, you can do it by logging out and then back in.", "error": null}
+{"turn_id": "test_seen:1694:12", "generation": "is there anything else i can help you with today?", "error": null}
+{"turn_id": "test_seen:1694:14", "generation": "thank you for contacting acmecorp. have a great day!", "error": null}
+{"turn_id": "test_seen:8068:0", "generation": "hello, how can i help you today?", "error": null}
+{"turn_id": "test_seen:8068:2", "generation": "i am sorry to hear that. let me look into this for you.", "error": null}
+{"turn_id": "test_seen:8068:3", "generation": "may i have your full name or account id?", "error": null}
+{"turn_id": "test_seen:8068:7", "generation": "great, can you try to log out of your account and log back in to see if that helps?", "error": null}
+{"turn_id": "test_seen:8068:10", "generation": "can you try to enter the card number again?", "error": null}
+{"turn_id": "test_seen:8068:12", "generation": "great, is there anything else i can help you with today?", "error": null}
+{"turn_id": "test_seen:8068:13", "generation": "thank you for contacting acmecorp, have a great day!", "error": null}
+{"turn_id": "test_seen:7462:0", "generation": "hello, how can i help you today?", "error": null}
+{"turn_id": "test_seen:7462:5", "generation": "i'm sorry, but our return policy is not available on our website.", "error": null}
+{"turn_id": "test_seen:7462:7", "generation": "great! is there anything else i can help you with?", "error": null}
+{"turn_id": "test_seen:7462:8", "generation": "is there anything else i can help you with today?", "error": null}
+{"turn_id": "test_seen:7462:9", "generation": "is there anything else i can help you with?", "error": null}
+{"turn_id": "test_seen:7462:11", "generation": "thank you for shopping with acmebrands! have a great day!", "error": null}
+{"turn_id": "test_seen:3585:0", "generation": "hello, how can i help you today?", "error": null}
+{"turn_id": "test_seen:3585:3", "generation": "i see, i can help you with that.", "error": null}
+{"turn_id": "test_seen:3585:5", "generation": "can you please provide me with your account id and order id?", "error": null}
+{"turn_id": "test_seen:3585:8", "generation": "i am going to check with the system about this.", "error": null}
+{"turn_id": "test_seen:3585:11", "generation": "here is your new promo code: 123456", "error": null}
+{"turn_id": "test_seen:3585:13", "generation": "is there anything else i can help you with today?", "error": null}
+{"turn_id": "test_seen:3585:15", "generation": "thank you and have a great day!", "error": null}
+{"turn_id": "test_seen:1136:0", "generation": "hello, how can i help you today?", "error": null}
+{"turn_id": "test_seen:1136:2", "generation": "okay, i can help you with that.", "error": null}
+{"turn_id": "test_seen:1136:4", "generation": "ok, i can help you with that.", "error": null}
+{"turn_id": "test_seen:1136:6", "generation": "ok, i can help you with that.", "error": null}
+{"turn_id": "test_seen:1136:9", "generation": "thank you.", "error": null}
+{"turn_id": "test_seen:1136:12", "generation": "great, i have sent you a reset code.", "error": null}
+{"turn_id": "test_seen:1136:15", "generation": "you are welcome. is there anything else i can help you with today?", "error": null}
+{"turn_id": "test_seen:1136:17", "generation": "have a great day!", "error": null}
+{"turn_id": "test_seen:1601:0", "generation": "hello, how can i help you today?", "error": null}
+{"turn_id": "test_seen:1601:2", "generation": "oh, i'm sorry to hear that.  let's see if we can get that fixed.  what is your full name?", "error": null}
+{"turn_id": "test_seen:1601:3", "generation": "may i have your full name or account id?", "error": null}
+{"turn_id": "test_seen:1601:5", "generation": "thank you, norman.  i'll also need your username, email address, and order id to pull up your account", "error": null}
+{"turn_id": "test_seen:1601:8", "generation": "okay, i'll need your username, email address, and order id to pull up your account", "error": null}
+{"turn_id": "test_seen:1601:11", "generation": "i'm sorry, but i can't find the item for you, but i can let our purchasing department know what it is that you were looking for", "error": null}
+{"turn_id": "test_seen:1601:13", "generation": "i'm sorry, but i'm not sure what you mean by that", "error": null}
+{"turn_id": "test_seen:1601:15", "generation": "okay, i can put that in for you.  i'll just need your username and email address to send you the order.", "error": null}
+{"turn_id": "test_seen:1601:17", "generation": "okay, i'll just need your username, email address, and order id to pull up your account", "error": null}
+{"turn_id": "test_seen:1601:20", "generation": "okay, i've placed the order for you, and it should ship out shortly", "error": null}
+{"turn_id": "test_seen:1601:22", "generation": "you're welcome, have a great day!", "error": null}
+{"turn_id": "test_seen:5735:0", "generation": "hello, how can i help you today?", "error": null}
+{"turn_id": "test_seen:5735:3", "generation": "i'm sorry to hear that. may i have your full name or account id?", "error": null}
+{"turn_id": "test_seen:5735:6", "generation": "thank you, joseph. may i also have your username, email address, and order id?", "error": null}
+{"turn_id": "test_seen:5735:10", "generation": "thank you, joseph. i've verified your identity.", "error": null}
+{"turn_id": "test_seen:5735:15", "generation": "thank you!", "error": null}
+{"turn_id": "test_seen:5735:17", "generation": "it looks like your order was delivered yesterday.", "error": null}
+{"turn_id": "test_seen:5735:20", "generation": "i'm sorry for the inconvenience.", "error": null}
+{"turn_id": "test_seen:5735:23", "generation": "i have successfully changed the delivery date for you.", "error": null}
+{"turn_id": "test_seen:5735:24", "generation": "is there anything else i can help you with today?", "error": null}
+{"turn_id": "test_seen:5735:26", "generation": "thank you! have a great day!", "error": null}
+{"turn_id": "test_seen:960:0", "generation": "hello, how can i help you today?", "error": null}
+{"turn_id": "test_seen:960:2", "generation": "sure, what would you like to know?", "error": null}
+{"turn_id": "test_seen:960:3", "generation": "can i have your full name or account id?", "error": null}
+{"turn_id": "test_seen:960:7", "generation": "thank you.", "error": null}
+{"turn_id": "test_seen:960:9", "generation": "can i have your username, email address and order id?", "error": null}
+{"turn_id": "test_seen:960:12", "generation": "your subscription is active and you have 30 days left.", "error": null}
+{"turn_id": "test_seen:960:14", "generation": "yes, you can use the credit card on file.", "error": null}
+{"turn_id": "test_seen:960:17", "generation": "is there anything else i can help you with?", "error": null}
+{"turn_id": "test_seen:960:19", "generation": "have a great day!", "error": null}
+{"turn_id": "test_seen:2341:2", "generation": "hello, how can i help you?", "error": null}
+{"turn_id": "test_seen:2341:5", "generation": "i can help you with that", "error": null}
+{"turn_id": "test_seen:2341:6", "generation": "can i have your full name or account id", "error": null}
+{"turn_id": "test_seen:2341:8", "generation": "can you please try searching for the item again?", "error": null}
+{"turn_id": "test_seen:2341:10", "generation": "can you please try searching for the item again?", "error": null}
+{"turn_id": "test_seen:10365:0", "generation": "hello, how can i help you today?", "error": null}
+{"turn_id": "test_seen:10365:3", "generation": "i'm sorry to hear that, albert. let me see what i can do to help.", "error": null}
+{"turn_id": "test_seen:10365:6", "generation": "i can help you with that. can i have your account id and order id?", "error": null}
+{"turn_id": "test_seen:10365:12", "generation": "alright, your subscription is currently active.", "error": null}
+{"turn_id": "test_seen:10365:13", "generation": "i'm sorry, but i can't change the due date.", "error": null}
+{"turn_id": "test_seen:10365:16", "generation": "i can do that for you now.", "error": null}
+{"turn_id": "test_seen:10365:17", "generation": "is there anything else i can help you with today?", "error": null}
+{"turn_id": "test_seen:10365:20", "generation": "is there anything else i can help you with today?", "error": null}
+{"turn_id": "test_seen:10365:23", "generation": "you're welcome, have a great day!", "error": null}
+{"turn_id": "test_seen:5231:0", "generation": "hello, how can i help you today?", "error": null}
+{"turn_id": "test_seen:5231:3", "generation": "i can help you with that.", "error": null}
+{"turn_id": "test_seen:5231:5", "generation": "may i have your full name or account id?", "error": null}
+{"turn_id": "test_seen:5231:8", "generation": "alright, i will need your username, email address, and order id.", "error": null}
+{"turn_id": "test_seen:5231:10", "generation": "alright, i'll need your zip code and email address.", "error": null}
+{"turn_id": "test_seen:5231:11", "generation": "could you give me your zip code and phone number?", "error": null}
+{"turn_id": "test_seen:5231:12", "generation": "and your zip code and email address.", "error": null}
+{"turn_id": "test_seen:5231:13", "generation": "i'm sorry, i can't recover your username without your zip code.", "error": null}
+{"turn_id": "test_seen:5231:17", "generation": "thank you.", "error": null}
+{"turn_id": "test_seen:5231:18", "generation": "alright, i've recovered your username.", "error": null}
+{"turn_id": "test_seen:5231:20", "generation": "alright, i've successfully recovered your username.", "error": null}
+{"turn_id": "test_seen:5231:21", "generation": "alright, i've recovered your username and i've also generated a new password for you.", "error": null}
+{"turn_id": "test_seen:5231:24", "generation": "i'm sorry but i can't recover your password.", "error": null}
+{"turn_id": "test_seen:5231:25", "generation": "do you know your mother's maiden name?", "error": null}
+{"turn_id": "test_seen:5231:27", "generation": "what was your mother's maiden name?", "error": null}
+{"turn_id": "test_seen:5231:28", "generation": "what was your mother's maiden name?", "error": null}
+{"turn_id": "test_seen:5231:30", "generation": "your new password is 1qz44zq44zq44zq44zq44zq44zq44zq44zq", "error": null}
+{"turn_id": "test_seen:5231:32", "generation": "is there anything else i can help you with?", "error": null}
+{"turn_id": "test_seen:5231:34", "generation": "have a great day!", "error": null}
+{"turn_id": "test_seen:5485:0", "generation": "hello, how can i help you today?", "error": null}
+{"turn_id": "test_seen:5485:2", "generation": "ok, i can help you with that", "error": null}
+{"turn_id": "test_seen:5485:3", "generation": "can i get your full name or account id?", "error": null}
+{"turn_id": "test_seen:5485:6", "generation": "can you try logging out and back in?", "error": null}
+{"turn_id": "test_seen:5485:9", "generation": "can you please try to log out of your account & log back in?", "error": null}
+{"turn_id": "test_seen:5485:10", "generation": "can you try to add it to your cart again?", "error": null}
+{"turn_id": "test_seen:5485:13", "generation": "i'm sorry to hear that", "error": null}
+{"turn_id": "test_seen:5485:15", "generation": "no problem", "error": null}
+{"turn_id": "test_seen:5485:17", "generation": "have a great day!", "error": null}
+{"turn_id": "test_seen:5485:18", "generation": "have a great day!", "error": null}
+{"turn_id": "test_seen:1941:0", "generation": "hello, how can i help you today?", "error": null}
+{"turn_id": "test_seen:1941:2", "generation": "i can help you with that.", "error": null}
+{"turn_id": "test_seen:1941:3", "generation": "may i have your full name or account id?", "error": null}
+{"turn_id": "test_seen:1941:5", "generation": "okay, can i have your full name or account id?", "error": null}
+{"turn_id": "test_seen:1941:8", "generation": "thank you.", "error": null}
+{"turn_id": "test_seen:1941:12", "generation": "thank you.", "error": null}
+{"turn_id": "test_seen:1941:17", "generation": "thank you.", "error": null}
+{"turn_id": "test_seen:1941:20", "generation": "your phone number has been updated to 609-646-7433.", "error": null}
+{"turn_id": "test_seen:1941:22", "generation": "is there anything else i can help you with?", "error": null}
+{"turn_id": "test_seen:1941:24", "generation": "have a good day.", "error": null}
+{"turn_id": "test_seen:3631:1", "generation": "hello, how can i help you?", "error": null}
+{"turn_id": "test_seen:3631:3", "generation": "i'm sorry to hear that. let me see what i can do to help.", "error": null}
+{"turn_id": "test_seen:3631:4", "generation": "may i have your full name or account id?", "error": null}
+{"turn_id": "test_seen:3631:7", "generation": "thank you.  i will need your account id and order id to validate your purchase.", "error": null}
+{"turn_id": "test_seen:3631:9", "generation": "okay, i will need your username and email address to validate the code.", "error": null}
+{"turn_id": "test_seen:3631:11", "generation": "i am sorry to say that your promo code is invalid.", "error": null}
+{"turn_id": "test_seen:3631:14", "generation": "your new promo code is: 12345", "error": null}
+{"turn_id": "test_seen:3631:16", "generation": "no problem, is there anything else i can help you with today?", "error": null}
+{"turn_id": "test_seen:3631:18", "generation": "have a great day!", "error": null}
+{"turn_id": "test_seen:5334:0", "generation": "hello, how can i help you today?", "error": null}
+{"turn_id": "test_seen:5334:2", "generation": "i am sorry to hear that", "error": null}
+{"turn_id": "test_seen:5334:3", "generation": "can i have your full name or account id", "error": null}
+{"turn_id": "test_seen:5334:6", "generation": "ok, i can help with that", "error": null}
+{"turn_id": "test_seen:5334:8", "generation": "ok, i can help with that", "error": null}
+{"turn_id": "test_seen:5334:10", "generation": "ok, i will write up a report for the manager", "error": null}
+{"turn_id": "test_seen:5334:11", "generation": "can i have your name please", "error": null}
+{"turn_id": "test_seen:5334:13", "generation": "i am sorry about that", "error": null}
+{"turn_id": "test_seen:5334:14", "generation": "i will be happy to help you with that", "error": null}
+{"turn_id": "test_seen:5334:18", "generation": "i will need your account id and order id", "error": null}
+{"turn_id": "test_seen:5334:19", "generation": "can i have your account id and order id please?", "error": null}
+{"turn_id": "test_seen:5334:21", "generation": "ok, i will look up your order", "error": null}
+{"turn_id": "test_seen:5334:26", "generation": "ok, i have pulled up your account", "error": null}
+{"turn_id": "test_seen:5334:28", "generation": "okay, i can help you with that", "error": null}
+{"turn_id": "test_seen:5334:30", "generation": "i'm sorry, i can't do anything about it", "error": null}
+{"turn_id": "test_seen:5334:31", "generation": "i can refund you the amount of the credit", "error": null}
+{"turn_id": "test_seen:5334:33", "generation": "i'm sorry, but i can't help you with that", "error": null}
+{"turn_id": "test_seen:5334:34", "generation": "i understand, but i can help you with that", "error": null}
+{"turn_id": "test_seen:5334:35", "generation": "i can issue you a new credit, but it will take a few days to process", "error": null}
+{"turn_id": "test_seen:5334:37", "generation": "okay, i can issue you a new credit.", "error": null}
+{"turn_id": "test_seen:5334:40", "generation": "i am norman bouchard", "error": null}
+{"turn_id": "test_seen:5334:42", "generation": "i hope you have a great day!", "error": null}
+{"turn_id": "test_seen:5334:44", "generation": "i hope you have a great day!", "error": null}
+{"turn_id": "test_seen:5334:46", "generation": "okay, have a good day!", "error": null}
+{"turn_id": "test_seen:5334:47", "generation": "have a good day!", "error": null}
+{"turn_id": "test_seen:5177:0", "generation": "hello, how can i help you today?", "error": null}
+{"turn_id": "test_seen:5177:2", "generation": "i see, let me help you with that.", "error": null}
+{"turn_id": "test_seen:5177:3", "generation": "may i have your full name or account id?", "error": null}
+{"turn_id": "test_seen:5177:6", "generation": "can you try logging out and then logging back in?", "error": null}
+{"turn_id": "test_seen:5177:8", "generation": "ok, could you try clearing your cookies?", "error": null}
+{"turn_id": "test_seen:5177:10", "generation": "could you try clearing your cookies?", "error": null}
+{"turn_id": "test_seen:5177:12", "generation": "ok", "error": null}
+{"turn_id": "test_seen:5177:14", "generation": "ok", "error": null}
+{"turn_id": "test_seen:5177:16", "generation": "can you try to refresh the page?", "error": null}
+{"turn_id": "test_seen:5177:18", "generation": "can you close all other tabs and programs?", "error": null}
+{"turn_id": "test_seen:5177:20", "generation": "you are welcome.", "error": null}
+{"turn_id": "test_seen:5177:21", "generation": "is there anything else i can help you with?", "error": null}
+{"turn_id": "test_seen:5177:23", "generation": "have a good day!", "error": null}
+{"turn_id": "test_seen:399:0", "generation": "hello, how can i help you today?", "error": null}
+{"turn_id": "test_seen:399:2", "generation": "i'm sorry to hear that. let me see if i can help you with that.", "error": null}
+{"turn_id": "test_seen:399:6", "generation": "i'm sorry to hear that. i'm going to try a few things on my end.", "error": null}
+{"turn_id": "test_seen:399:9", "generation": "great! is there anything else i can help you with today?", "error": null}
+{"turn_id": "test_seen:399:11", "generation": "thank you for shopping with acmebrands. have a wonderful day!", "error": null}
+{"turn_id": "test_seen:1315:0", "generation": "hello, how can i help you today?", "error": null}
+{"turn_id": "test_seen:1315:2", "generation": "hello, joyce", "error": null}
+{"turn_id": "test_seen:1315:5", "generation": "i can help you with that.", "error": null}
+{"turn_id": "test_seen:1315:7", "generation": "i will need your full name and account id", "error": null}
+{"turn_id": "test_seen:1315:9", "generation": "i am going to send a report to our purchasing department to see if they can look into this.", "error": null}
+{"turn_id": "test_seen:1315:12", "generation": "thank you", "error": null}
+{"turn_id": "test_seen:1315:13", "generation": "i will send you a link to your account to see if this is the case.", "error": null}
+{"turn_id": "test_seen:1315:15", "generation": "is there anything else i can help you with?", "error": null}
+{"turn_id": "test_seen:1315:17", "generation": "i apologize for the inconvenience", "error": null}
+{"turn_id": "test_seen:1315:19", "generation": "have a nice day", "error": null}
+{"turn_id": "test_seen:8141:1", "generation": "hello, how may i help you?", "error": null}
+{"turn_id": "test_seen:8141:2", "generation": "i can help you with that.", "error": null}
+{"turn_id": "test_seen:8141:5", "generation": "thank you, i will also need your username, email address, and order id.", "error": null}
+{"turn_id": "test_seen:8141:10", "generation": "thank you.", "error": null}
+{"turn_id": "test_seen:8141:11", "generation": "can i also get your membership level?", "error": null}
+{"turn_id": "test_seen:8141:14", "generation": "thanks for that information.", "error": null}
+{"turn_id": "test_seen:8141:18", "generation": "okay, i've created a shipping label for you.", "error": null}
+{"turn_id": "test_seen:8141:20", "generation": "i'll also need your full address to send a shipping label.", "error": null}
+{"turn_id": "test_seen:8141:22", "generation": "is there anything else i can help you with today?", "error": null}
+{"turn_id": "test_seen:8141:24", "generation": "have a great day!", "error": null}
+{"turn_id": "test_seen:965:0", "generation": "hello, how can i help you today?", "error": null}
+{"turn_id": "test_seen:965:2", "generation": "sure, what is your question?", "error": null}
+{"turn_id": "test_seen:965:5", "generation": "may i have your account id and order id?", "error": null}
+{"turn_id": "test_seen:965:7", "generation": "ok, i'll look into that for you.", "error": null}
+{"turn_id": "test_seen:965:9", "generation": "ok, i'll look into that for you.", "error": null}
+{"turn_id": "test_seen:965:11", "generation": "i'll need your account id and order id.", "error": null}
+{"turn_id": "test_seen:965:15", "generation": "ok, i'll need your username and email address.", "error": null}
+{"turn_id": "test_seen:965:18", "generation": "ok, i pulled up your account.", "error": null}
+{"turn_id": "test_seen:965:20", "generation": "i'm sorry, but i can't do anything about it.", "error": null}
+{"turn_id": "test_seen:965:23", "generation": "123456", "error": null}
+{"turn_id": "test_seen:965:25", "generation": "i'm sorry, but i can't do anything about the shipping cost.", "error": null}
+{"turn_id": "test_seen:965:27", "generation": "yes, it is.", "error": null}
+{"turn_id": "test_seen:965:29", "generation": "have a nice day.", "error": null}
+{"turn_id": "test_seen:6601:0", "generation": "hello, how can i help you today?", "error": null}
+{"turn_id": "test_seen:6601:3", "generation": "okay, i can help you recover your password", "error": null}
+{"turn_id": "test_seen:6601:7", "generation": "okay, your new password is 1q44z4141414141", "error": null}
+{"turn_id": "test_seen:6601:8", "generation": "is there anything else i can help you with", "error": null}
+{"turn_id": "test_seen:6601:11", "generation": "have a great day", "error": null}
+{"turn_id": "test_seen:4397:0", "generation": "hello, how can i help you today?", "error": null}
+{"turn_id": "test_seen:4397:1", "generation": "how can i help you?", "error": null}
+{"turn_id": "test_seen:4397:4", "generation": "sure, what's your name?", "error": null}
+{"turn_id": "test_seen:4397:10", "generation": "i'm sorry to hear that. i can help with that.", "error": null}
+{"turn_id": "test_seen:4397:11", "generation": "is there anything else i can help you with?", "error": null}
+{"turn_id": "test_seen:4397:13", "generation": "is there anything else i can help you with?", "error": null}
+{"turn_id": "test_seen:4397:16", "generation": "is there anything else i can help you with?", "error": null}
+{"turn_id": "test_seen:4397:17", "generation": "is there anything else i can help you with?", "error": null}
+{"turn_id": "test_seen:4397:19", "generation": "have a great day!", "error": null}
+{"turn_id": "test_seen:8137:0", "generation": "hello, how can i help you today?", "error": null}
+{"turn_id": "test_seen:8137:1", "generation": "hello, how can i help you today?", "error": null}
+{"turn_id": "test_seen:8137:3", "generation": "i am sorry to hear that. let me see if i can help you with that.", "error": null}
+{"turn_id": "test_seen:8137:6", "generation": "thank you david. i will need your account id and order id to pull up your account.", "error": null}
+{"turn_id": "test_seen:8137:9", "generation": "okay, i will need your account id and order id to validate your purchase.", "error": null}
+{"turn_id": "test_seen:8137:11", "generation": "ok, i will also need your username and email address to validate the purchase.", "error": null}
+{"turn_id": "test_seen:8137:14", "generation": "here is your new promo code: 12345", "error": null}
+{"turn_id": "test_seen:8137:15", "generation": "is there anything else i can help you with today?", "error": null}
+{"turn_id": "test_seen:8137:18", "generation": "thank you and have a great day!", "error": null}
+{"turn_id": "test_seen:8137:19", "generation": "have a great day!", "error": null}
+{"turn_id": "test_seen:5869:0", "generation": "hello, how can i help you today?", "error": null}
+{"turn_id": "test_seen:5869:2", "generation": "i am sorry to hear that. let me look into this for you.", "error": null}
+{"turn_id": "test_seen:5869:4", "generation": "thank you, norman.", "error": null}
+{"turn_id": "test_seen:5869:8", "generation": "is there anything else i can help you with?", "error": null}
+{"turn_id": "test_seen:5869:10", "generation": "have a great day!", "error": null}
+{"turn_id": "test_seen:6804:1", "generation": "hello, how can i help you?", "error": null}
+{"turn_id": "test_seen:6804:3", "generation": "hello, albert.", "error": null}
+{"turn_id": "test_seen:6804:5", "generation": "ok. i can help you with that.", "error": null}
+{"turn_id": "test_seen:6804:8", "generation": "the color of the jeans is dark blue.", "error": null}
+{"turn_id": "test_seen:6804:9", "generation": "is there anything else i can help you with?", "error": null}
+{"turn_id": "test_seen:6804:10", "generation": "is there anything else i can help you with?", "error": null}
+{"turn_id": "test_seen:6804:13", "generation": "is there anything else i can help you with?", "error": null}
+{"turn_id": "test_seen:6804:15", "generation": "ok.", "error": null}
+{"turn_id": "test_seen:6804:17", "generation": "have a great day.", "error": null}
+{"turn_id": "test_seen:4019:0", "generation": "hello, how can i help you today?", "error": null}
+{"turn_id": "test_seen:4019:3", "generation": "ok, i can help you with that", "error": null}
+{"turn_id": "test_seen:4019:6", "generation": "thanks, norman. what is your account id and order id?", "error": null}
+{"turn_id": "test_seen:4019:11", "generation": "your subscription is active, you will be charged $10 per month for the next 6 months.", "error": null}
+{"turn_id": "test_seen:4019:13", "generation": "i will send you a link to your email so you can check on your subscription.", "error": null}
+{"turn_id": "test_seen:4019:14", "generation": "is there anything else i can help you with?", "error": null}
+{"turn_id": "test_seen:4019:17", "generation": "it's $10.", "error": null}
+{"turn_id": "test_seen:4019:18", "generation": "is there anything else i can help you with?", "error": null}
+{"turn_id": "test_seen:4019:20", "generation": "is there anything else i can help you with?", "error": null}
+{"turn_id": "test_seen:4019:23", "generation": "i've charged your card.", "error": null}
+{"turn_id": "test_seen:4019:24", "generation": "is there anything else i can help you with?", "error": null}
+{"turn_id": "test_seen:4019:27", "generation": "have a good day.", "error": null}
+{"turn_id": "test_seen:9043:0", "generation": "hello, how can i help you today?", "error": null}
+{"turn_id": "test_seen:9043:2", "generation": "i am sorry to hear that.", "error": null}
+{"turn_id": "test_seen:9043:3", "generation": "can i have your full name or account id", "error": null}
+{"turn_id": "test_seen:9043:6", "generation": "ok, try to close all other tabs and programs that are running in the background", "error": null}
+{"turn_id": "test_seen:9043:10", "generation": "great, have a nice day", "error": null}
+{"turn_id": "test_seen:9043:11", "generation": "have a nice day", "error": null}
+{"turn_id": "test_seen:7961:0", "generation": "hello, how can i help you today?", "error": null}
+{"turn_id": "test_seen:7961:3", "generation": "sure, i can help you with that.", "error": null}
+{"turn_id": "test_seen:7961:6", "generation": "can i have your full name please?", "error": null}
+{"turn_id": "test_seen:7961:8", "generation": "can i have your account id and order id?", "error": null}
+{"turn_id": "test_seen:7961:11", "generation": "thank you.", "error": null}
+{"turn_id": "test_seen:7961:14", "generation": "i am sorry to hear that, i will be happy to help you with that.", "error": null}
+{"turn_id": "test_seen:7961:17", "generation": "ok, i can't do anything about it, but i can offer you a refund.", "error": null}
+{"turn_id": "test_seen:7961:20", "generation": "i am so sorry, but i am unable to help you with that.", "error": null}
+{"turn_id": "test_seen:7961:21", "generation": "is there anything else i can help you with?", "error": null}
+{"turn_id": "test_seen:7961:23", "generation": "have a great day.", "error": null}
+{"turn_id": "test_seen:3685:0", "generation": "hello, how can i help you today?", "error": null}
+{"turn_id": "test_seen:3685:2", "generation": "sure.", "error": null}
+{"turn_id": "test_seen:3685:6", "generation": "membership levels are bronze, silver, and gold.", "error": null}
+{"turn_id": "test_seen:3685:8", "generation": "bronze members get unlimited refunds.", "error": null}
+{"turn_id": "test_seen:3685:9", "generation": "silver has unlimited returns", "error": null}
+{"turn_id": "test_seen:3685:10", "generation": "silver has a 30 day return period", "error": null}
+{"turn_id": "test_seen:3685:11", "generation": "silver has a 30 day return period", "error": null}
+{"turn_id": "test_seen:9243:1", "generation": "hello, how can i help you?", "error": null}
+{"turn_id": "test_seen:9243:3", "generation": "sure, i can help you with that.  what is your name?", "error": null}
+{"turn_id": "test_seen:9243:9", "generation": "okay, i can help you with that.  the shirt is made of cotton, and it is machine washable.  you can wash it in cold water, and dry it on low heat.", "error": null}
+{"turn_id": "test_seen:9243:10", "generation": "the shirt is made of cotton and is machine washable.  it is not recommended to dry it in the dryer.", "error": null}
+{"turn_id": "test_seen:9243:12", "generation": "is there anything else i can help you with?", "error": null}
+{"turn_id": "test_seen:9243:13", "generation": "is there anything else i can help you with?", "error": null}
+{"turn_id": "test_seen:9243:15", "generation": "okay, have a great day!", "error": null}
+{"turn_id": "test_seen:4389:0", "generation": "hello, how can i help you today?", "error": null}
+{"turn_id": "test_seen:4389:3", "generation": "i can help you with that", "error": null}
+{"turn_id": "test_seen:4389:4", "generation": "can i please have your full name or account id", "error": null}
+{"turn_id": "test_seen:4389:9", "generation": "can i have your username, email address and order id", "error": null}
+{"turn_id": "test_seen:4389:14", "generation": "what is your membership level", "error": null}
+{"turn_id": "test_seen:4389:15", "generation": "i will refund you the amount", "error": null}
+{"turn_id": "test_seen:4389:18", "generation": "is there anything else i can help you with?", "error": null}
+{"turn_id": "test_seen:4389:20", "generation": "is there anything else i can help you with?", "error": null}
+{"turn_id": "test_seen:4588:0", "generation": "hello, how can i help you today?", "error": null}
+{"turn_id": "test_seen:4588:2", "generation": "sure. what is your name?", "error": null}
+{"turn_id": "test_seen:4588:7", "generation": "the lining is made of 100% cotton.", "error": null}
+{"turn_id": "test_seen:4588:8", "generation": "it is made of 100% polyester, 100% cotton, and 100% wool.", "error": null}
+{"turn_id": "test_seen:4588:9", "generation": "it is also waterproof.", "error": null}
+{"turn_id": "test_seen:4588:10", "generation": "it is also waterproof", "error": null}
+{"turn_id": "test_seen:4162:0", "generation": "hello, how can i help you today?", "error": null}
+{"turn_id": "test_seen:4162:3", "generation": "okay, can i have your full name and account id", "error": null}
+{"turn_id": "test_seen:4162:6", "generation": "i can help you with that", "error": null}
+{"turn_id": "test_seen:4162:10", "generation": "okay, i have validated your purchase", "error": null}
+{"turn_id": "test_seen:4162:13", "generation": "okay, i have sent you a link to the return policy.", "error": null}
+{"turn_id": "test_seen:4162:17", "generation": "okay, i have sent you a link to the return policy.", "error": null}
+{"turn_id": "test_seen:4162:20", "generation": "okay, i have the address for the shipping label.", "error": null}
+{"turn_id": "test_seen:4162:23", "generation": "okay, i have processed your return.", "error": null}
+{"turn_id": "test_seen:4162:25", "generation": "okay, have a nice day.", "error": null}
+{"turn_id": "test_seen:6156:0", "generation": "hello, how can i help you today?", "error": null}
+{"turn_id": "test_seen:6156:2", "generation": "sure!", "error": null}
+{"turn_id": "test_seen:6156:7", "generation": "alright, i can see that you have a $100 balance due today.", "error": null}
+{"turn_id": "test_seen:6156:9", "generation": "okay, i can go ahead and process that payment for you.", "error": null}
+{"turn_id": "test_seen:6156:12", "generation": "your subscription is now active and you owe $49.", "error": null}
+{"turn_id": "test_seen:6156:14", "generation": "have a great day!", "error": null}
+{"turn_id": "test_seen:8904:0", "generation": "hello, how can i help you today?", "error": null}
+{"turn_id": "test_seen:8904:4", "generation": "okay, i can look into that for you. can i have your account id and order id?", "error": null}
+{"turn_id": "test_seen:8904:9", "generation": "okay, i'm going to check the system to see if it's an error.", "error": null}
+{"turn_id": "test_seen:8904:13", "generation": "great, i've successfully validated your purchase.", "error": null}
+{"turn_id": "test_seen:8904:15", "generation": "okay, i'm sorry, but i can't see anything wrong with your order.", "error": null}
+{"turn_id": "test_seen:8904:17", "generation": "is there anything else i can help you with?", "error": null}
+{"turn_id": "test_seen:8904:19", "generation": "have a great day!", "error": null}
+{"turn_id": "test_seen:3550:0", "generation": "hello, how can i help you today?", "error": null}
+{"turn_id": "test_seen:3550:2", "generation": "sure, i can help with that. may i have your full name or account id?", "error": null}
+{"turn_id": "test_seen:3550:7", "generation": "i'm sorry, but i can't offer you a discount for overnight shipping.", "error": null}
+{"turn_id": "test_seen:3550:9", "generation": "is there anything else i can help you with?", "error": null}
+{"turn_id": "test_seen:3550:11", "generation": "i apologize for the inconvenience.", "error": null}
+{"turn_id": "test_seen:3550:13", "generation": "thank you for contacting acmebrand. have a great day!", "error": null}
+{"turn_id": "test_seen:169:0", "generation": "hello, how can i help you today?", "error": null}
+{"turn_id": "test_seen:169:3", "generation": "i'm sorry to hear that. let me look into that for you.", "error": null}
+{"turn_id": "test_seen:169:5", "generation": "thank you.", "error": null}
+{"turn_id": "test_seen:169:7", "generation": "i'm sorry to hear that. let me check with our purchasing department to see if they can resend the order for you.", "error": null}
+{"turn_id": "test_seen:169:8", "generation": "can i have your address please?", "error": null}
+{"turn_id": "test_seen:169:11", "generation": "i'm sorry, but i can't send it to you. i need to verify your identity.", "error": null}
+{"turn_id": "test_seen:169:13", "generation": "i'm sorry, but i can't send you a new order.", "error": null}
+{"turn_id": "test_seen:169:15", "generation": "i'm so sorry for the inconvenience.", "error": null}
+{"turn_id": "test_seen:169:17", "generation": "have a great day!", "error": null}
+{"turn_id": "test_seen:6657:0", "generation": "hello, how can i help you today?", "error": null}
+{"turn_id": "test_seen:6657:5", "generation": "ok, let me check that for you", "error": null}
+{"turn_id": "test_seen:6657:7", "generation": "is there anything else i can help you with today", "error": null}
+{"turn_id": "test_seen:6657:9", "generation": "have a great day", "error": null}
+{"turn_id": "test_seen:8450:0", "generation": "hello, how can i help you today?", "error": null}
+{"turn_id": "test_seen:8450:2", "generation": "i see, i can help you with that.", "error": null}
+{"turn_id": "test_seen:8450:4", "generation": "ok, i'll need your full name or account id to pull up your account.", "error": null}
+{"turn_id": "test_seen:8450:7", "generation": "can i get your username?", "error": null}
+{"turn_id": "test_seen:8450:11", "generation": "thank you.", "error": null}
+{"turn_id": "test_seen:8450:12", "generation": "is there anything else i can help you with today?", "error": null}
+{"turn_id": "test_seen:8450:14", "generation": "have a great day!", "error": null}
+{"turn_id": "test_seen:3176:0", "generation": "hello, how can i help you today?", "error": null}
+{"turn_id": "test_seen:3176:2", "generation": "sure, i can help you with that. can i have your name please?", "error": null}
+{"turn_id": "test_seen:3176:4", "generation": "okay, i can help you with that. could i have your username, email address, and order id?", "error": null}
+{"turn_id": "test_seen:3176:10", "generation": "yes, that's correct.", "error": null}
+{"turn_id": "test_seen:3176:13", "generation": "i'm glad i could help you with that. is there anything else i can do for you today?", "error": null}
+{"turn_id": "test_seen:3176:15", "generation": "you're welcome. have a great day!", "error": null}
+{"turn_id": "test_seen:3342:0", "generation": "hello, how can i help you today?", "error": null}
+{"turn_id": "test_seen:3342:2", "generation": "i'm sorry to hear that. let me help you with that.", "error": null}
+{"turn_id": "test_seen:3342:5", "generation": "thank you norman. can i also get your username, email address, and order id?", "error": null}
+{"turn_id": "test_seen:3342:9", "generation": "thank you. i have pulled up your account.", "error": null}
+{"turn_id": "test_seen:3342:12", "generation": "great, i can help you with that.", "error": null}
+{"turn_id": "test_seen:3342:14", "generation": "great. i can process your return for you.", "error": null}
+{"turn_id": "test_seen:3342:15", "generation": "can i help you with anything else today?", "error": null}
+{"turn_id": "test_seen:3342:18", "generation": "thank you. can you please provide me with your full address for the return label?", "error": null}
+{"turn_id": "test_seen:3342:21", "generation": "great! i have processed that for you.", "error": null}
+{"turn_id": "test_seen:3342:22", "generation": "is there anything else i can help you with today?", "error": null}
+{"turn_id": "test_seen:3342:24", "generation": "thank you and have a great day!", "error": null}
+{"turn_id": "test_seen:143:1", "generation": "hello, how can i help you?", "error": null}
+{"turn_id": "test_seen:143:6", "generation": "i'm sorry to hear that.", "error": null}
+{"turn_id": "test_seen:143:10", "generation": "i am sorry to hear that.", "error": null}
+{"turn_id": "test_seen:143:14", "generation": "i will need your full name, account id, and order id.", "error": null}
+{"turn_id": "test_seen:143:17", "generation": "great, i can get that for you.", "error": null}
+{"turn_id": "test_seen:143:20", "generation": "thank you.", "error": null}
+{"turn_id": "test_seen:143:23", "generation": "thank you, mr. phoenix.", "error": null}
+{"turn_id": "test_seen:143:28", "generation": "i will give you a new one.", "error": null}
+{"turn_id": "test_seen:143:31", "generation": "i will just need your pin number, please.", "error": null}
+{"turn_id": "test_seen:143:34", "generation": "yes, it will work on our site.", "error": null}
+{"turn_id": "test_seen:143:36", "generation": "i'm sorry, i can't help you with that.", "error": null}
+{"turn_id": "test_seen:143:39", "generation": "have a great day!", "error": null}
+{"turn_id": "test_seen:3601:0", "generation": "hello, how can i help you today?", "error": null}
+{"turn_id": "test_seen:3601:2", "generation": "i'm sorry to hear that. can i please have your name?", "error": null}
+{"turn_id": "test_seen:3601:5", "generation": "thank you, crystal. i'll also need your username, email address, and order id.", "error": null}
+{"turn_id": "test_seen:3601:8", "generation": "i'm sorry to hear that. may i have your username, email address, and order id?", "error": null}
+{"turn_id": "test_seen:3601:11", "generation": "is there anything else i can help you with?", "error": null}
+{"turn_id": "test_seen:3601:13", "generation": "have a great day!", "error": null}
+{"turn_id": "test_seen:7102:0", "generation": "hello, how can i help you today?", "error": null}
+{"turn_id": "test_seen:7102:4", "generation": "sure, what is your question?", "error": null}
+{"turn_id": "test_seen:7102:6", "generation": "can i have your full name or account id?", "error": null}
+{"turn_id": "test_seen:7102:10", "generation": "okay, i'm going to check on that for you.", "error": null}
+{"turn_id": "test_seen:7102:12", "generation": "okay, i can't do anything about that stain, but i can tell you that it's very easy to remove.", "error": null}
+{"turn_id": "test_seen:7102:14", "generation": "okay, i can help you with that.", "error": null}
+{"turn_id": "test_seen:7102:16", "generation": "you can still wash it, but you should wait until it's completely dry before drying.", "error": null}
+{"turn_id": "test_seen:7102:18", "generation": "is there anything else i can help you with today?", "error": null}
+{"turn_id": "test_seen:7102:20", "generation": "is there anything else i can help you with?", "error": null}
+{"turn_id": "test_seen:7102:22", "generation": "have a great day!", "error": null}
+{"turn_id": "test_seen:4960:0", "generation": "hello, how can i help you today?", "error": null}
+{"turn_id": "test_seen:4960:1", "generation": "how can i help you?", "error": null}
+{"turn_id": "test_seen:4960:2", "generation": "how may i help you?", "error": null}
+{"turn_id": "test_seen:4960:5", "generation": "sure, i can help you with that", "error": null}
+{"turn_id": "test_seen:4960:6", "generation": "may i have your full name or account id?", "error": null}
+{"turn_id": "test_seen:4960:9", "generation": "what is your account id", "error": null}
+{"turn_id": "test_seen:4960:10", "generation": "what is the shipping status?", "error": null}
+{"turn_id": "test_seen:4960:17", "generation": "what is your membership level?", "error": null}
+{"turn_id": "test_seen:4960:19", "generation": "what is your membership level?", "error": null}
+{"turn_id": "test_seen:4960:22", "generation": "i am sorry about that!", "error": null}
+{"turn_id": "test_seen:4960:23", "generation": "i will send a new email to the correct address", "error": null}
+{"turn_id": "test_seen:1529:0", "generation": "hello, how can i help you today?", "error": null}
+{"turn_id": "test_seen:1529:2", "generation": "i can help you with that. can i have your full name or account id?", "error": null}
+{"turn_id": "test_seen:1529:4", "generation": "okay, i can help you with that.", "error": null}
+{"turn_id": "test_seen:1529:7", "generation": "thank you, rodriguez. can you please provide me with your username, email address and order id?", "error": null}
+{"turn_id": "test_seen:1529:12", "generation": "thank you, and what is your membership level?", "error": null}
+{"turn_id": "test_seen:1529:16", "generation": "ok, i have processed your refund.  i will send you a link to your account so you can verify your refund.", "error": null}
+{"turn_id": "test_seen:1529:20", "generation": "ok, i have refunded your credit card.", "error": null}
+{"turn_id": "test_seen:1529:25", "generation": "your refund has been made.  is there anything else i can help you with today?", "error": null}
+{"turn_id": "test_seen:1529:26", "generation": "is there anything else i can help you with today?", "error": null}
+{"turn_id": "test_seen:1529:28", "generation": "thank you, have a great day!", "error": null}
+{"turn_id": "test_seen:10186:0", "generation": "hello, how can i help you today?", "error": null}
+{"turn_id": "test_seen:10186:2", "generation": "sure, what's your question?", "error": null}
+{"turn_id": "test_seen:10186:4", "generation": "i can help you with that!", "error": null}
+{"turn_id": "test_seen:10186:7", "generation": "the jeans are dark blue.", "error": null}
+{"turn_id": "test_seen:10186:8", "generation": "i'm sorry, but i can't find anything about that.", "error": null}
+{"turn_id": "test_seen:10186:9", "generation": "is there anything else i can help you with today?", "error": null}
+{"turn_id": "test_seen:10186:12", "generation": "yes, they are available in both colors.", "error": null}
+{"turn_id": "test_seen:10186:14", "generation": "you're welcome!", "error": null}
+{"turn_id": "test_seen:10186:16", "generation": "you too!", "error": null}
+{"turn_id": "test_seen:2280:0", "generation": "hello, how can i help you today?", "error": null}
+{"turn_id": "test_seen:2280:2", "generation": "i can look into that for you.", "error": null}
+{"turn_id": "test_seen:2280:6", "generation": "overnight shipping is available for orders that are shipped within 24 hours of receiving the order.", "error": null}
+{"turn_id": "test_seen:2280:7", "generation": "it is available for orders that are over 25 pounds.", "error": null}
+{"turn_id": "test_seen:2280:9", "generation": "i can help you with that.", "error": null}
+{"turn_id": "test_seen:2280:11", "generation": "what is your name?", "error": null}
+{"turn_id": "test_seen:2280:12", "generation": "for 10 pounds or more it is 49.99", "error": null}
+{"turn_id": "test_seen:2280:13", "generation": "for 20 pounds or more it is 69.99", "error": null}
+{"turn_id": "test_seen:2280:14", "generation": "is there anything else i can help you with?", "error": null}
+{"turn_id": "test_seen:2280:16", "generation": "have a good day", "error": null}
+{"turn_id": "test_seen:6799:0", "generation": "hello, how can i help you today?", "error": null}
+{"turn_id": "test_seen:6799:2", "generation": "i can help you with that", "error": null}
+{"turn_id": "test_seen:6799:6", "generation": "can i get your account id and order id", "error": null}
+{"turn_id": "test_seen:6799:9", "generation": "you are welcome", "error": null}
+{"turn_id": "test_seen:6799:11", "generation": "i can do that for you", "error": null}
+{"turn_id": "test_seen:6799:14", "generation": "i will be sending you a link to the order so you can check it out", "error": null}
+{"turn_id": "test_seen:6799:16", "generation": "is there anything else i can help you with?", "error": null}
+{"turn_id": "test_seen:6799:18", "generation": "have a good day", "error": null}
+{"turn_id": "test_seen:2415:0", "generation": "hello, how can i help you today?", "error": null}
+{"turn_id": "test_seen:2415:2", "generation": "okay. i can help you with that.", "error": null}
+{"turn_id": "test_seen:2415:4", "generation": "okay. can i have your full name or account id?", "error": null}
+{"turn_id": "test_seen:2415:6", "generation": "okay. can i have your full name or account id?", "error": null}
+{"turn_id": "test_seen:2415:7", "generation": "can i have your full name or account id please?", "error": null}
+{"turn_id": "test_seen:2415:10", "generation": "thank you norman", "error": null}
+{"turn_id": "test_seen:2415:14", "generation": "okay norman, i was able to pull up your account", "error": null}
+{"turn_id": "test_seen:2415:15", "generation": "can you tell me the current status of the shipment?", "error": null}
+{"turn_id": "test_seen:2415:19", "generation": "okay i've validated your purchase.", "error": null}
+{"turn_id": "test_seen:2415:20", "generation": "okay the order has been delivered and is now delivered.", "error": null}
+{"turn_id": "test_seen:2415:22", "generation": "okay the order has been delivered on the original date.", "error": null}
+{"turn_id": "test_seen:2415:24", "generation": "is there anything else i can help you with?", "error": null}
+{"turn_id": "test_seen:2415:26", "generation": "is there anything else i can help you with?", "error": null}
+{"turn_id": "test_seen:2415:28", "generation": "have a great day!", "error": null}
+{"turn_id": "test_seen:8735:1", "generation": "hello, how can i help you?", "error": null}
+{"turn_id": "test_seen:8735:3", "generation": "ok, i can help you with that", "error": null}
+{"turn_id": "test_seen:8735:4", "generation": "can i have your full name or account id", "error": null}
+{"turn_id": "test_seen:8735:7", "generation": "okay, i will need your email address to send you a reset code", "error": null}
+{"turn_id": "test_seen:8735:10", "generation": "okay, i will need your username and email address.", "error": null}
+{"turn_id": "test_seen:8735:12", "generation": "i will also send you a link to your account so you can check it out.", "error": null}
+{"turn_id": "test_seen:8735:13", "generation": "is there anything else i can help you with?", "error": null}
+{"turn_id": "test_seen:8735:15", "generation": "okay, have a great day!", "error": null}
+{"turn_id": "test_seen:9807:0", "generation": "hello, how can i help you today?", "error": null}
+{"turn_id": "test_seen:9807:2", "generation": "i'm sorry to hear that. let me look into this for you.", "error": null}
+{"turn_id": "test_seen:9807:3", "generation": "may i have your full name or account id?", "error": null}
+{"turn_id": "test_seen:9807:5", "generation": "i am sorry, but i cannot provide you with that information.", "error": null}
+{"turn_id": "test_seen:9807:12", "generation": "thank you.", "error": null}
+{"turn_id": "test_seen:9807:14", "generation": "i am unable to find the purchase on our website.", "error": null}
+{"turn_id": "test_seen:9807:15", "generation": "i am going to issue a refund to your account.", "error": null}
+{"turn_id": "test_seen:9807:17", "generation": "i have removed the charge from your account.", "error": null}
+{"turn_id": "test_seen:9807:19", "generation": "is there anything else i can help you with today?", "error": null}
+{"turn_id": "test_seen:9807:20", "generation": "is there anything else i can help you with today?", "error": null}
+{"turn_id": "test_seen:9807:22", "generation": "thank you. have a great day!", "error": null}
+{"turn_id": "test_seen:456:0", "generation": "hello, how can i help you today?", "error": null}
+{"turn_id": "test_seen:456:2", "generation": "okay, i can help you with that.", "error": null}
+{"turn_id": "test_seen:456:4", "generation": "okay, can i have your full name or account id?", "error": null}
+{"turn_id": "test_seen:456:7", "generation": "thank you.", "error": null}
+{"turn_id": "test_seen:456:9", "generation": "okay, i will check on that for you.", "error": null}
+{"turn_id": "test_seen:456:10", "generation": "can i have your username and email address?", "error": null}
+{"turn_id": "test_seen:456:12", "generation": "okay, have a great day!", "error": null}
+{"turn_id": "test_seen:2627:0", "generation": "hello, how can i help you today?", "error": null}
+{"turn_id": "test_seen:2627:2", "generation": "sure, what is your name?", "error": null}
+{"turn_id": "test_seen:2627:5", "generation": "overnight shipping is $49.99 for the first 25 pounds, $69.99 for the next 25 pounds, and $99.99 for the", "error": null}

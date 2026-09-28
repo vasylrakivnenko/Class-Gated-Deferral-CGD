@@ -79,8 +79,9 @@ clause presence. The numbers are not comparable, so the panel carries no
 baseline rather than a mislabelled one. Measuring the paid arm on these same
 14,790 decisions is the open item.
 
-Unlike FinBen at 71.5% and BeaverTails at 99.8%, CUAD is clean: only 4 contract
-pairs exceed 0.90 similarity and none of them cross the official split.
+Unlike FinBen at 71.5% and BeaverTails at 99.8% (both measured in
+`contamination/`), CUAD is clean: only 4 contract pairs exceed 0.90 similarity
+and none of them cross the official split.
 
 ## The three rows settled from the literature rather than by spending
 

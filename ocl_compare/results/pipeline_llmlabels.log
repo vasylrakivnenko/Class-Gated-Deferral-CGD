@@ -1,0 +1,207 @@
+Run the class-aware AutoML pipeline over the reconstructed OCL streams.
+
+`src/downshift/classpipe.py` holds the reusable analysis; this file holds only
+what is specific to these four datasets. Point it at any (texts, gold, expert)
+triple and it does the same thing.
+    pair-scoring: 21,406 pairs x ~22 tokens = 470,932 units, within the 4,000,000 budget
+
+==============================================================================
+hatespeech [trained on llm]  n=10703  classes=2  imbalance 1:7.95
+==============================================================================
+  ! G1: a constant '0' predictor scores 0.8883 accuracy. Raw accuracy ranks systems by closeness to degenerate prediction on this dataset -- headline metric forced to balanced accuracy.
+  ! G2: 257 rows (2.40%) share text with another row; CV is grouped so copies cannot straddle a fold.
+  headline metric: balanced_accuracy  (resolution +/-0.0102)
+
+  candidates (balanced accuracy):
+    bge-large-en-v1.5+logreg    0.8084  <- best
+    nli+logreg                  0.8029
+    bge-small-en-v1.5+logreg    0.7872
+    tfidf+logreg                0.7637
+    constant-majority           0.5000
+
+  G3 pass: at least one pair is not ROC-ordered, so some genuine complementarity exists.
+  G4 pass: members disagree on 14.9% of items.
+    oracle 0.9230 vs independence null 0.9976
+  G5 pass: spread 0.3022 across 2 classes, cheap arm wins 1.
+  G7 FAIL: a vote for the weakest class is right only 30.4% of the time. Reliability-based selection will avoid that class and drift to the majority.
+
+  bge-large-en-v1.5+logreg vs expert LLM: 0.8084 vs 0.8331  delta -0.0247 CI [-0.0360,-0.0133] p=0.000
+  non-inferiority at 2pts: clearly worse by more than the 2% margin
+
+  deferral dial -- balanced accuracy by share sent to the LLM
+     LLM share   confidence  class-aware   gain/+10% spend
+          0.0%       0.8084       0.8084                --
+          5.0%       0.8116       0.8097           +0.0063
+         10.1%       0.8136       0.8152           +0.0040
+         20.1%       0.8239       0.8177           +0.0102
+         30.0%       0.8283       0.8192           +0.0045
+         49.9%       0.8312       0.8314           +0.0014
+         74.9%       0.8322       0.8321           +0.0004
+        100.0%       0.8331       0.8331           +0.0004
+    curve max (OPTIMISTIC -- chosen by looking at its own score, 16 configs): 0.8331 at 100.0% via confidence
+    NESTED (rule+budget picked on training folds only): 0.8331 at 100.0% LLM  [selection bias +0.0000]
+      per-fold picks: confidence, budgets [1.0, 1.0, 1.0, 1.0, 1.0], stable=True
+    reference: free alone 0.8084, LLM alone 0.8331
+    beats BOTH ends by a resolvable margin? False  (vs free +0.0247, vs LLM +0.0000, floor +/-0.0102)
+      ! G6: +0.0000 is inside the +/-0.0102 this dataset can resolve -- not a difference
+
+  per-class guaranteed coverage (free share | guarantee holds):
+    bar 0.80  free  69.2%  balanced 0.8193  holds=False
+    bar 0.90  free  68.1%  balanced 0.8194  holds=True
+    bar 0.95  free  68.1%  balanced 0.8194  holds=True
+
+  >> ship: bge-large-en-v1.5+logreg
+  >> build class-aware layer: False
+     G7 FAIL: a vote for the weakest class is right only 30.4% of the time. Reliability-based selection will avoid that class and drift to the majority.
+    pair-scoring: 53,662 pairs x ~28 tokens = 1,502,536 units, within the 4,000,000 budget
+
+==============================================================================
+isear [trained on llm]  n=7666  classes=7  imbalance 1:1.00
+==============================================================================
+  ! G2: 218 rows (2.84%) share text with another row; CV is grouped so copies cannot straddle a fold.
+  headline metric: accuracy  (resolution +/-0.0057)
+
+  candidates (balanced accuracy):
+    bge-large-en-v1.5+logreg    0.6557  <- best
+    nli+logreg                  0.6137
+    bge-small-en-v1.5+logreg    0.6108
+    tfidf+logreg                0.5843
+    constant-majority           0.1429
+
+  G3 n/a (multiclass)
+  G4 pass: members disagree on 31.5% of items.
+    oracle 0.7882 vs independence null 0.9786
+  G5 pass: spread 0.0932 across 7 classes, cheap arm wins 1.
+  G7 pass: every class's vote is right more often than not (worst 54.3%).
+
+  class-aware layer (vs bge-large-en-v1.5+logreg 0.6557):
+    selection_dcs_lca   0.6325  -0.0232 CI [-0.0302,-0.0162] p=0.000 holm=True
+    stacking            0.6677  +0.0120 CI [+0.0061,+0.0180] p=0.000 holm=True
+    -> stacking beats the best single model by +0.0120 and survives Holm
+
+  stacking vs expert LLM: 0.6677 vs 0.7036  delta -0.0359 CI [-0.0445,-0.0274] p=0.000
+  non-inferiority at 2pts: clearly worse by more than the 2% margin
+
+  deferral dial -- balanced accuracy by share sent to the LLM
+     LLM share   confidence  class-aware   gain/+10% spend
+          0.0%       0.6677       0.6677                --
+          5.0%       0.6759       0.6696           +0.0164
+         10.0%       0.6806       0.6695           +0.0094
+         20.1%       0.6916       0.6708           +0.0109
+         30.0%       0.6965       0.6689           +0.0050
+         50.1%       0.7032       0.6774           +0.0033
+         75.0%       0.7041       0.6982           +0.0004
+        100.0%       0.7036       0.7036           -0.0002
+    curve max (OPTIMISTIC -- chosen by looking at its own score, 16 configs): 0.7041 at 75.0% via confidence
+    NESTED (rule+budget picked on training folds only): 0.7041 at 75.0% LLM  [selection bias +0.0000]
+      per-fold picks: confidence, budgets [0.75, 0.75, 0.75, 0.75, 0.75], stable=True
+    reference: free alone 0.6677, LLM alone 0.7036
+    beats BOTH ends by a resolvable margin? False  (vs free +0.0364, vs LLM +0.0005, floor +/-0.0057)
+      ! G6: +0.0005 is inside the +/-0.0057 this dataset can resolve -- not a difference
+
+  per-class guaranteed coverage (free share | guarantee holds):
+    bar 0.80  free  59.7%  balanced 0.6970  holds=False
+    bar 0.90  free  43.7%  balanced 0.7024  holds=False
+    bar 0.95  free  33.4%  balanced 0.7051  holds=True
+
+  >> ship: stacking
+  >> build class-aware layer: True
+     all gates open -- a class-aware layer has something to work with
+    pair-scoring: 13,024 pairs x ~11 tokens = 143,264 units, within the 4,000,000 budget
+
+==============================================================================
+fever [trained on llm]  n=6512  classes=2  imbalance 1:1.00
+==============================================================================
+  headline metric: accuracy  (resolution +/-0.0062)
+
+  candidates (balanced accuracy):
+    bge-large-en-v1.5+logreg    0.7110  <- best
+    nli+logreg                  0.6946
+    bge-small-en-v1.5+logreg    0.6902
+    tfidf+logreg                0.6402
+    constant-majority           0.5000
+
+  G3 pass: at least one pair is not ROC-ordered, so some genuine complementarity exists.
+  G4 pass: members disagree on 30.3% of items.
+    oracle 0.9289 vs independence null 0.9902
+  G5 FAIL: per-class advantage is flat (spread 0.0095); a class-aware SELECTION layer has nothing to act on. Budget-constrained class-aware allocation is a separate rule, reported on the dial regardless.
+  G7 pass: every class's vote is right more often than not (worst 70.1%).
+
+  bge-large-en-v1.5+logreg vs expert LLM: 0.7110 vs 0.7997  delta -0.0886 CI [-0.1014,-0.0759] p=0.000
+  non-inferiority at 2pts: clearly worse by more than the 2% margin
+
+  deferral dial -- balanced accuracy by share sent to the LLM
+     LLM share   confidence  class-aware   gain/+10% spend
+          0.0%       0.7110       0.7110                --
+          5.1%       0.7222       0.7213           +0.0221
+         10.0%       0.7324       0.7309           +0.0204
+         20.0%       0.7541       0.7432           +0.0218
+         29.9%       0.7703       0.7500           +0.0163
+         49.9%       0.7905       0.7555           +0.0101
+         75.0%       0.8010       0.7966           +0.0042
+        100.0%       0.7997       0.7997           -0.0006
+    curve max (OPTIMISTIC -- chosen by looking at its own score, 16 configs): 0.8010 at 75.0% via confidence
+    NESTED (rule+budget picked on training folds only): 0.8000 at 79.9% LLM  [selection bias +0.0011]
+      per-fold picks: confidence, budgets [1.0, 0.75, 0.75, 0.75, 0.75], stable=False
+    reference: free alone 0.7110, LLM alone 0.7997
+    beats BOTH ends by a resolvable margin? False  (vs free +0.0890, vs LLM +0.0003, floor +/-0.0062)
+      ! G6: +0.0003 is inside the +/-0.0062 this dataset can resolve -- not a difference
+
+  per-class guaranteed coverage (free share | guarantee holds):
+    bar 0.80  free  59.9%  balanced 0.7774  holds=True
+    bar 0.90  free  24.9%  balanced 0.7983  holds=False
+    bar 0.95  free  19.3%  balanced 0.8013  holds=False
+
+  >> ship: bge-large-en-v1.5+logreg
+  >> build class-aware layer: False
+     G5 FAIL: per-class advantage is flat (spread 0.0095); a class-aware SELECTION layer has nothing to act on. Budget-constrained class-aware allocation is a separate rule, reported on the dial regardless.
+    pair-scoring: 50,000 pairs x ~256 tokens = 12,800,000 units, over the 4,000,000 budget -- skipped; pair scorers are not worth hours on a long-document task
+
+==============================================================================
+imdb [trained on llm]  n=25000  classes=2  imbalance 1:1.00
+==============================================================================
+  ! G2: 188 rows (0.75%) share text with another row; CV is grouped so copies cannot straddle a fold.
+  headline metric: accuracy  (resolution +/-0.0032)
+
+  candidates (balanced accuracy):
+    bge-large-en-v1.5+logreg    0.9358  <- best
+    bge-small-en-v1.5+logreg    0.9226
+    tfidf+logreg                0.8964
+    constant-majority           0.5000
+
+  G3 pass: at least one pair is not ROC-ordered, so some genuine complementarity exists.
+  G4 FAIL: members agree 92.0% of the time -- one classifier repeated. Selection has almost nothing to choose between.
+    oracle 0.9706 vs independence null 0.9995
+  G5 FAIL: per-class advantage is flat (spread 0.0368); a class-aware SELECTION layer has nothing to act on. Budget-constrained class-aware allocation is a separate rule, reported on the dial regardless.
+  G7 pass: every class's vote is right more often than not (worst 92.1%).
+
+  bge-large-en-v1.5+logreg vs expert LLM: 0.9358 vs 0.9415  delta -0.0057 CI [-0.0086,-0.0029] p=0.000
+  non-inferiority at 2pts: non-inferior within the 2% margin
+
+  deferral dial -- balanced accuracy by share sent to the LLM
+     LLM share   confidence  class-aware   gain/+10% spend
+          0.0%       0.9358       0.9358                --
+          5.0%       0.9420       0.9351           +0.0123
+         10.0%       0.9437       0.9316           +0.0034
+         20.0%       0.9428       0.9302           -0.0008
+         30.0%       0.9424       0.9297           -0.0004
+         50.0%       0.9418       0.9342           -0.0003
+         74.9%       0.9416       0.9415           -0.0001
+        100.0%       0.9415       0.9415           -0.0000
+    curve max (OPTIMISTIC -- chosen by looking at its own score, 16 configs): 0.9437 at 10.0% via confidence
+    NESTED (rule+budget picked on training folds only): 0.9437 at 10.0% LLM  [selection bias +0.0000]
+      per-fold picks: confidence, budgets [0.1, 0.1, 0.1, 0.1, 0.1], stable=True
+    reference: free alone 0.9358, LLM alone 0.9415
+    beats BOTH ends by a resolvable margin? False  (vs free +0.0079, vs LLM +0.0022, floor +/-0.0032)
+      ! G6: +0.0022 is inside the +/-0.0032 this dataset can resolve -- not a difference
+
+  per-class guaranteed coverage (free share | guarantee holds):
+    bar 0.80  free 100.0%  balanced 0.9358  holds=True
+    bar 0.90  free 100.0%  balanced 0.9358  holds=True
+    bar 0.95  free  96.7%  balanced 0.9430  holds=True
+
+  >> ship: bge-large-en-v1.5+logreg
+  >> build class-aware layer: False
+     G4 FAIL: members agree 92.0% of the time -- one classifier repeated. Selection has almost nothing to choose between.; G5 FAIL: per-class advantage is flat (spread 0.0368); a class-aware SELECTION layer has nothing to act on. Budget-constrained class-aware allocation is a separate rule, reported on the dial regardless.
+
+wrote /Users/vasyl/zadumai/ocl_compare/results/pipeline_llmlabels.json (168s)
