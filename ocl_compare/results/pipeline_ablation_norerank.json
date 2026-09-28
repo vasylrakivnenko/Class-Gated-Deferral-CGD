@@ -1,0 +1,443 @@
+{
+ "what": "Class-aware AutoML pipeline over the OCL streams.",
+ "ocl_commit": "285e03fc98afabdf7768558d33ee7b5f662b5f19",
+ "sources": {
+  "preprocessed_archive": {
+   "url": "https://drive.usercontent.google.com/download?id=1vQR7pqVqmYndHkfpcEpwCSWYDXON0gkl&export=download",
+   "sha256": "c8a31ebdc474eb285243a6499ab0fd59bedae9290d5cddf2ea7198061d92d404",
+   "bytes": 13712029
+  },
+  "imdb_gpt3.5": {
+   "url": "https://raw.githubusercontent.com/Flitternie/online_cascade_learning/285e03fc98afabdf7768558d33ee7b5f662b5f19/data/llm_anntations/imdb_gpt3.5_turbo_1106.txt",
+   "sha256": "e355af8351d2e98a60630e88c80ff340349b55d0a8412f2184488f1d1e42c8d7",
+   "bytes": 225000
+  },
+  "imdb_llama2": {
+   "url": "https://raw.githubusercontent.com/Flitternie/online_cascade_learning/285e03fc98afabdf7768558d33ee7b5f662b5f19/data/llm_anntations/imdb_llama2_70b_chat.txt",
+   "sha256": "cf62a99acc312fffbd9fe3c99004243deb30af426f37f196b86c84e9ddef8038",
+   "bytes": 50862
+  },
+  "hatespeech_gpt3.5": {
+   "url": "https://raw.githubusercontent.com/Flitternie/online_cascade_learning/285e03fc98afabdf7768558d33ee7b5f662b5f19/data/llm_anntations/hatespeech_gpt3.5_turbo_1106.txt",
+   "sha256": "bc7ea34a5157dcea3f8b0ba629dfb6afa95537f5da25484a74c21f09b5a85948",
+   "bytes": 34688
+  },
+  "hatespeech_llama2": {
+   "url": "https://raw.githubusercontent.com/Flitternie/online_cascade_learning/285e03fc98afabdf7768558d33ee7b5f662b5f19/data/llm_anntations/hatespeech_llama2_70b_chat.txt",
+   "sha256": "33557dafe0926a71e8c436244d24a778a9d783e3fa7e73cdc7ec83762d3415a9",
+   "bytes": 21406
+  },
+  "isear_gpt3.5": {
+   "url": "https://raw.githubusercontent.com/Flitternie/online_cascade_learning/285e03fc98afabdf7768558d33ee7b5f662b5f19/data/llm_anntations/isear_gpt3.5_turbo_1106.txt",
+   "sha256": "80028b1034d5b44801ddb83c4c9cece4346b7a45673731dfe783f79628cff595",
+   "bytes": 47522
+  },
+  "isear_llama2": {
+   "url": "https://raw.githubusercontent.com/Flitternie/online_cascade_learning/285e03fc98afabdf7768558d33ee7b5f662b5f19/data/llm_anntations/isear_llama2_70b_chat.txt",
+   "sha256": "14fa40a4351ecda17d8d62dda8c052ec658f8aec4522497ea5b950364e41039f",
+   "bytes": 15573
+  },
+  "fever_gpt3.5": {
+   "url": "https://raw.githubusercontent.com/Flitternie/online_cascade_learning/285e03fc98afabdf7768558d33ee7b5f662b5f19/data/llm_anntations/fever_gpt3.5_turbo_1106.txt",
+   "sha256": "dada9d5e61783e14b0e35da344483f41d13621ef3da5f0a2d6cd0baf0c41c155",
+   "bytes": 36493
+  },
+  "fever_llama2": {
+   "url": "https://raw.githubusercontent.com/Flitternie/online_cascade_learning/285e03fc98afabdf7768558d33ee7b5f662b5f19/data/llm_anntations/fever_llama2_70b_chat.txt",
+   "sha256": "eb78c908d73b2fc0be437b4e1db1b9a83e5b4db2aa0d82bc9597875a04170fd3",
+   "bytes": 13024
+  }
+ },
+ "environment": {
+  "utc": "2026-09-24T06:59:22+00:00",
+  "python": "3.12.8",
+  "platform": "macOS-26.6.1-arm64-arm-64bit",
+  "machine": "arm64",
+  "packages": {
+   "numpy": "2.5.3",
+   "pandas": "3.0.5",
+   "scikit-learn": null
+  },
+  "git_commit": "ad67f12205a4f1b001dca52388b36b259acbe3fd",
+  "git_branch": "recover/post-oom-checkpoint",
+  "git_dirty": true,
+  "audit_code_dirty": true,
+  "audit_code_uncommitted": [
+   "M ocl_compare/run_pipeline.py"
+  ]
+ },
+ "seed": 0,
+ "dropped_candidates": [
+  "rerank+logreg"
+ ],
+ "tasks": [
+  {
+   "task": "isear",
+   "profile": {
+    "n": 7666,
+    "n_classes": 7,
+    "class_counts": {
+     "0": 1094,
+     "1": 1096,
+     "2": 1096,
+     "3": 1093,
+     "4": 1096,
+     "5": 1095,
+     "6": 1096
+    },
+    "majority_class": 1,
+    "majority_baseline": 0.14296895382207148,
+    "imbalance_ratio": 1.0027447392497713,
+    "duplicate_rows": 218,
+    "duplicate_share": 0.028437255413514217,
+    "resolution_half_width": 0.005716245906115465,
+    "headline_metric": "accuracy",
+    "notes": [
+     "G2: 218 rows (2.84%) share text with another row; CV is grouped so copies cannot straddle a fold."
+    ]
+   },
+   "candidates": {
+    "ranking": [
+     {
+      "name": "bge-large-en-v1.5+logreg",
+      "balanced": 0.6878745897865188
+     },
+     {
+      "name": "bge-small-en-v1.5+logreg",
+      "balanced": 0.6302159984889725
+     },
+     {
+      "name": "nli+logreg",
+      "balanced": 0.6162635861681179
+     },
+     {
+      "name": "tfidf+logreg",
+      "balanced": 0.6011207949333349
+     },
+     {
+      "name": "constant-majority",
+      "balanced": 0.14285714285714285
+     }
+    ],
+    "best": "bge-large-en-v1.5+logreg",
+    "vs_best": {
+     "bge-small-en-v1.5+logreg": {
+      "delta": -0.05765859129754636,
+      "ci": [
+       -0.06626335268313903,
+       -0.04905512366439146
+      ],
+      "p": 0.0,
+      "significant_after_holm": true
+     },
+     "nli+logreg": {
+      "delta": -0.07161100361840089,
+      "ci": [
+       -0.08191667752412854,
+       -0.06104739436210793
+      ],
+      "p": 0.0,
+      "significant_after_holm": true
+     },
+     "tfidf+logreg": {
+      "delta": -0.08675379485318391,
+      "ci": [
+       -0.09718681213017458,
+       -0.07619529798876466
+      ],
+      "p": 0.0,
+      "significant_after_holm": true
+     },
+     "constant-majority": {
+      "delta": -0.545017446929376,
+      "ci": [
+       -0.5550633855151847,
+       -0.5352309073313892
+      ],
+      "p": 0.0,
+      "significant_after_holm": true
+     }
+    },
+    "n_candidates": 5,
+    "holm_alpha": 0.0125
+   },
+   "G3_roc_dominance": {
+    "applicable": false,
+    "reason": "binary only"
+   },
+   "G4_pool_diversity": {
+    "oracle_balanced": 0.8271865253526416,
+    "oracle_if_independent": 0.9824295997745907,
+    "mean_pairwise_disagreement": 0.3391816679711279,
+    "diversity_ratio": 0.8973793851189457,
+    "verdict": "G4 pass: members disagree on 33.9% of items."
+   },
+   "G5_class_advantage": {
+    "per_class": {
+     "0": {
+      "share": 0.15705713540307853,
+      "cheap_acc": 0.8330564784053156,
+      "expert_acc": 0.8679401993355482,
+      "advantage": 0.03488372093023262
+     },
+     "1": {
+      "share": 0.14805635272632403,
+      "cheap_acc": 0.6977973568281939,
+      "expert_acc": 0.7480176211453744,
+      "advantage": 0.05022026431718052
+     },
+     "2": {
+      "share": 0.1470127837203235,
+      "cheap_acc": 0.5874001774622892,
+      "expert_acc": 0.5714285714285714,
+      "advantage": -0.015971606033717833
+     },
+     "3": {
+      "share": 0.13553352465431776,
+      "cheap_acc": 0.6198267564966313,
+      "expert_acc": 0.6669874879692012,
+      "advantage": 0.04716073147256983
+     },
+     "4": {
+      "share": 0.13175058700756587,
+      "cheap_acc": 0.595049504950495,
+      "expert_acc": 0.5702970297029702,
+      "advantage": -0.024752475247524774
+     },
+     "5": {
+      "share": 0.14153404643882075,
+      "cheap_acc": 0.7797235023041474,
+      "expert_acc": 0.8193548387096774,
+      "advantage": 0.03963133640552996
+     },
+     "6": {
+      "share": 0.13905557004956953,
+      "cheap_acc": 0.6801125703564728,
+      "expert_acc": 0.6538461538461539,
+      "advantage": -0.026266416510318913
+     }
+    },
+    "spread": 0.07648668082749943,
+    "classes_cheap_wins": 3,
+    "verdict": "G5 pass: spread 0.0765 across 7 classes, cheap arm wins 3."
+   },
+   "G7_base_rate_dominance": {
+    "precision_by_predicted_class": {
+     "0": 0.8330564784053156,
+     "1": 0.6977973568281939,
+     "2": 0.5874001774622892,
+     "3": 0.6198267564966313,
+     "4": 0.595049504950495,
+     "5": 0.7797235023041474,
+     "6": 0.6801125703564728
+    },
+    "min_precision": 0.5874001774622892,
+    "spread": 0.24565630094302637,
+    "verdict": "G7 pass: every class's vote is right more often than not (worst 58.7%)."
+   },
+   "class_aware_layer": {
+    "best_single": "bge-large-en-v1.5+logreg",
+    "best_single_balanced": 0.6878745897865188,
+    "selection_dcs_lca": {
+     "balanced": 0.6641552848064618,
+     "per_class": {
+      "0": 0.9424131627056673,
+      "1": 0.7116788321167883,
+      "2": 0.5465328467153284,
+      "3": 0.5663311985361391,
+      "4": 0.4124087591240876,
+      "5": 0.8155251141552512,
+      "6": 0.6541970802919708
+     },
+     "delta_vs_best_single": -0.023719304980057032,
+     "ci": [
+      -0.030500776419997575,
+      -0.016940323829409257
+     ],
+     "p": 0.0,
+     "significant_after_holm": true
+    },
+    "stacking": {
+     "balanced": 0.6975272068466006,
+     "per_class": {
+      "0": 0.9104204753199269,
+      "1": 0.7198905109489051,
+      "2": 0.6359489051094891,
+      "3": 0.6065873741994511,
+      "4": 0.5538321167883211,
+      "5": 0.7881278538812785,
+      "6": 0.6678832116788321
+     },
+     "delta_vs_best_single": 0.009652617060081803,
+     "ci": [
+      0.0031421034303501074,
+      0.016045208191735594
+     ],
+     "p": 0.0036,
+     "significant_after_holm": true
+    },
+    "winner": "stacking",
+    "winner_is_construction": true,
+    "verdict": "stacking beats the best single model by +0.0097 and survives Holm"
+   },
+   "free_arm_shipped": "stacking",
+   "versus_expert": {
+    "cheap_balanced": 0.6975272068466006,
+    "expert_balanced": 0.7035778756802983,
+    "balanced_delta": -0.006050668833697648,
+    "balanced_ci": [
+     -0.01582311425545407,
+     0.0037345754416738246
+    ],
+    "balanced_p": 0.2368,
+    "mcnemar_accuracy": {
+     "acc_a": 0.6974954343855988,
+     "acc_b": 0.7034959561701017,
+     "diff": -0.0060005217845029435,
+     "n_both_right": 4608,
+     "n_a_only": 739,
+     "n_b_only": 785,
+     "n_both_wrong": 1534,
+     "n_discordant": 1524,
+     "p_value": 0.23881088034043987,
+     "test_used": "McNemar mid-p",
+     "diff_ci_lo": -0.015914427341507942,
+     "diff_ci_hi": 0.004043829898252027
+    },
+    "non_inferiority": {
+     "candidate_acc": 0.6974954343855988,
+     "baseline_acc": 0.7034959561701017,
+     "diff": -0.0060005217845029435,
+     "margin": 0.02,
+     "diff_ci_lo": -0.014349073832507164,
+     "diff_ci_hi": 0.0024784763892512496,
+     "p_value": 0.0026,
+     "passes": true,
+     "verdict": "non-inferior within the 2% margin"
+    }
+   },
+   "guaranteed_coverage": [
+    {
+     "bar": 0.8,
+     "free_share": 0.6984085572658492,
+     "expert_share": 0.30159144273415084,
+     "balanced": 0.7074736486977145,
+     "per_class": {
+      "0": {
+       "owned_share": 0.14844769110357423,
+       "realized_precision": 0.875219683655536
+      },
+      "1": {
+       "owned_share": 0.12196712757631098,
+       "realized_precision": 0.7989304812834225
+      },
+      "2": {
+       "owned_share": 0.0513957735455257,
+       "realized_precision": 0.7944162436548223
+      },
+      "3": {
+       "owned_share": 0.06717975476128359,
+       "realized_precision": 0.7941747572815534
+      },
+      "4": {
+       "owned_share": 0.06391860161753196,
+       "realized_precision": 0.7918367346938775
+      },
+      "5": {
+       "owned_share": 0.13996869292981998,
+       "realized_precision": 0.8005591798695247
+      },
+      "6": {
+       "owned_share": 0.10553091573180276,
+       "realized_precision": 0.7985166872682324
+      }
+     },
+     "vacuous_classes": [],
+     "guarantee_holds": true
+    },
+    {
+     "bar": 0.9,
+     "free_share": 0.5031307070180016,
+     "expert_share": 0.49686929298199844,
+     "balanced": 0.7060504753234841,
+     "per_class": {
+      "0": {
+       "owned_share": 0.14166449256457084,
+       "realized_precision": 0.8977900552486188
+      },
+      "1": {
+       "owned_share": 0.0903991651447952,
+       "realized_precision": 0.8975468975468975
+      },
+      "2": {
+       "owned_share": 0.02152361074876076,
+       "realized_precision": 0.9030303030303031
+      },
+      "3": {
+       "owned_share": 0.03169840855726585,
+       "realized_precision": 0.8888888888888888
+      },
+      "4": {
+       "owned_share": 0.04122097573702061,
+       "realized_precision": 0.8860759493670886
+      },
+      "5": {
+       "owned_share": 0.10670493086355336,
+       "realized_precision": 0.9009779951100244
+      },
+      "6": {
+       "owned_share": 0.06991912340203496,
+       "realized_precision": 0.8973880597014925
+      }
+     },
+     "vacuous_classes": [],
+     "guarantee_holds": false
+    },
+    {
+     "bar": 0.95,
+     "free_share": 0.364075136968432,
+     "expert_share": 0.6359248630315679,
+     "balanced": 0.705793246113206,
+     "per_class": {
+      "0": {
+       "owned_share": 0.12092355857031047,
+       "realized_precision": 0.9471413160733549
+      },
+      "1": {
+       "owned_share": 0.06770153926428385,
+       "realized_precision": 0.9421965317919075
+      },
+      "2": {
+       "owned_share": 0.0006522306287503261,
+       "realized_precision": 0.6
+      },
+      "3": {
+       "owned_share": 0.014609966084007305,
+       "realized_precision": 0.9375
+      },
+      "4": {
+       "owned_share": 0.02621967127576311,
+       "realized_precision": 0.945273631840796
+      },
+      "5": {
+       "owned_share": 0.08922515001304461,
+       "realized_precision": 0.945906432748538
+      },
+      "6": {
+       "owned_share": 0.044743021132272374,
+       "realized_precision": 0.9446064139941691
+      }
+     },
+     "vacuous_classes": [],
+     "guarantee_holds": false
+    }
+   ],
+   "recommendation": {
+    "best_free_model": "bge-large-en-v1.5+logreg",
+    "free_arm_shipped": "stacking",
+    "build_class_aware_layer": true,
+    "why": "all gates open -- a class-aware layer has something to work with"
+   }
+  }
+ ]
+}

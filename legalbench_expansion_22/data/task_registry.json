@@ -1,0 +1,425 @@
+[
+  {
+    "task": "cuad_governing_law",
+    "hf_config": "cuad_governing_law",
+    "family": "cuad",
+    "is_reasoning_exception": false,
+    "n_train": 6,
+    "n_test": 876,
+    "input_columns": [
+      "text"
+    ],
+    "n_classes": 2,
+    "class_distribution": {
+      "yes": 438,
+      "no": 438
+    },
+    "metric": "balanced_accuracy",
+    "experiment": "legalbench_expansion_22",
+    "notes": "Separate expansion cohort; selected before scoring; supervised CV adaptation, not the original few-shot setting."
+  },
+  {
+    "task": "cuad_insurance",
+    "hf_config": "cuad_insurance",
+    "family": "cuad",
+    "is_reasoning_exception": false,
+    "n_train": 6,
+    "n_test": 1030,
+    "input_columns": [
+      "text"
+    ],
+    "n_classes": 2,
+    "class_distribution": {
+      "yes": 515,
+      "no": 515
+    },
+    "metric": "balanced_accuracy",
+    "experiment": "legalbench_expansion_22",
+    "notes": "Separate expansion cohort; selected before scoring; supervised CV adaptation, not the original few-shot setting."
+  },
+  {
+    "task": "cuad_ip_ownership_assignment",
+    "hf_config": "cuad_ip_ownership_assignment",
+    "family": "cuad",
+    "is_reasoning_exception": false,
+    "n_train": 6,
+    "n_test": 576,
+    "input_columns": [
+      "text"
+    ],
+    "n_classes": 2,
+    "class_distribution": {
+      "yes": 288,
+      "no": 288
+    },
+    "metric": "balanced_accuracy",
+    "experiment": "legalbench_expansion_22",
+    "notes": "Separate expansion cohort; selected before scoring; supervised CV adaptation, not the original few-shot setting."
+  },
+  {
+    "task": "cuad_license_grant",
+    "hf_config": "cuad_license_grant",
+    "family": "cuad",
+    "is_reasoning_exception": false,
+    "n_train": 6,
+    "n_test": 1396,
+    "input_columns": [
+      "text"
+    ],
+    "n_classes": 2,
+    "class_distribution": {
+      "yes": 698,
+      "no": 698
+    },
+    "metric": "balanced_accuracy",
+    "experiment": "legalbench_expansion_22",
+    "notes": "Separate expansion cohort; selected before scoring; supervised CV adaptation, not the original few-shot setting."
+  },
+  {
+    "task": "cuad_minimum_commitment",
+    "hf_config": "cuad_minimum_commitment",
+    "family": "cuad",
+    "is_reasoning_exception": false,
+    "n_train": 6,
+    "n_test": 772,
+    "input_columns": [
+      "text"
+    ],
+    "n_classes": 2,
+    "class_distribution": {
+      "yes": 386,
+      "no": 386
+    },
+    "metric": "balanced_accuracy",
+    "experiment": "legalbench_expansion_22",
+    "notes": "Separate expansion cohort; selected before scoring; supervised CV adaptation, not the original few-shot setting."
+  },
+  {
+    "task": "cuad_non-compete",
+    "hf_config": "cuad_non-compete",
+    "family": "cuad",
+    "is_reasoning_exception": false,
+    "n_train": 6,
+    "n_test": 442,
+    "input_columns": [
+      "text"
+    ],
+    "n_classes": 2,
+    "class_distribution": {
+      "yes": 221,
+      "no": 221
+    },
+    "metric": "balanced_accuracy",
+    "experiment": "legalbench_expansion_22",
+    "notes": "Separate expansion cohort; selected before scoring; supervised CV adaptation, not the original few-shot setting."
+  },
+  {
+    "task": "cuad_non-transferable_license",
+    "hf_config": "cuad_non-transferable_license",
+    "family": "cuad",
+    "is_reasoning_exception": false,
+    "n_train": 6,
+    "n_test": 542,
+    "input_columns": [
+      "text"
+    ],
+    "n_classes": 2,
+    "class_distribution": {
+      "yes": 271,
+      "no": 271
+    },
+    "metric": "balanced_accuracy",
+    "experiment": "legalbench_expansion_22",
+    "notes": "Separate expansion cohort; selected before scoring; supervised CV adaptation, not the original few-shot setting."
+  },
+  {
+    "task": "cuad_post-termination_services",
+    "hf_config": "cuad_post-termination_services",
+    "family": "cuad",
+    "is_reasoning_exception": false,
+    "n_train": 6,
+    "n_test": 808,
+    "input_columns": [
+      "text"
+    ],
+    "n_classes": 2,
+    "class_distribution": {
+      "yes": 404,
+      "no": 404
+    },
+    "metric": "balanced_accuracy",
+    "experiment": "legalbench_expansion_22",
+    "notes": "Separate expansion cohort; selected before scoring; supervised CV adaptation, not the original few-shot setting."
+  },
+  {
+    "task": "cuad_renewal_term",
+    "hf_config": "cuad_renewal_term",
+    "family": "cuad",
+    "is_reasoning_exception": false,
+    "n_train": 6,
+    "n_test": 386,
+    "input_columns": [
+      "text"
+    ],
+    "n_classes": 2,
+    "class_distribution": {
+      "yes": 193,
+      "no": 193
+    },
+    "metric": "balanced_accuracy",
+    "experiment": "legalbench_expansion_22",
+    "notes": "Separate expansion cohort; selected before scoring; supervised CV adaptation, not the original few-shot setting."
+  },
+  {
+    "task": "cuad_revenue-profit_sharing",
+    "hf_config": "cuad_revenue-profit_sharing",
+    "family": "cuad",
+    "is_reasoning_exception": false,
+    "n_train": 6,
+    "n_test": 774,
+    "input_columns": [
+      "text"
+    ],
+    "n_classes": 2,
+    "class_distribution": {
+      "yes": 387,
+      "no": 387
+    },
+    "metric": "balanced_accuracy",
+    "experiment": "legalbench_expansion_22",
+    "notes": "Separate expansion cohort; selected before scoring; supervised CV adaptation, not the original few-shot setting."
+  },
+  {
+    "task": "cuad_rofr-rofo-rofn",
+    "hf_config": "cuad_rofr-rofo-rofn",
+    "family": "cuad",
+    "is_reasoning_exception": false,
+    "n_train": 6,
+    "n_test": 690,
+    "input_columns": [
+      "text"
+    ],
+    "n_classes": 2,
+    "class_distribution": {
+      "yes": 345,
+      "no": 345
+    },
+    "metric": "balanced_accuracy",
+    "experiment": "legalbench_expansion_22",
+    "notes": "Separate expansion cohort; selected before scoring; supervised CV adaptation, not the original few-shot setting."
+  },
+  {
+    "task": "cuad_termination_for_convenience",
+    "hf_config": "cuad_termination_for_convenience",
+    "family": "cuad",
+    "is_reasoning_exception": false,
+    "n_train": 6,
+    "n_test": 430,
+    "input_columns": [
+      "text"
+    ],
+    "n_classes": 2,
+    "class_distribution": {
+      "yes": 215,
+      "no": 215
+    },
+    "metric": "balanced_accuracy",
+    "experiment": "legalbench_expansion_22",
+    "notes": "Separate expansion cohort; selected before scoring; supervised CV adaptation, not the original few-shot setting."
+  },
+  {
+    "task": "cuad_volume_restriction",
+    "hf_config": "cuad_volume_restriction",
+    "family": "cuad",
+    "is_reasoning_exception": false,
+    "n_train": 6,
+    "n_test": 322,
+    "input_columns": [
+      "text"
+    ],
+    "n_classes": 2,
+    "class_distribution": {
+      "yes": 161,
+      "no": 161
+    },
+    "metric": "balanced_accuracy",
+    "experiment": "legalbench_expansion_22",
+    "notes": "Separate expansion cohort; selected before scoring; supervised CV adaptation, not the original few-shot setting."
+  },
+  {
+    "task": "cuad_warranty_duration",
+    "hf_config": "cuad_warranty_duration",
+    "family": "cuad",
+    "is_reasoning_exception": false,
+    "n_train": 6,
+    "n_test": 320,
+    "input_columns": [
+      "text"
+    ],
+    "n_classes": 2,
+    "class_distribution": {
+      "yes": 160,
+      "no": 160
+    },
+    "metric": "balanced_accuracy",
+    "experiment": "legalbench_expansion_22",
+    "notes": "Separate expansion cohort; selected before scoring; supervised CV adaptation, not the original few-shot setting."
+  },
+  {
+    "task": "definition_classification",
+    "hf_config": "definition_classification",
+    "family": "other",
+    "is_reasoning_exception": false,
+    "n_train": 8,
+    "n_test": 1337,
+    "input_columns": [
+      "text"
+    ],
+    "n_classes": 2,
+    "class_distribution": {
+      "yes": 691,
+      "no": 646
+    },
+    "metric": "balanced_accuracy",
+    "experiment": "legalbench_expansion_22",
+    "notes": "Separate expansion cohort; selected before scoring; supervised CV adaptation, not the original few-shot setting."
+  },
+  {
+    "task": "function_of_decision_section",
+    "hf_config": "function_of_decision_section",
+    "family": "other",
+    "is_reasoning_exception": false,
+    "n_train": 7,
+    "n_test": 367,
+    "input_columns": [
+      "Paragraph"
+    ],
+    "n_classes": 7,
+    "class_distribution": {
+      "facts": 49,
+      "procedural history": 58,
+      "issue": 51,
+      "rule": 56,
+      "analysis": 56,
+      "conclusion": 50,
+      "decree": 47
+    },
+    "metric": "balanced_accuracy",
+    "experiment": "legalbench_expansion_22",
+    "notes": "Separate expansion cohort; selected before scoring; supervised CV adaptation, not the original few-shot setting."
+  },
+  {
+    "task": "learned_hands_traffic",
+    "hf_config": "learned_hands_traffic",
+    "family": "learned_hands",
+    "is_reasoning_exception": false,
+    "n_train": 6,
+    "n_test": 556,
+    "input_columns": [
+      "text"
+    ],
+    "n_classes": 2,
+    "class_distribution": {
+      "yes": 278,
+      "no": 278
+    },
+    "metric": "balanced_accuracy",
+    "experiment": "legalbench_expansion_22",
+    "notes": "Separate expansion cohort; selected before scoring; supervised CV adaptation, not the original few-shot setting."
+  },
+  {
+    "task": "opp115_user_choice_control",
+    "hf_config": "opp115_user_choice_control",
+    "family": "opp115",
+    "is_reasoning_exception": false,
+    "n_train": 8,
+    "n_test": 1254,
+    "input_columns": [
+      "text"
+    ],
+    "n_classes": 2,
+    "class_distribution": {
+      "yes": 627,
+      "no": 627
+    },
+    "metric": "balanced_accuracy",
+    "experiment": "legalbench_expansion_22",
+    "notes": "Separate expansion cohort; selected before scoring; supervised CV adaptation, not the original few-shot setting."
+  },
+  {
+    "task": "supply_chain_disclosure_disclosed_audits",
+    "hf_config": "supply_chain_disclosure_disclosed_audits",
+    "family": "supply_chain_disclosure",
+    "is_reasoning_exception": false,
+    "n_train": 8,
+    "n_test": 379,
+    "input_columns": [
+      "text"
+    ],
+    "n_classes": 2,
+    "class_distribution": {
+      "yes": 344,
+      "no": 35
+    },
+    "metric": "balanced_accuracy",
+    "experiment": "legalbench_expansion_22",
+    "notes": "Separate expansion cohort; selected before scoring; supervised CV adaptation, not the original few-shot setting."
+  },
+  {
+    "task": "supply_chain_disclosure_disclosed_certification",
+    "hf_config": "supply_chain_disclosure_disclosed_certification",
+    "family": "supply_chain_disclosure",
+    "is_reasoning_exception": false,
+    "n_train": 8,
+    "n_test": 378,
+    "input_columns": [
+      "text"
+    ],
+    "n_classes": 2,
+    "class_distribution": {
+      "yes": 343,
+      "no": 35
+    },
+    "metric": "balanced_accuracy",
+    "experiment": "legalbench_expansion_22",
+    "notes": "Separate expansion cohort; selected before scoring; supervised CV adaptation, not the original few-shot setting."
+  },
+  {
+    "task": "supply_chain_disclosure_disclosed_training",
+    "hf_config": "supply_chain_disclosure_disclosed_training",
+    "family": "supply_chain_disclosure",
+    "is_reasoning_exception": false,
+    "n_train": 8,
+    "n_test": 379,
+    "input_columns": [
+      "text"
+    ],
+    "n_classes": 2,
+    "class_distribution": {
+      "yes": 328,
+      "no": 51
+    },
+    "metric": "balanced_accuracy",
+    "experiment": "legalbench_expansion_22",
+    "notes": "Separate expansion cohort; selected before scoring; supervised CV adaptation, not the original few-shot setting."
+  },
+  {
+    "task": "supply_chain_disclosure_disclosed_verification",
+    "hf_config": "supply_chain_disclosure_disclosed_verification",
+    "family": "supply_chain_disclosure",
+    "is_reasoning_exception": false,
+    "n_train": 8,
+    "n_test": 379,
+    "input_columns": [
+      "text"
+    ],
+    "n_classes": 2,
+    "class_distribution": {
+      "yes": 281,
+      "no": 98
+    },
+    "metric": "balanced_accuracy",
+    "experiment": "legalbench_expansion_22",
+    "notes": "Separate expansion cohort; selected before scoring; supervised CV adaptation, not the original few-shot setting."
+  }
+]

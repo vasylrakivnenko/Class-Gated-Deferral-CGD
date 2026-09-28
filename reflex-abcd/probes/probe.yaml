@@ -1,0 +1,152 @@
+# Probe-only configuration for the H5 / H7 / H4 measurement protocol.
+#
+# DELIBERATELY NOT IN configs/default.yaml. The coordinator owns that file
+# exclusively and DECISIONS records a previous run losing an agent's config
+# block to exactly that race. Fold these keys in later if the probe graduates;
+# until then this harness reads default.yaml READ-ONLY for the shared values
+# (compile.dedup_threshold, compile.merge_field_terms, compile.dedup_embed_model,
+# model.value_context_len, data.context_turns_K, report.n_bootstrap).
+
+probe:
+
+  # ---- the featurizer, owned by a different agent --------------------------
+  # "module.path:callable". The callable returns an object satisfying
+  # probes.featurizer_api.Featurizer. There is NO fallback: a probe measured on
+  # a rendering reflex.select cannot reproduce is not transferable to the ship
+  # path, so an unwired featurizer is a hard error.
+  featurizer_factory: "reflex.featurize:build_featurizer"   # landed: reflex.featurize.ProbeFeaturizer
+
+  # ---- TF-IDF + logreg -----------------------------------------------------
+  # D7 says only "word 1-2gram TF-IDF + logreg, same C". The harness that
+  # produced digest 08ad053a37a67cc36aeec16e0a02306c is NOT in this repository,
+  # so min_df / sublinear_tf / C are NOT recorded anywhere and these are a
+  # starting point, not the original settings. `validate` sweeps validate_grid
+  # over them looking for the setting that reproduces D7's cell.
+  vectorizer:
+    analyzer: word
+    ngram_range: [1, 2]
+    # Aligned with reflex.featurize.TfidfSpec's defaults, which are sklearn's own
+    # and are flagged there as UNPINNED by the measured record. Starting point,
+    # not a transcription of the lost harness.
+    min_df: 1
+    max_df: 1.0
+    sublinear_tf: false
+    lowercase: true
+    max_features: null
+    classifier: logreg
+    C: 1.0
+    max_iter: 1000
+    class_weight: null
+
+  # ---- per-head estimator and feature cap (spec 10: no literal in Python) ---
+  # THE BLOCK ABOVE IS THE CERTIFIED nextstep SETTING AND MUST NOT CHANGE.
+  # nextstep is 3-way, so lbfgs/multinomial holds 3 x n_features x 21 doubles --
+  # ~0.10 GiB at 218k features, free. H5/H7/H4 are not 3-way:
+  #
+  #   H7 ASK   1,066 classes x 218k features x 8 B = 1.73 GiB per dense array
+  #            x 21 L-BFGS correction vectors      = 36.4 GiB   <- 24 GB machine
+  #   H7 ACK   1,020 classes                       = 34.8 GiB
+  #   H7 OFFER   649 classes                       = 22.1 GiB
+  #   H5         570 classes                       = 19.4 GiB
+  #
+  # That is why `measure --heads h5,h7,h4` died with SIGBUS (exit 138) and no
+  # traceback: it is killed in native code, not raised. Two levers, both here:
+  #
+  #   classifier    a one-vs-rest kind keeps NO solver history, so the multiplier
+  #                 falls from 21 to ~2. The (n_classes x n_features) coefficient
+  #                 matrix itself is unavoidable for any linear model.
+  #   max_features  caps the other axis, deterministically (min_df's effect on
+  #                 vocabulary size is data-dependent; a cap is a hard bound, and
+  #                 a memory guard needs a bound it can check).
+  #
+  # `sgd_log` optimises the logistic loss by SGD one-vs-rest. It is NOT the
+  # certified estimator and is not the same decision function as multinomial
+  # lbfgs; `logreg_ovr` (exact solver, one-vs-rest) is the closer-but-slower
+  # alternative -- it runs n_classes sequential exact fits, which is ~4,500
+  # binary fits across H7's act pools. Whichever is used is reported beside every
+  # number (D6). Neither has ever been compared against the other on this corpus:
+  # no H5/H7/H4 number exists yet to compare against.
+  vectorizer_by_head:
+    h5: {classifier: sgd_log, max_features: 60000, max_iter: 25}   # 0.51 GiB
+    h7: {classifier: sgd_log, max_features: 40000, max_iter: 25}   # 0.64 GiB at ASK
+    h4: {classifier: logreg,  max_features: 40000}                 # 1.41 GiB, 226 columns
+
+  # ---- the guard that turns a SIGBUS into an error message -----------------
+  # Checked after the vectorizer is fitted (n_features is only known then) and
+  # before the estimator is fitted. Over budget it RAISES, naming the head, the
+  # class count, the feature count and the max_features that would fit. It does
+  # not silently shrink the representation: that would change the number without
+  # changing the report, which is the D6 failure mode.
+  memory_guard:
+    max_dense_state_gib: 2.0
+    bytes_per_coefficient: 8          # float64
+    state_vectors_by_classifier:
+      logreg: 21                      # L-BFGS keeps 2m+1 vectors at the default m=10
+      logreg_ovr: 2                   # coefficient matrix + working copy
+      sgd_log: 2
+    on_over_budget: raise             # raise | report
+
+  # Each entry overrides `vectorizer` for one validate attempt.
+  validate_grid:
+    - {}
+    - {min_df: 2}
+    - {sublinear_tf: true}
+    - {C: 4.0}
+    - {min_df: 2, sublinear_tf: true}
+    - {C: 4.0, sublinear_tf: true}
+
+  # ---- the arms each head is measured on -----------------------------------
+  # The same window x tagging grid D2b and D7 took their decisions on, so the
+  # new heads' answers are comparable to the established ones. DECISIONS says
+  # twice that H5/H7/H4 must be MEASURED rather than inherit a default, so the
+  # grid deliberately includes both the local (k6 + tagging) and the global
+  # (full, untagged) configurations rather than presupposing either.
+  arms:
+    - {k: full, tag_recency: false}
+    - {k: 6,    tag_recency: false}
+    - {k: 10,   tag_recency: false}
+    - {k: full, tag_recency: true, recency_buckets: 3, recency_mode: word}
+    - {k: 6,    tag_recency: true, recency_buckets: 3, recency_mode: word}
+    - {k: 6,    tag_recency: true, recency_buckets: 1, recency_mode: word}
+    - {k: 6,    tag_recency: true, recency_buckets: 3, recency_mode: turn}
+
+  # ---- the clean selection protocol (mode: select) -------------------------
+  # The internal split is GROUPED BY CONVERSATION and seeded; both are on the
+  # CLI (--select-frac, --split-seed) because they belong in the run record
+  # rather than in a file that changes under a running job.
+  selection:
+    # Used only by `--select-grid vectorizers`, which holds the arm fixed and
+    # sweeps the vectorizer. D7's ship configuration is the arm to hold fixed:
+    # it is the one cell in this repo with a twice-verified number, so a
+    # vectorizer-only sweep is anchored to something known rather than to
+    # whatever happens to be first in `arms`.
+    reference_arm: {k: 6, tag_recency: true, recency_buckets: 3, recency_mode: word}
+
+  # ---- metrics -------------------------------------------------------------
+  # H5 is reported at k=1 and k=3 ONLY. A label-blind constant reaches ~0.82 at
+  # k=10 on this label prior, so k>=5 is computed for the artifact and must not
+  # be quoted (DECISIONS D5).
+  recall_ks: [1, 3, 5, 10, 20]
+  h5_quotable_ks: [1, 3]
+  h7_quotable_ks: [1, 5, 20]
+
+  # A control whose representation cannot respond to a line permutation is
+  # VACUOUS, not null (D7: mean-pool shuffle, and plain word unigrams at exactly
+  # 0.00% order sensitivity). Below this share of TF-IDF mass moving under a
+  # permutation, the order control is reported as vacuous.
+  min_order_headroom: 0.01
+
+  # ---- H4 -------------------------------------------------------------------
+  # `model` calls models.ModernBERT.value_target_index -- the single source of
+  # truth for the index. `mirror` reproduces it from a bare tokenizer (cheaper,
+  # no encoder weights) and REQUIRES H4TargetIndexer.verify_against_model to
+  # have been run once before any H4 number is quoted.
+  h4_indexer: model
+
+  # ---- the reproduction check ----------------------------------------------
+  # Targets live in probes.run_response_probe.D7_CELLS, taken verbatim from
+  # DECISIONS D7. Do not widen a band to make a check pass: a band is the spread
+  # the record itself contains, and widening it is how an unreproducible harness
+  # gets certified.
+  validate_head: nextstep
+  validate_split: dev

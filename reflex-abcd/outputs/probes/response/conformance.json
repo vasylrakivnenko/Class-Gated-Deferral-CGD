@@ -1,0 +1,17 @@
+{
+  "checks_run": 60,
+  "failures": [],
+  "featurizer_fingerprint": {
+    "featurizer": "reflex.featurize.ProbeFeaturizer",
+    "reflex_version": "1.0.0.dev0",
+    "render_contract": "reflex.select._render_variant (shuffle=None), bucket=min(n-1-i, MAXB)",
+    "shuffle_seed_rule": "sha256(seed:convo_id:turn_index) -- unsalted, stable across processes",
+    "speaker_token": "emitted once per line, untagged",
+    "tag_separator": "|",
+    "token_pattern": "(?u)\\b\\w\\w+\\b",
+    "tokenizer": "reflex.featurize.tokenize_rendered"
+  },
+  "n_failures": 0,
+  "notes": [],
+  "ok": true
+}

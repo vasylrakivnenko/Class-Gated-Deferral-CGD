@@ -1,0 +1,1740 @@
+{
+ "what": "Class-aware AutoML pipeline over the OCL streams.",
+ "ocl_commit": "285e03fc98afabdf7768558d33ee7b5f662b5f19",
+ "sources": {
+  "preprocessed_archive": {
+   "url": "https://drive.usercontent.google.com/download?id=1vQR7pqVqmYndHkfpcEpwCSWYDXON0gkl&export=download",
+   "sha256": "c8a31ebdc474eb285243a6499ab0fd59bedae9290d5cddf2ea7198061d92d404",
+   "bytes": 13712029
+  },
+  "imdb_gpt3.5": {
+   "url": "https://raw.githubusercontent.com/Flitternie/online_cascade_learning/285e03fc98afabdf7768558d33ee7b5f662b5f19/data/llm_anntations/imdb_gpt3.5_turbo_1106.txt",
+   "sha256": "e355af8351d2e98a60630e88c80ff340349b55d0a8412f2184488f1d1e42c8d7",
+   "bytes": 225000
+  },
+  "imdb_llama2": {
+   "url": "https://raw.githubusercontent.com/Flitternie/online_cascade_learning/285e03fc98afabdf7768558d33ee7b5f662b5f19/data/llm_anntations/imdb_llama2_70b_chat.txt",
+   "sha256": "cf62a99acc312fffbd9fe3c99004243deb30af426f37f196b86c84e9ddef8038",
+   "bytes": 50862
+  },
+  "hatespeech_gpt3.5": {
+   "url": "https://raw.githubusercontent.com/Flitternie/online_cascade_learning/285e03fc98afabdf7768558d33ee7b5f662b5f19/data/llm_anntations/hatespeech_gpt3.5_turbo_1106.txt",
+   "sha256": "bc7ea34a5157dcea3f8b0ba629dfb6afa95537f5da25484a74c21f09b5a85948",
+   "bytes": 34688
+  },
+  "hatespeech_llama2": {
+   "url": "https://raw.githubusercontent.com/Flitternie/online_cascade_learning/285e03fc98afabdf7768558d33ee7b5f662b5f19/data/llm_anntations/hatespeech_llama2_70b_chat.txt",
+   "sha256": "33557dafe0926a71e8c436244d24a778a9d783e3fa7e73cdc7ec83762d3415a9",
+   "bytes": 21406
+  },
+  "isear_gpt3.5": {
+   "url": "https://raw.githubusercontent.com/Flitternie/online_cascade_learning/285e03fc98afabdf7768558d33ee7b5f662b5f19/data/llm_anntations/isear_gpt3.5_turbo_1106.txt",
+   "sha256": "80028b1034d5b44801ddb83c4c9cece4346b7a45673731dfe783f79628cff595",
+   "bytes": 47522
+  },
+  "isear_llama2": {
+   "url": "https://raw.githubusercontent.com/Flitternie/online_cascade_learning/285e03fc98afabdf7768558d33ee7b5f662b5f19/data/llm_anntations/isear_llama2_70b_chat.txt",
+   "sha256": "14fa40a4351ecda17d8d62dda8c052ec658f8aec4522497ea5b950364e41039f",
+   "bytes": 15573
+  },
+  "fever_gpt3.5": {
+   "url": "https://raw.githubusercontent.com/Flitternie/online_cascade_learning/285e03fc98afabdf7768558d33ee7b5f662b5f19/data/llm_anntations/fever_gpt3.5_turbo_1106.txt",
+   "sha256": "dada9d5e61783e14b0e35da344483f41d13621ef3da5f0a2d6cd0baf0c41c155",
+   "bytes": 36493
+  },
+  "fever_llama2": {
+   "url": "https://raw.githubusercontent.com/Flitternie/online_cascade_learning/285e03fc98afabdf7768558d33ee7b5f662b5f19/data/llm_anntations/fever_llama2_70b_chat.txt",
+   "sha256": "eb78c908d73b2fc0be437b4e1db1b9a83e5b4db2aa0d82bc9597875a04170fd3",
+   "bytes": 13024
+  }
+ },
+ "environment": {
+  "utc": "2026-09-24T19:06:56+00:00",
+  "python": "3.12.8",
+  "platform": "macOS-26.6.1-arm64-arm-64bit",
+  "machine": "arm64",
+  "packages": {
+   "numpy": "2.5.3",
+   "pandas": "3.0.5",
+   "scikit-learn": null
+  },
+  "git_commit": "53a5283e86a5e3e5042d802b183d4a8ef5dd0a70",
+  "git_branch": "recover/post-oom-checkpoint",
+  "git_dirty": true,
+  "audit_code_dirty": true,
+  "audit_code_uncommitted": [
+   " M ocl_compare/run_pipeline.py"
+  ]
+ },
+ "seed": 0,
+ "dropped_candidates": [],
+ "train_on": "llm",
+ "tasks": [
+  {
+   "task": "hatespeech",
+   "trained_on": "llm",
+   "profile": {
+    "n": 10703,
+    "n_classes": 2,
+    "class_counts": {
+     "0": 9507,
+     "1": 1196
+    },
+    "majority_class": 0,
+    "majority_baseline": 0.8882556292628235,
+    "imbalance_ratio": 7.948996655518394,
+    "duplicate_rows": 257,
+    "duplicate_share": 0.024011959263757824,
+    "resolution_half_width": 0.010223260251369132,
+    "headline_metric": "balanced_accuracy",
+    "notes": [
+     "G1: a constant '0' predictor scores 0.8883 accuracy. Raw accuracy ranks systems by closeness to degenerate prediction on this dataset -- headline metric forced to balanced accuracy.",
+     "G2: 257 rows (2.40%) share text with another row; CV is grouped so copies cannot straddle a fold."
+    ]
+   },
+   "candidates": {
+    "ranking": [
+     {
+      "name": "bge-large-en-v1.5+logreg",
+      "balanced": 0.8084127766444229
+     },
+     {
+      "name": "nli+logreg",
+      "balanced": 0.8028931243410506
+     },
+     {
+      "name": "bge-small-en-v1.5+logreg",
+      "balanced": 0.7871673855525572
+     },
+     {
+      "name": "tfidf+logreg",
+      "balanced": 0.7636529394113052
+     },
+     {
+      "name": "constant-majority",
+      "balanced": 0.5
+     }
+    ],
+    "best": "bge-large-en-v1.5+logreg",
+    "vs_best": {
+     "nli+logreg": {
+      "delta": -0.005519652303372258,
+      "ci": [
+       -0.018324489515382635,
+       0.006985789471092094
+      ],
+      "p": 0.3852,
+      "significant_after_holm": false
+     },
+     "bge-small-en-v1.5+logreg": {
+      "delta": -0.02124539109186574,
+      "ci": [
+       -0.030547901159258428,
+       -0.01230566598876437
+      ],
+      "p": 0.0,
+      "significant_after_holm": true
+     },
+     "tfidf+logreg": {
+      "delta": -0.044759837233117716,
+      "ci": [
+       -0.05745942173220009,
+       -0.032506388093546945
+      ],
+      "p": 0.0,
+      "significant_after_holm": true
+     },
+     "constant-majority": {
+      "delta": -0.3084127766444229,
+      "ci": [
+       -0.3191326776731667,
+       -0.29773742121190055
+      ],
+      "p": 0.0,
+      "significant_after_holm": true
+     }
+    },
+    "n_candidates": 5,
+    "holm_alpha": 0.0125
+   },
+   "G3_roc_dominance": {
+    "applicable": true,
+    "total_pairs": 6,
+    "dominating_pairs": 5,
+    "is_total_order": false,
+    "verdict": "G3 pass: at least one pair is not ROC-ordered, so some genuine complementarity exists."
+   },
+   "G4_pool_diversity": {
+    "oracle_balanced": 0.9229788172277917,
+    "oracle_if_independent": 0.9975678152834402,
+    "mean_pairwise_disagreement": 0.14938179326668535,
+    "diversity_ratio": 1.5359643115453903,
+    "verdict": "G4 pass: members disagree on 14.9% of items."
+   },
+   "G5_class_advantage": {
+    "per_class": {
+     "0": {
+      "share": 0.6816780341960198,
+      "cheap_acc": 0.9780701754385965,
+      "expert_acc": 0.9517543859649122,
+      "advantage": -0.026315789473684292
+     },
+     "1": {
+      "share": 0.3183219658039802,
+      "cheap_acc": 0.3040798356325213,
+      "expert_acc": 0.5799823891987086,
+      "advantage": 0.2759025535661873
+     }
+    },
+    "spread": 0.3022183430398716,
+    "classes_cheap_wins": 1,
+    "gates": "class-aware selection layer only",
+    "verdict": "G5 pass: spread 0.3022 across 2 classes, cheap arm wins 1."
+   },
+   "G7_base_rate_dominance": {
+    "precision_by_predicted_class": {
+     "0": 0.9780701754385965,
+     "1": 0.3040798356325213
+    },
+    "min_precision": 0.3040798356325213,
+    "spread": 0.6739903398060753,
+    "verdict": "G7 FAIL: a vote for the weakest class is right only 30.4% of the time. Reliability-based selection will avoid that class and drift to the majority."
+   },
+   "class_aware_layer": null,
+   "free_arm_shipped": "bge-large-en-v1.5+logreg",
+   "versus_expert": {
+    "cheap_balanced": 0.8084127766444229,
+    "expert_balanced": 0.8331335157723951,
+    "balanced_delta": -0.024720739127972235,
+    "balanced_ci": [
+     -0.03604271698410565,
+     -0.013267220940528505
+    ],
+    "balanced_p": 0.0,
+    "mcnemar_accuracy": {
+     "acc_a": 0.7635242455386341,
+     "acc_b": 0.8334111931234234,
+     "diff": -0.0698869475847893,
+     "n_both_right": 7810,
+     "n_a_only": 362,
+     "n_b_only": 1110,
+     "n_both_wrong": 1421,
+     "n_discordant": 1472,
+     "p_value": 1.4422427836326161e-88,
+     "test_used": "McNemar mid-p",
+     "diff_ci_lo": -0.07670746519667382,
+     "diff_ci_hi": -0.0628795664766888
+    },
+    "non_inferiority": {
+     "candidate_acc": 0.7635242455386341,
+     "baseline_acc": 0.8334111931234234,
+     "diff": -0.0698869475847893,
+     "margin": 0.02,
+     "diff_ci_lo": -0.07567971596748568,
+     "diff_ci_hi": -0.06409417920209282,
+     "p_value": 1.0,
+     "passes": false,
+     "verdict": "clearly worse by more than the 2% margin"
+    }
+   },
+   "deferral_curve": {
+    "free_alone": 0.8084127766444229,
+    "expert_alone": 0.8331335157723951,
+    "points": [
+     {
+      "expert_share_target": 0.0,
+      "confidence": {
+       "expert_share": 0.0,
+       "balanced": 0.8084127766444229
+      },
+      "class_aware": {
+       "expert_share": 0.0,
+       "balanced": 0.8084127766444229
+      },
+      "gain_per_10pct_spend": null
+     },
+     {
+      "expert_share_target": 0.05,
+      "confidence": {
+       "expert_share": 0.05017284873399981,
+       "balanced": 0.8115898055050441
+      },
+      "class_aware": {
+       "expert_share": 0.049985985237783796,
+       "balanced": 0.8096663855852737
+      },
+      "gain_per_10pct_spend": 0.006332167578254904
+     },
+     {
+      "expert_share_target": 0.1,
+      "confidence": {
+       "expert_share": 0.10053256096421564,
+       "balanced": 0.8136044273661407
+      },
+      "class_aware": {
+       "expert_share": 0.09997197047556759,
+       "balanced": 0.8151896877252565
+      },
+      "gain_per_10pct_spend": 0.004000463409891774
+     },
+     {
+      "expert_share_target": 0.2,
+      "confidence": {
+       "expert_share": 0.20078482668410727,
+       "balanced": 0.8238573460921068
+      },
+      "class_aware": {
+       "expert_share": 0.19994394095113519,
+       "balanced": 0.8176556140819315
+      },
+      "gain_per_10pct_spend": 0.010227119210066672
+     },
+     {
+      "expert_share_target": 0.3,
+      "confidence": {
+       "expert_share": 0.3002896384191348,
+       "balanced": 0.8282939203748128
+      },
+      "class_aware": {
+       "expert_share": 0.2999159114267028,
+       "balanced": 0.8192129949662157
+      },
+      "gain_per_10pct_spend": 0.004458653009183257
+     },
+     {
+      "expert_share_target": 0.5,
+      "confidence": {
+       "expert_share": 0.49939269363729794,
+       "balanced": 0.831166121917559
+      },
+      "class_aware": {
+       "expert_share": 0.499859852377838,
+       "balanced": 0.8313748661873156
+      },
+      "gain_per_10pct_spend": 0.0014425703008922185
+     },
+     {
+      "expert_share_target": 0.75,
+      "confidence": {
+       "expert_share": 0.7487620293375689,
+       "balanced": 0.8321868448983023
+      },
+      "class_aware": {
+       "expert_share": 0.749789778566757,
+       "balanced": 0.8320897064757424
+      },
+      "gain_per_10pct_spend": 0.00040932177080912235
+     },
+     {
+      "expert_share_target": 1.0,
+      "confidence": {
+       "expert_share": 1.0,
+       "balanced": 0.8331335157723951
+      },
+      "class_aware": {
+       "expert_share": 1.0,
+       "balanced": 0.8331335157723951
+      },
+      "gain_per_10pct_spend": 0.00037680246803330707
+     }
+    ],
+    "best_point_optimistic": {
+     "expert_share": 1.0,
+     "balanced": 0.8331335157723951,
+     "rule": "confidence",
+     "n_configurations_selected_over": 16
+    },
+    "best_point": {
+     "balanced": 0.8331335157723951,
+     "expert_share": 1.0,
+     "picks_per_fold": [
+      {
+       "rule": "confidence",
+       "budget": 1.0
+      },
+      {
+       "rule": "confidence",
+       "budget": 1.0
+      },
+      {
+       "rule": "confidence",
+       "budget": 1.0
+      },
+      {
+       "rule": "confidence",
+       "budget": 1.0
+      },
+      {
+       "rule": "confidence",
+       "budget": 1.0
+      }
+     ],
+     "rule_agreement": 1.0,
+     "stable": true
+    },
+    "selection_bias": 0.0,
+    "gain_over_free": {
+     "delta": 0.024720739127972235,
+     "resolution_half_width": 0.010223260251369132,
+     "resolvable": true,
+     "note": ""
+    },
+    "gain_over_expert": {
+     "delta": 0.0,
+     "resolution_half_width": 0.010223260251369132,
+     "resolvable": false,
+     "note": "G6: +0.0000 is inside the +/-0.0102 this dataset can resolve -- not a difference"
+    },
+    "beats_both_ends": false
+   },
+   "guaranteed_coverage": [
+    {
+     "bar": 0.8,
+     "free_share": 0.6924226852284406,
+     "expert_share": 0.30757731477155936,
+     "balanced": 0.8193181806188927,
+     "per_class": {
+      "0": {
+       "owned_share": 0.6814911706998038,
+       "realized_precision": 0.9780641623251988
+      },
+      "1": {
+       "owned_share": 0.01093151452863683,
+       "realized_precision": 0.7692307692307693
+      }
+     },
+     "vacuous_classes": [],
+     "guarantee_holds": false
+    },
+    {
+     "bar": 0.9,
+     "free_share": 0.6814911706998038,
+     "expert_share": 0.3185088293001962,
+     "balanced": 0.8193707734452311,
+     "per_class": {
+      "0": {
+       "owned_share": 0.6814911706998038,
+       "realized_precision": 0.9780641623251988
+      },
+      "1": {
+       "owned_share": 0.0,
+       "realized_precision": NaN
+      }
+     },
+     "vacuous_classes": [
+      1
+     ],
+     "guarantee_holds": true
+    },
+    {
+     "bar": 0.95,
+     "free_share": 0.6814911706998038,
+     "expert_share": 0.3185088293001962,
+     "balanced": 0.8193707734452311,
+     "per_class": {
+      "0": {
+       "owned_share": 0.6814911706998038,
+       "realized_precision": 0.9780641623251988
+      },
+      "1": {
+       "owned_share": 0.0,
+       "realized_precision": NaN
+      }
+     },
+     "vacuous_classes": [
+      1
+     ],
+     "guarantee_holds": true
+    }
+   ],
+   "recommendation": {
+    "best_free_model": "bge-large-en-v1.5+logreg",
+    "free_arm_shipped": "bge-large-en-v1.5+logreg",
+    "build_class_aware_layer": false,
+    "why": "G7 FAIL: a vote for the weakest class is right only 30.4% of the time. Reliability-based selection will avoid that class and drift to the majority."
+   }
+  },
+  {
+   "task": "isear",
+   "trained_on": "llm",
+   "profile": {
+    "n": 7666,
+    "n_classes": 7,
+    "class_counts": {
+     "0": 1094,
+     "1": 1096,
+     "2": 1096,
+     "3": 1093,
+     "4": 1096,
+     "5": 1095,
+     "6": 1096
+    },
+    "majority_class": 1,
+    "majority_baseline": 0.14296895382207148,
+    "imbalance_ratio": 1.0027447392497713,
+    "duplicate_rows": 218,
+    "duplicate_share": 0.028437255413514217,
+    "resolution_half_width": 0.005716245906115465,
+    "headline_metric": "accuracy",
+    "notes": [
+     "G2: 218 rows (2.84%) share text with another row; CV is grouped so copies cannot straddle a fold."
+    ]
+   },
+   "candidates": {
+    "ranking": [
+     {
+      "name": "bge-large-en-v1.5+logreg",
+      "balanced": 0.6556832964354183
+     },
+     {
+      "name": "nli+logreg",
+      "balanced": 0.6136718478910304
+     },
+     {
+      "name": "bge-small-en-v1.5+logreg",
+      "balanced": 0.6107985476729817
+     },
+     {
+      "name": "tfidf+logreg",
+      "balanced": 0.5843166563868804
+     },
+     {
+      "name": "constant-majority",
+      "balanced": 0.14285714285714285
+     }
+    ],
+    "best": "bge-large-en-v1.5+logreg",
+    "vs_best": {
+     "nli+logreg": {
+      "delta": -0.042011448544387986,
+      "ci": [
+       -0.05166562923440705,
+       -0.03236484570203539
+      ],
+      "p": 0.0,
+      "significant_after_holm": true
+     },
+     "bge-small-en-v1.5+logreg": {
+      "delta": -0.044884748762436644,
+      "ci": [
+       -0.053102278890908426,
+       -0.036667699057845615
+      ],
+      "p": 0.0,
+      "significant_after_holm": true
+     },
+     "tfidf+logreg": {
+      "delta": -0.07136664004853799,
+      "ci": [
+       -0.08128092797186814,
+       -0.061320311945228655
+      ],
+      "p": 0.0,
+      "significant_after_holm": true
+     },
+     "constant-majority": {
+      "delta": -0.5128261535782754,
+      "ci": [
+       -0.5227401914242661,
+       -0.5026543787194648
+      ],
+      "p": 0.0,
+      "significant_after_holm": true
+     }
+    },
+    "n_candidates": 5,
+    "holm_alpha": 0.0125
+   },
+   "G3_roc_dominance": {
+    "applicable": false,
+    "reason": "binary only"
+   },
+   "G4_pool_diversity": {
+    "oracle_balanced": 0.7882033802529447,
+    "oracle_if_independent": 0.9786245101181804,
+    "mean_pairwise_disagreement": 0.3152013218540743,
+    "diversity_ratio": 0.6959316080908744,
+    "verdict": "G4 pass: members disagree on 31.5% of items."
+   },
+   "G5_class_advantage": {
+    "per_class": {
+     "0": {
+      "share": 0.16057918079833028,
+      "cheap_acc": 0.8082859463850528,
+      "expert_acc": 0.8570268074735987,
+      "advantage": 0.04874086108854592
+     },
+     "1": {
+      "share": 0.19997391077485,
+      "cheap_acc": 0.5753424657534246,
+      "expert_acc": 0.6660143509458578,
+      "advantage": 0.09067188519243319
+     },
+     "2": {
+      "share": 0.14127315418732064,
+      "cheap_acc": 0.5429362880886427,
+      "expert_acc": 0.5835641735918744,
+      "advantage": 0.04062788550323171
+     },
+     "3": {
+      "share": 0.1530133055048265,
+      "cheap_acc": 0.566069906223359,
+      "expert_acc": 0.6214833759590793,
+      "advantage": 0.055413469735720366
+     },
+     "4": {
+      "share": 0.09731280980954865,
+      "cheap_acc": 0.6501340482573726,
+      "expert_acc": 0.6554959785522788,
+      "advantage": 0.00536193029490617
+     },
+     "5": {
+      "share": 0.14492564570832248,
+      "cheap_acc": 0.7497749774977498,
+      "expert_acc": 0.8010801080108011,
+      "advantage": 0.0513051305130513
+     },
+     "6": {
+      "share": 0.10292199321680146,
+      "cheap_acc": 0.7338403041825095,
+      "expert_acc": 0.7313054499366286,
+      "advantage": -0.0025348542458808465
+     }
+    },
+    "spread": 0.09320673943831403,
+    "classes_cheap_wins": 1,
+    "gates": "class-aware selection layer only",
+    "verdict": "G5 pass: spread 0.0932 across 7 classes, cheap arm wins 1."
+   },
+   "G7_base_rate_dominance": {
+    "precision_by_predicted_class": {
+     "0": 0.8082859463850528,
+     "1": 0.5753424657534246,
+     "2": 0.5429362880886427,
+     "3": 0.566069906223359,
+     "4": 0.6501340482573726,
+     "5": 0.7497749774977498,
+     "6": 0.7338403041825095
+    },
+    "min_precision": 0.5429362880886427,
+    "spread": 0.2653496582964101,
+    "verdict": "G7 pass: every class's vote is right more often than not (worst 54.3%)."
+   },
+   "class_aware_layer": {
+    "best_single": "bge-large-en-v1.5+logreg",
+    "best_single_balanced": 0.6556832964354183,
+    "selection_dcs_lca": {
+     "balanced": 0.6324807372659998,
+     "per_class": {
+      "0": 0.8994515539305301,
+      "1": 0.8403284671532847,
+      "2": 0.4534671532846715,
+      "3": 0.6129917657822507,
+      "4": 0.3686131386861314,
+      "5": 0.754337899543379,
+      "6": 0.4981751824817518
+     },
+     "delta_vs_best_single": -0.02320255916941849,
+     "ci": [
+      -0.0302441427770931,
+      -0.016158014855208357
+     ],
+     "p": 0.0,
+     "significant_after_holm": true,
+     "resolution": {
+      "delta": -0.02320255916941849,
+      "resolution_half_width": 0.005716245906115465,
+      "resolvable": true,
+      "note": ""
+     }
+    },
+    "stacking": {
+     "balanced": 0.6676822243023148,
+     "per_class": {
+      "0": 0.9159049360146252,
+      "1": 0.8147810218978102,
+      "2": 0.5437956204379562,
+      "3": 0.6175663311985361,
+      "4": 0.45711678832116787,
+      "5": 0.7735159817351598,
+      "6": 0.551094890510949
+     },
+     "delta_vs_best_single": 0.011998927866896492,
+     "ci": [
+      0.0061285452250375095,
+      0.017999051836474454
+     ],
+     "p": 0.0002,
+     "significant_after_holm": true,
+     "resolution": {
+      "delta": 0.011998927866896492,
+      "resolution_half_width": 0.005716245906115465,
+      "resolvable": true,
+      "note": ""
+     }
+    },
+    "winner": "stacking",
+    "winner_is_construction": true,
+    "verdict": "stacking beats the best single model by +0.0120 and survives Holm"
+   },
+   "free_arm_shipped": "stacking",
+   "versus_expert": {
+    "cheap_balanced": 0.6676822243023148,
+    "expert_balanced": 0.7035778756802983,
+    "balanced_delta": -0.03589565137798345,
+    "balanced_ci": [
+     -0.04449922250288005,
+     -0.02742017731647567
+    ],
+    "balanced_p": 0.0,
+    "mcnemar_accuracy": {
+     "acc_a": 0.6676232715888338,
+     "acc_b": 0.7034959561701017,
+     "diff": -0.03587268458126791,
+     "n_both_right": 4700,
+     "n_a_only": 418,
+     "n_b_only": 693,
+     "n_both_wrong": 1855,
+     "n_discordant": 1111,
+     "p_value": 1.1415193832754535e-16,
+     "test_used": "McNemar mid-p",
+     "diff_ci_lo": -0.04422123662927213,
+     "diff_ci_hi": -0.027263240281763634
+    },
+    "non_inferiority": {
+     "candidate_acc": 0.6676232715888338,
+     "baseline_acc": 0.7034959561701017,
+     "diff": -0.03587268458126791,
+     "margin": 0.02,
+     "diff_ci_lo": -0.04291677537177152,
+     "diff_ci_hi": -0.02869814766501433,
+     "p_value": 0.9998,
+     "passes": false,
+     "verdict": "clearly worse by more than the 2% margin"
+    }
+   },
+   "deferral_curve": {
+    "free_alone": 0.6676822243023148,
+    "expert_alone": 0.7035778756802983,
+    "points": [
+     {
+      "expert_share_target": 0.0,
+      "confidence": {
+       "expert_share": 0.0,
+       "balanced": 0.6676822243023148
+      },
+      "class_aware": {
+       "expert_share": 0.0,
+       "balanced": 0.6676822243023148
+      },
+      "gain_per_10pct_spend": null
+     },
+     {
+      "expert_share_target": 0.05,
+      "confidence": {
+       "expert_share": 0.05009131228802505,
+       "balanced": 0.6759040348913766
+      },
+      "class_aware": {
+       "expert_share": 0.04956952778502478,
+       "balanced": 0.6696477588075869
+      },
+      "gain_per_10pct_spend": 0.016413645827017636
+     },
+     {
+      "expert_share_target": 0.1,
+      "confidence": {
+       "expert_share": 0.09992173232454996,
+       "balanced": 0.6806038149894105
+      },
+      "class_aware": {
+       "expert_share": 0.0997912861987999,
+       "balanced": 0.66952337650419
+      },
+      "gain_per_10pct_spend": 0.009431548228148552
+     },
+     {
+      "expert_share_target": 0.2,
+      "confidence": {
+       "expert_share": 0.20075658752935038,
+       "balanced": 0.6915639229590708
+      },
+      "class_aware": {
+       "expert_share": 0.1995825723975998,
+       "balanced": 0.6708389781809103
+      },
+      "gain_per_10pct_spend": 0.010869364514284063
+     },
+     {
+      "expert_share_target": 0.3,
+      "confidence": {
+       "expert_share": 0.2997651969736499,
+       "balanced": 0.6965245081299731
+      },
+      "class_aware": {
+       "expert_share": 0.29950430472214973,
+       "balanced": 0.6688904912660727
+      },
+      "gain_per_10pct_spend": 0.00501025637946476
+     },
+     {
+      "expert_share_target": 0.5,
+      "confidence": {
+       "expert_share": 0.5005217845030002,
+       "balanced": 0.7031814756392148
+      },
+      "class_aware": {
+       "expert_share": 0.4997391077484999,
+       "balanced": 0.6773505714974334
+      },
+      "gain_per_10pct_spend": 0.0033159397612636146
+     },
+     {
+      "expert_share_target": 0.75,
+      "confidence": {
+       "expert_share": 0.7498043308113749,
+       "balanced": 0.7040986551927897
+      },
+      "class_aware": {
+       "expert_share": 0.7495434385598748,
+       "balanced": 0.698231263996153
+      },
+      "gain_per_10pct_spend": 0.000367927705793027
+     },
+     {
+      "expert_share_target": 1.0,
+      "confidence": {
+       "expert_share": 1.0,
+       "balanced": 0.7035778756802983
+      },
+      "class_aware": {
+       "expert_share": 1.0,
+       "balanced": 0.7035778756802983
+      },
+      "gain_per_10pct_spend": -0.00020814889169755706
+     }
+    ],
+    "best_point_optimistic": {
+     "expert_share": 0.7495434385598748,
+     "balanced": 0.7040986551927897,
+     "rule": "confidence",
+     "n_configurations_selected_over": 16
+    },
+    "best_point": {
+     "balanced": 0.7040986551927897,
+     "expert_share": 0.7498043308113749,
+     "picks_per_fold": [
+      {
+       "rule": "confidence",
+       "budget": 0.75
+      },
+      {
+       "rule": "confidence",
+       "budget": 0.75
+      },
+      {
+       "rule": "confidence",
+       "budget": 0.75
+      },
+      {
+       "rule": "confidence",
+       "budget": 0.75
+      },
+      {
+       "rule": "confidence",
+       "budget": 0.75
+      }
+     ],
+     "rule_agreement": 1.0,
+     "stable": true
+    },
+    "selection_bias": 0.0,
+    "gain_over_free": {
+     "delta": 0.03641643089047486,
+     "resolution_half_width": 0.005716245906115465,
+     "resolvable": true,
+     "note": ""
+    },
+    "gain_over_expert": {
+     "delta": 0.0005207795124914094,
+     "resolution_half_width": 0.005716245906115465,
+     "resolvable": false,
+     "note": "G6: +0.0005 is inside the +/-0.0057 this dataset can resolve -- not a difference"
+    },
+    "beats_both_ends": false
+   },
+   "guaranteed_coverage": [
+    {
+     "bar": 0.8,
+     "free_share": 0.5971823636837986,
+     "expert_share": 0.4028176363162014,
+     "balanced": 0.6970473121194927,
+     "per_class": {
+      "0": {
+       "owned_share": 0.15327419775632664,
+       "realized_precision": 0.8527659574468085
+      },
+      "1": {
+       "owned_share": 0.11609705191755805,
+       "realized_precision": 0.7955056179775281
+      },
+      "2": {
+       "owned_share": 0.0,
+       "realized_precision": NaN
+      },
+      "3": {
+       "owned_share": 0.03248108531176624,
+       "realized_precision": 0.8072289156626506
+      },
+      "4": {
+       "owned_share": 0.06404904774328203,
+       "realized_precision": 0.7861507128309573
+      },
+      "5": {
+       "owned_share": 0.1361857552830681,
+       "realized_precision": 0.8026819923371648
+      },
+      "6": {
+       "owned_share": 0.09509522567179755,
+       "realized_precision": 0.803840877914952
+      }
+     },
+     "vacuous_classes": [
+      2
+     ],
+     "guarantee_holds": false
+    },
+    {
+     "bar": 0.9,
+     "free_share": 0.4369945212627185,
+     "expert_share": 0.5630054787372816,
+     "balanced": 0.7024015575508852,
+     "per_class": {
+      "0": {
+       "owned_share": 0.13931646230106967,
+       "realized_precision": 0.8951310861423221
+      },
+      "1": {
+       "owned_share": 0.07865901382728933,
+       "realized_precision": 0.9021558872305141
+      },
+      "2": {
+       "owned_share": 0.0,
+       "realized_precision": NaN
+      },
+      "3": {
+       "owned_share": 0.007174536916253587,
+       "realized_precision": 0.8363636363636363
+      },
+      "4": {
+       "owned_share": 0.039525176102269764,
+       "realized_precision": 0.8943894389438944
+      },
+      "5": {
+       "owned_share": 0.1024002087138012,
+       "realized_precision": 0.9044585987261147
+      },
+      "6": {
+       "owned_share": 0.06991912340203496,
+       "realized_precision": 0.8936567164179104
+      }
+     },
+     "vacuous_classes": [
+      2
+     ],
+     "guarantee_holds": false
+    },
+    {
+     "bar": 0.95,
+     "free_share": 0.3342029741716671,
+     "expert_share": 0.6657970258283329,
+     "balanced": 0.7051425988527459,
+     "per_class": {
+      "0": {
+       "owned_share": 0.11766240542655883,
+       "realized_precision": 0.9490022172949002
+      },
+      "1": {
+       "owned_share": 0.05974432559352987,
+       "realized_precision": 0.9454148471615721
+      },
+      "2": {
+       "owned_share": 0.0,
+       "realized_precision": NaN
+      },
+      "3": {
+       "owned_share": 0.0,
+       "realized_precision": NaN
+      },
+      "4": {
+       "owned_share": 0.021393164623010698,
+       "realized_precision": 0.9451219512195121
+      },
+      "5": {
+       "owned_share": 0.08374641273154187,
+       "realized_precision": 0.9470404984423676
+      },
+      "6": {
+       "owned_share": 0.05165666579702583,
+       "realized_precision": 0.946969696969697
+      }
+     },
+     "vacuous_classes": [
+      2,
+      3
+     ],
+     "guarantee_holds": true
+    }
+   ],
+   "recommendation": {
+    "best_free_model": "bge-large-en-v1.5+logreg",
+    "free_arm_shipped": "stacking",
+    "build_class_aware_layer": true,
+    "why": "all gates open -- a class-aware layer has something to work with"
+   }
+  },
+  {
+   "task": "fever",
+   "trained_on": "llm",
+   "profile": {
+    "n": 6512,
+    "n_classes": 2,
+    "class_counts": {
+     "0": 3259,
+     "1": 3253
+    },
+    "majority_class": 0,
+    "majority_baseline": 0.500460687960688,
+    "imbalance_ratio": 1.0018444512757454,
+    "duplicate_rows": 0,
+    "duplicate_share": 0.0,
+    "resolution_half_width": 0.006198876369528368,
+    "headline_metric": "accuracy",
+    "notes": []
+   },
+   "candidates": {
+    "ranking": [
+     {
+      "name": "bge-large-en-v1.5+logreg",
+      "balanced": 0.7110166299628347
+     },
+     {
+      "name": "nli+logreg",
+      "balanced": 0.694593193980452
+     },
+     {
+      "name": "bge-small-en-v1.5+logreg",
+      "balanced": 0.6901592572466211
+     },
+     {
+      "name": "tfidf+logreg",
+      "balanced": 0.6401660345721895
+     },
+     {
+      "name": "constant-majority",
+      "balanced": 0.5
+     }
+    ],
+    "best": "bge-large-en-v1.5+logreg",
+    "vs_best": {
+     "nli+logreg": {
+      "delta": -0.016423435982382606,
+      "ci": [
+       -0.030106258513514127,
+       -0.002752803912115742
+      ],
+      "p": 0.0198,
+      "significant_after_holm": true
+     },
+     "bge-small-en-v1.5+logreg": {
+      "delta": -0.020857372716213574,
+      "ci": [
+       -0.031914756242190416,
+       -0.009958475793156805
+      ],
+      "p": 0.0004,
+      "significant_after_holm": true
+     },
+     "tfidf+logreg": {
+      "delta": -0.0708505953906452,
+      "ci": [
+       -0.08314811866252846,
+       -0.05795465360791898
+      ],
+      "p": 0.0,
+      "significant_after_holm": true
+     },
+     "constant-majority": {
+      "delta": -0.21101662996283466,
+      "ci": [
+       -0.2219214340537925,
+       -0.1999569826120331
+      ],
+      "p": 0.0,
+      "significant_after_holm": true
+     }
+    },
+    "n_candidates": 5,
+    "holm_alpha": 0.0125
+   },
+   "G3_roc_dominance": {
+    "applicable": true,
+    "total_pairs": 6,
+    "dominating_pairs": 5,
+    "is_total_order": false,
+    "verdict": "G3 pass: at least one pair is not ROC-ordered, so some genuine complementarity exists."
+   },
+   "G4_pool_diversity": {
+    "oracle_balanced": 0.9289217958884602,
+    "oracle_if_independent": 0.9902118756099947,
+    "mean_pairwise_disagreement": 0.3034398034398035,
+    "diversity_ratio": 3.5553088421543553,
+    "verdict": "G4 pass: members disagree on 30.3% of items."
+   },
+   "G5_class_advantage": {
+    "per_class": {
+     "0": {
+      "share": 0.4768120393120393,
+      "cheap_acc": 0.7217391304347827,
+      "expert_acc": 0.8154589371980676,
+      "advantage": 0.09371980676328495
+     },
+     "1": {
+      "share": 0.5231879606879607,
+      "cheap_acc": 0.7012034047549164,
+      "expert_acc": 0.7854417375990608,
+      "advantage": 0.08423833284414439
+     }
+    },
+    "spread": 0.00948147391914056,
+    "classes_cheap_wins": 0,
+    "gates": "class-aware selection layer only",
+    "verdict": "G5 FAIL: per-class advantage is flat (spread 0.0095); a class-aware SELECTION layer has nothing to act on. Budget-constrained class-aware allocation is a separate rule, reported on the dial regardless."
+   },
+   "G7_base_rate_dominance": {
+    "precision_by_predicted_class": {
+     "0": 0.7217391304347827,
+     "1": 0.7012034047549164
+    },
+    "min_precision": 0.7012034047549164,
+    "spread": 0.02053572567986628,
+    "verdict": "G7 pass: every class's vote is right more often than not (worst 70.1%)."
+   },
+   "class_aware_layer": null,
+   "free_arm_shipped": "bge-large-en-v1.5+logreg",
+   "versus_expert": {
+    "cheap_balanced": 0.7110166299628347,
+    "expert_balanced": 0.7996587661381234,
+    "balanced_delta": -0.08864213617528871,
+    "balanced_ci": [
+     -0.10139084680914366,
+     -0.07589938930495577
+    ],
+    "balanced_p": 0.0,
+    "mcnemar_accuracy": {
+     "acc_a": 0.710995085995086,
+     "acc_b": 0.7997542997542998,
+     "diff": -0.0887592137592138,
+     "n_both_right": 3934,
+     "n_a_only": 696,
+     "n_b_only": 1274,
+     "n_both_wrong": 608,
+     "n_discordant": 1970,
+     "p_value": 2.7034348544359332e-39,
+     "test_used": "McNemar mid-p",
+     "diff_ci_lo": -0.10212300368550373,
+     "diff_ci_hi": -0.07524570024570021
+    },
+    "non_inferiority": {
+     "candidate_acc": 0.710995085995086,
+     "baseline_acc": 0.7997542997542998,
+     "diff": -0.0887592137592138,
+     "margin": 0.02,
+     "diff_ci_lo": -0.09997696560196563,
+     "diff_ci_hi": -0.07724201474201475,
+     "p_value": 1.0,
+     "passes": false,
+     "verdict": "clearly worse by more than the 2% margin"
+    }
+   },
+   "deferral_curve": {
+    "free_alone": 0.7110166299628347,
+    "expert_alone": 0.7996587661381234,
+    "points": [
+     {
+      "expert_share_target": 0.0,
+      "confidence": {
+       "expert_share": 0.0,
+       "balanced": 0.7110166299628347
+      },
+      "class_aware": {
+       "expert_share": 0.0,
+       "balanced": 0.7110166299628347
+      },
+      "gain_per_10pct_spend": null
+     },
+     {
+      "expert_share_target": 0.05,
+      "confidence": {
+       "expert_share": 0.05067567567567568,
+       "balanced": 0.7222194972478964
+      },
+      "class_aware": {
+       "expert_share": 0.04990786240786241,
+       "balanced": 0.7212771801647064
+      },
+      "gain_per_10pct_spend": 0.02210699144252176
+     },
+     {
+      "expert_share_target": 0.1,
+      "confidence": {
+       "expert_share": 0.10042997542997543,
+       "balanced": 0.7323501133374466
+      },
+      "class_aware": {
+       "expert_share": 0.09981572481572482,
+       "balanced": 0.7309246111432814
+      },
+      "gain_per_10pct_spend": 0.02036128764665159
+     },
+     {
+      "expert_share_target": 0.2,
+      "confidence": {
+       "expert_share": 0.2003992628992629,
+       "balanced": 0.7541410308156551
+      },
+      "class_aware": {
+       "expert_share": 0.19963144963144963,
+       "balanced": 0.7431629424704573
+      },
+      "gain_per_10pct_spend": 0.021797612076512093
+     },
+     {
+      "expert_share_target": 0.3,
+      "confidence": {
+       "expert_share": 0.29914004914004916,
+       "balanced": 0.7702547944272556
+      },
+      "class_aware": {
+       "expert_share": 0.29944717444717445,
+       "balanced": 0.750033226345601
+      },
+      "gain_per_10pct_spend": 0.01631925795314818
+     },
+     {
+      "expert_share_target": 0.5,
+      "confidence": {
+       "expert_share": 0.49938574938574937,
+       "balanced": 0.7904914075113896
+      },
+      "class_aware": {
+       "expert_share": 0.49984643734643736,
+       "balanced": 0.7555091356179162
+      },
+      "gain_per_10pct_spend": 0.010105891442015354
+     },
+     {
+      "expert_share_target": 0.75,
+      "confidence": {
+       "expert_share": 0.749539312039312,
+       "balanced": 0.8010463492664783
+      },
+      "class_aware": {
+       "expert_share": 0.7496928746928747,
+       "balanced": 0.7965750594230434
+      },
+      "gain_per_10pct_spend": 0.00421938494224297
+     },
+     {
+      "expert_share_target": 1.0,
+      "confidence": {
+       "expert_share": 1.0,
+       "balanced": 0.7996587661381234
+      },
+      "class_aware": {
+       "expert_share": 1.0,
+       "balanced": 0.7996587661381234
+      },
+      "gain_per_10pct_spend": -0.0005540123440740356
+     }
+    ],
+    "best_point_optimistic": {
+     "expert_share": 0.749539312039312,
+     "balanced": 0.8010463492664783,
+     "rule": "confidence",
+     "n_configurations_selected_over": 16
+    },
+    "best_point": {
+     "balanced": 0.7999709853118329,
+     "expert_share": 0.7985257985257985,
+     "picks_per_fold": [
+      {
+       "rule": "confidence",
+       "budget": 1.0
+      },
+      {
+       "rule": "confidence",
+       "budget": 0.75
+      },
+      {
+       "rule": "confidence",
+       "budget": 0.75
+      },
+      {
+       "rule": "confidence",
+       "budget": 0.75
+      },
+      {
+       "rule": "confidence",
+       "budget": 0.75
+      }
+     ],
+     "rule_agreement": 1.0,
+     "stable": false
+    },
+    "selection_bias": 0.0010753639546454696,
+    "gain_over_free": {
+     "delta": 0.0889543553489982,
+     "resolution_half_width": 0.006198876369528368,
+     "resolvable": true,
+     "note": ""
+    },
+    "gain_over_expert": {
+     "delta": 0.0003122191737094937,
+     "resolution_half_width": 0.006198876369528368,
+     "resolvable": false,
+     "note": "G6: +0.0003 is inside the +/-0.0062 this dataset can resolve -- not a difference"
+    },
+    "beats_both_ends": false
+   },
+   "guaranteed_coverage": [
+    {
+     "bar": 0.8,
+     "free_share": 0.5987407862407862,
+     "expert_share": 0.4012592137592138,
+     "balanced": 0.7774177719869977,
+     "per_class": {
+      "0": {
+       "owned_share": 0.35196560196560195,
+       "realized_precision": 0.7993019197207679
+      },
+      "1": {
+       "owned_share": 0.24677518427518427,
+       "realized_precision": 0.7977598008711886
+      }
+     },
+     "vacuous_classes": [],
+     "guarantee_holds": true
+    },
+    {
+     "bar": 0.9,
+     "free_share": 0.24892506142506143,
+     "expert_share": 0.7510749385749386,
+     "balanced": 0.7982686362068407,
+     "per_class": {
+      "0": {
+       "owned_share": 0.23617936117936117,
+       "realized_precision": 0.8985695708712613
+      },
+      "1": {
+       "owned_share": 0.012745700245700245,
+       "realized_precision": 0.8795180722891566
+      }
+     },
+     "vacuous_classes": [],
+     "guarantee_holds": false
+    },
+    {
+     "bar": 0.95,
+     "free_share": 0.19333538083538085,
+     "expert_share": 0.8066646191646192,
+     "balanced": 0.8013430046445196,
+     "per_class": {
+      "0": {
+       "owned_share": 0.19011056511056512,
+       "realized_precision": 0.9523424878836834
+      },
+      "1": {
+       "owned_share": 0.0032248157248157246,
+       "realized_precision": 0.8571428571428571
+      }
+     },
+     "vacuous_classes": [],
+     "guarantee_holds": false
+    }
+   ],
+   "recommendation": {
+    "best_free_model": "bge-large-en-v1.5+logreg",
+    "free_arm_shipped": "bge-large-en-v1.5+logreg",
+    "build_class_aware_layer": false,
+    "why": "G5 FAIL: per-class advantage is flat (spread 0.0095); a class-aware SELECTION layer has nothing to act on. Budget-constrained class-aware allocation is a separate rule, reported on the dial regardless."
+   }
+  },
+  {
+   "task": "imdb",
+   "trained_on": "llm",
+   "profile": {
+    "n": 25000,
+    "n_classes": 2,
+    "class_counts": {
+     "0": 12500,
+     "1": 12500
+    },
+    "majority_class": 0,
+    "majority_baseline": 0.5,
+    "imbalance_ratio": 1.0,
+    "duplicate_rows": 188,
+    "duplicate_share": 0.00752,
+    "resolution_half_width": 0.0031622776601683794,
+    "headline_metric": "accuracy",
+    "notes": [
+     "G2: 188 rows (0.75%) share text with another row; CV is grouped so copies cannot straddle a fold."
+    ]
+   },
+   "candidates": {
+    "ranking": [
+     {
+      "name": "bge-large-en-v1.5+logreg",
+      "balanced": 0.9358
+     },
+     {
+      "name": "bge-small-en-v1.5+logreg",
+      "balanced": 0.92256
+     },
+     {
+      "name": "tfidf+logreg",
+      "balanced": 0.89636
+     },
+     {
+      "name": "constant-majority",
+      "balanced": 0.5
+     }
+    ],
+    "best": "bge-large-en-v1.5+logreg",
+    "vs_best": {
+     "bge-small-en-v1.5+logreg": {
+      "delta": -0.013239999999999919,
+      "ci": [
+       -0.015960000000000085,
+       -0.010559999999999903
+      ],
+      "p": 0.0,
+      "significant_after_holm": true
+     },
+     "tfidf+logreg": {
+      "delta": -0.03943999999999992,
+      "ci": [
+       -0.043279999999999985,
+       -0.035560000000000036
+      ],
+      "p": 0.0,
+      "significant_after_holm": true
+     },
+     "constant-majority": {
+      "delta": -0.43579999999999997,
+      "ci": [
+       -0.4388000000000001,
+       -0.4328389999999999
+      ],
+      "p": 0.0,
+      "significant_after_holm": true
+     }
+    },
+    "n_candidates": 4,
+    "holm_alpha": 0.016666666666666666
+   },
+   "G3_roc_dominance": {
+    "applicable": true,
+    "total_pairs": 3,
+    "dominating_pairs": 2,
+    "is_total_order": false,
+    "verdict": "G3 pass: at least one pair is not ROC-ordered, so some genuine complementarity exists."
+   },
+   "G4_pool_diversity": {
+    "oracle_balanced": 0.97064,
+    "oracle_if_independent": 0.9994808000000001,
+    "mean_pairwise_disagreement": 0.0804,
+    "diversity_ratio": 1.2080108315992975,
+    "verdict": "G4 FAIL: members agree 92.0% of the time -- one classifier repeated. Selection has almost nothing to choose between."
+   },
+   "G5_class_advantage": {
+    "per_class": {
+     "0": {
+      "share": 0.51804,
+      "cheap_acc": 0.9206238900471007,
+      "expert_acc": 0.9440969809281137,
+      "advantage": 0.023473090881013015
+     },
+     "1": {
+      "share": 0.48196,
+      "cheap_acc": 0.9521122084820317,
+      "expert_acc": 0.9387501037430492,
+      "advantage": -0.013362104738982472
+     }
+    },
+    "spread": 0.03683519561999549,
+    "classes_cheap_wins": 1,
+    "gates": "class-aware selection layer only",
+    "verdict": "G5 FAIL: per-class advantage is flat (spread 0.0368); a class-aware SELECTION layer has nothing to act on. Budget-constrained class-aware allocation is a separate rule, reported on the dial regardless."
+   },
+   "G7_base_rate_dominance": {
+    "precision_by_predicted_class": {
+     "0": 0.9206238900471007,
+     "1": 0.9521122084820317
+    },
+    "min_precision": 0.9206238900471007,
+    "spread": 0.03148831843493105,
+    "verdict": "G7 pass: every class's vote is right more often than not (worst 92.1%)."
+   },
+   "class_aware_layer": null,
+   "free_arm_shipped": "bge-large-en-v1.5+logreg",
+   "versus_expert": {
+    "cheap_balanced": 0.9358,
+    "expert_balanced": 0.9415199999999999,
+    "balanced_delta": -0.005719999999999947,
+    "balanced_ci": [
+     -0.008600000000000052,
+     -0.0028799999999999937
+    ],
+    "balanced_p": 0.0002,
+    "mcnemar_accuracy": {
+     "acc_a": 0.9358,
+     "acc_b": 0.94152,
+     "diff": -0.005720000000000058,
+     "n_both_right": 22797,
+     "n_a_only": 598,
+     "n_b_only": 741,
+     "n_both_wrong": 864,
+     "n_discordant": 1339,
+     "p_value": 9.231865307992641e-05,
+     "test_used": "McNemar mid-p",
+     "diff_ci_lo": -0.008560000000000012,
+     "diff_ci_hi": -0.0029200000000000337
+    },
+    "non_inferiority": {
+     "candidate_acc": 0.9358,
+     "baseline_acc": 0.94152,
+     "diff": -0.005720000000000058,
+     "margin": 0.02,
+     "diff_ci_lo": -0.008079999999999976,
+     "diff_ci_hi": -0.0033600000000000296,
+     "p_value": 0.0,
+     "passes": true,
+     "verdict": "non-inferior within the 2% margin"
+    }
+   },
+   "deferral_curve": {
+    "free_alone": 0.9358,
+    "expert_alone": 0.9415199999999999,
+    "points": [
+     {
+      "expert_share_target": 0.0,
+      "confidence": {
+       "expert_share": 0.0,
+       "balanced": 0.9358
+      },
+      "class_aware": {
+       "expert_share": 0.0,
+       "balanced": 0.9358
+      },
+      "gain_per_10pct_spend": null
+     },
+     {
+      "expert_share_target": 0.05,
+      "confidence": {
+       "expert_share": 0.05008,
+       "balanced": 0.9419599999999999
+      },
+      "class_aware": {
+       "expert_share": 0.05,
+       "balanced": 0.93512
+      },
+      "gain_per_10pct_spend": 0.012300319488817778
+     },
+     {
+      "expert_share_target": 0.1,
+      "confidence": {
+       "expert_share": 0.10008,
+       "balanced": 0.94368
+      },
+      "class_aware": {
+       "expert_share": 0.1,
+       "balanced": 0.93164
+      },
+      "gain_per_10pct_spend": 0.0034400000000001096
+     },
+     {
+      "expert_share_target": 0.2,
+      "confidence": {
+       "expert_share": 0.1996,
+       "balanced": 0.9428399999999999
+      },
+      "class_aware": {
+       "expert_share": 0.2,
+       "balanced": 0.93016
+      },
+      "gain_per_10pct_spend": -0.0008440514469454009
+     },
+     {
+      "expert_share_target": 0.3,
+      "confidence": {
+       "expert_share": 0.30016,
+       "balanced": 0.9424399999999999
+      },
+      "class_aware": {
+       "expert_share": 0.3,
+       "balanced": 0.9296800000000001
+      },
+      "gain_per_10pct_spend": -0.0003977724741447455
+     },
+     {
+      "expert_share_target": 0.5,
+      "confidence": {
+       "expert_share": 0.49992,
+       "balanced": 0.9418
+      },
+      "class_aware": {
+       "expert_share": 0.5,
+       "balanced": 0.93416
+      },
+      "gain_per_10pct_spend": -0.0003203844613536113
+     },
+     {
+      "expert_share_target": 0.75,
+      "confidence": {
+       "expert_share": 0.74944,
+       "balanced": 0.9416
+      },
+      "class_aware": {
+       "expert_share": 0.75,
+       "balanced": 0.94152
+      },
+      "gain_per_10pct_spend": -8.015389547931147e-05
+     },
+     {
+      "expert_share_target": 1.0,
+      "confidence": {
+       "expert_share": 1.0,
+       "balanced": 0.9415199999999999
+      },
+      "class_aware": {
+       "expert_share": 1.0,
+       "balanced": 0.9415199999999999
+      },
+      "gain_per_10pct_spend": -3.1928480204374206e-05
+     }
+    ],
+    "best_point_optimistic": {
+     "expert_share": 0.1,
+     "balanced": 0.94368,
+     "rule": "confidence",
+     "n_configurations_selected_over": 16
+    },
+    "best_point": {
+     "balanced": 0.94368,
+     "expert_share": 0.10008,
+     "picks_per_fold": [
+      {
+       "rule": "confidence",
+       "budget": 0.1
+      },
+      {
+       "rule": "confidence",
+       "budget": 0.1
+      },
+      {
+       "rule": "confidence",
+       "budget": 0.1
+      },
+      {
+       "rule": "confidence",
+       "budget": 0.1
+      },
+      {
+       "rule": "confidence",
+       "budget": 0.1
+      }
+     ],
+     "rule_agreement": 1.0,
+     "stable": true
+    },
+    "selection_bias": 0.0,
+    "gain_over_free": {
+     "delta": 0.007879999999999998,
+     "resolution_half_width": 0.0031622776601683794,
+     "resolvable": true,
+     "note": ""
+    },
+    "gain_over_expert": {
+     "delta": 0.0021600000000000508,
+     "resolution_half_width": 0.0031622776601683794,
+     "resolvable": false,
+     "note": "G6: +0.0022 is inside the +/-0.0032 this dataset can resolve -- not a difference"
+    },
+    "beats_both_ends": false
+   },
+   "guaranteed_coverage": [
+    {
+     "bar": 0.8,
+     "free_share": 0.99992,
+     "expert_share": 7.999999999996898e-05,
+     "balanced": 0.9358,
+     "per_class": {
+      "0": {
+       "owned_share": 0.518,
+       "realized_precision": 0.9206177606177606
+      },
+      "1": {
+       "owned_share": 0.48192,
+       "realized_precision": 0.9521082337317397
+      }
+     },
+     "vacuous_classes": [],
+     "guarantee_holds": true
+    },
+    {
+     "bar": 0.9,
+     "free_share": 0.99992,
+     "expert_share": 7.999999999996898e-05,
+     "balanced": 0.9358,
+     "per_class": {
+      "0": {
+       "owned_share": 0.518,
+       "realized_precision": 0.9206177606177606
+      },
+      "1": {
+       "owned_share": 0.48192,
+       "realized_precision": 0.9521082337317397
+      }
+     },
+     "vacuous_classes": [],
+     "guarantee_holds": true
+    },
+    {
+     "bar": 0.95,
+     "free_share": 0.96748,
+     "expert_share": 0.03251999999999999,
+     "balanced": 0.94296,
+     "per_class": {
+      "0": {
+       "owned_share": 0.48556,
+       "realized_precision": 0.9502430183705413
+      },
+      "1": {
+       "owned_share": 0.48192,
+       "realized_precision": 0.9521082337317397
+      }
+     },
+     "vacuous_classes": [],
+     "guarantee_holds": true
+    }
+   ],
+   "recommendation": {
+    "best_free_model": "bge-large-en-v1.5+logreg",
+    "free_arm_shipped": "bge-large-en-v1.5+logreg",
+    "build_class_aware_layer": false,
+    "why": "G4 FAIL: members agree 92.0% of the time -- one classifier repeated. Selection has almost nothing to choose between.; G5 FAIL: per-class advantage is flat (spread 0.0368); a class-aware SELECTION layer has nothing to act on. Budget-constrained class-aware allocation is a separate rule, reported on the dial regardless."
+   }
+  }
+ ]
+}

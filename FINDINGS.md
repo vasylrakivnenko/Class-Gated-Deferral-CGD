@@ -725,6 +725,74 @@ Each of these produced a wrong number or a silent failure, not an error message.
 
 ---
 
+## 9. The LLM baseline is a choice, and two of ours are load-bearing
+
+An independent literature sweep of published LLM numbers on GoEmotions,
+dair-ai/emotion, BLURB and Financial PhraseBank was run against the baselines
+drawn on the chart pages. Most of it confirms what we already had. The parts
+that do not are the parts worth keeping.
+
+**Confirmed to the digit.** GoEmotions ChatGPT zero-shot **25.55% macro-F1**
+(Lecourt et al. 2025) and dair-ai LLaMA-3 8B zero-shot **49% accuracy**
+(arXiv:2503.24307) are the exact values on the charts. Our own measured
+Financial PhraseBank figure, GPT-5-nano + GEPA at **98.8%**, sits at the
+published top end (GPT-4 few-shot 97% on AllAgree, FinGPT 98.6%), which is a
+useful check that our harness is not flattering the paid arm.
+
+**Independently corroborated: the 82.91 correction.** The sweep lists 82.91 as
+BiomedBERT-LARGE with fine-tuning stabilisation and PubMedBERT at 81.10–81.16,
+matching the correction in `blurb_published.json`. Two sources now agree that
+attributing 82.91 to PubMedBERT is wrong.
+
+### The BLURB verdict rests on one number covering 70% of the items
+
+ChemProt is 16,038 of BLURB's 23,071 scored items. Our free arm gets 0.4470 on
+it. The published GPT-4 figure we draw is 0.4742 (Feng et al. Table 1, best
+prompt per task, official BLURB split). Chen et al.'s ChatGPT zero-shot on the
+same augmented split is 0.3416. Both are correct; they are different models.
+
+| ChemProt baseline chosen | weighted LLM line | BLURB items above it |
+|---|---|---|
+| GPT-4 best prompt (ours) | 0.479 | **4%** |
+| ChatGPT zero-shot | 0.469 | **73%** |
+
+The weighted line barely moves. The verdict moves 69 points. **We keep GPT-4**,
+because it is the harder test and the one that does not flatter us — but any
+BLURB claim must name the model, or it is not a claim about anything.
+
+Note also an unresolved source conflict on PubMedQA: the sweep reads Chen et al.
+(btad557) as ChatGPT 82.5, our file reads the same table as 76.45. Neither was
+re-fetched. It changes no conclusion, because the free arm scores 54.2% and
+loses to both, but the discrepancy is logged rather than silently resolved.
+
+### The real objection: our emotion lines are zero-shot
+
+This is the finding that matters commercially. Both emotion baselines beat by
+the free arm are **prompted** LLMs. A **fine-tuned** LLM is far stronger:
+
+| dataset | zero-shot LLM (our line) | fine-tuned LLM | fine-tuned encoder |
+|---|---|---|---|
+| dair-ai/emotion | 49% (LLaMA-3 8B) | 91% LLaMA-3 8B, 93.1% GPT-4o-DPO | 88–96.8% RoBERTa |
+| GoEmotions (28-label) | 25.6% (ChatGPT) | ~53% macro-F1 (GPT-4 distilled) | 46–52.8% BERT/RoBERTa |
+
+So "the free arm beats the LLM on 100% of dair-ai classes" is true of an LLM
+someone prompted and false of an LLM someone trained. The chart labels already
+say *zero-shot*, which is what keeps it honest, and prompting is what customers
+actually deploy. But this is the first question a technical diligence will ask,
+and the answer is not a defence of the chart — it is the thesis:
+
+**once you fine-tune, you have already accepted the labelled data and the
+training step, and at that point the 68M-parameter encoder is the cheaper way to
+spend them.** The fine-tuned LLM is not a counterexample to downshifting. It is
+downshifting, stopped one model size too early.
+
+The general pattern the sweep reports, across all four datasets, is that
+fine-tuned models beat zero-shot LLMs, and the gap closes only on coarse tasks
+(3-class Financial PhraseBank, 6-class emotion) where both saturate. That is the
+same boundary our own pre-flight test draws, arrived at independently.
+
+---
+
 ## The thread running through all of it
 
 Every finding above is the same shape: **the published number and the measured

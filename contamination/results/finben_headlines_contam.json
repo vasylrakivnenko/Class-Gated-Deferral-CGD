@@ -1,0 +1,215 @@
+{
+ "audit": "finben_headlines_contamination",
+ "claim_backed": [
+  "SCOPE.md: FinBen headlines: 71.5% of test rows have a prompt that appears in train",
+  "CASCADE_DIAL.md: FinBen at 71.5%",
+  "RESEARCH_BRIEF.md: train/test prompt overlap in FinBen (we measure 71.5% of test rows)"
+ ],
+ "dataset": {
+  "repo": "TheFinAI/flare-headlines",
+  "revision": "39e4f9ba3515a7cf464ed07ece80a4f7f4189134",
+  "repo_type": "dataset",
+  "snapshot_files": {
+   ".gitattributes": {
+    "sha256": "f4e703ea6e44bbebe53aceed2a89c11e40b88b7ae130c480c89860ab805ffc8f",
+    "bytes": 2307
+   },
+   "README.md": {
+    "sha256": "9681062cba5a88485b5a59fafa58ce4fd5a10813bebbec5ee763b4c4ba3e319e",
+    "bytes": 661
+   },
+   "data/test-00000-of-00001-2a1cddfd1b6bd5cb.parquet": {
+    "sha256": "84775bec089b612517f20ff450ccd3448c4de9a9d2c9d05fd416b95f47ec3614",
+    "bytes": 899498
+   },
+   "data/train-00000-of-00001-b4185af3fde5de2a.parquet": {
+    "sha256": "46dc6a309f2a2d6b0a178bb79121bbc0384a4165f17b55ec2b80686ca3d96762",
+    "bytes": 2517850
+   },
+   "data/valid-00000-of-00001-eaa51bb586dd9ed5.parquet": {
+    "sha256": "e73eb79e0dc1cbc090a70ff780810aae4824fbab1ab30e101d5b5a2c14e20490",
+    "bytes": 365008
+   }
+  }
+ },
+ "content_fingerprints": {
+  "test": "292fbd57a9c34ee3881d3a0ec43518429f73a2eb9e9c1ca30ca3c79dbc76ac8d",
+  "train": "a9b9061064de9ea62bb6de40c9a3106d9de4ab00047d66f4efdca8150fd9e408",
+  "valid": "6a17c0a20f07a4ed59c3b98e13dc628855e5ec765d396e638cbae26f07655fa6"
+ },
+ "environment": {
+  "utc": "2026-09-22T06:34:58+00:00",
+  "python": "3.12.8",
+  "platform": "macOS-26.6.1-arm64-arm-64bit",
+  "machine": "arm64",
+  "packages": {
+   "datasets": "5.0.1",
+   "huggingface_hub": "1.30.0",
+   "numpy": "2.5.3",
+   "pyarrow": "25.0.1"
+  },
+  "git_commit": "12ed998c0c53018951964cf6e19e643131072258",
+  "git_branch": "recover/post-oom-checkpoint",
+  "git_dirty": true,
+  "audit_code_dirty": false,
+  "audit_code_uncommitted": []
+ },
+ "verified_against_published_claim": true,
+ "derivation": {
+  "vocabulary_from_label_type": [
+   "Asset Comparision",
+   "Direction Constant",
+   "Direction Down",
+   "Direction Up",
+   "FutureNews",
+   "FuturePrice",
+   "PastNews",
+   "PastPrice",
+   "Price or Not"
+  ],
+  "n_test_rows": 20547,
+  "test_rows_agreeing_with_label_type": 20547,
+  "test_rows_matching_no_subtask": 0,
+  "test_rows_matching_multiple_subtasks": 0,
+  "test_rows_with_unparsable_headline": 0,
+  "train_rows_with_unparsable_headline": 0,
+  "unique_headlines_train": 7718,
+  "unique_headlines_test": 2239,
+  "unique_headlines_shared": 1590,
+  "per_split": {
+   "train": {
+    "rows": 71892,
+    "unparsable_headline": 0,
+    "matched_no_subtask": 0,
+    "matched_multiple_subtasks": 0,
+    "derived_counts": {
+     "Asset Comparision": 7988,
+     "Direction Constant": 7988,
+     "Direction Down": 7988,
+     "Direction Up": 7988,
+     "FutureNews": 7988,
+     "FuturePrice": 7988,
+     "PastNews": 7988,
+     "PastPrice": 7988,
+     "Price or Not": 7988
+    }
+   },
+   "test": {
+    "rows": 20547,
+    "unparsable_headline": 0,
+    "matched_no_subtask": 0,
+    "matched_multiple_subtasks": 0,
+    "derived_counts": {
+     "Asset Comparision": 2283,
+     "Direction Constant": 2283,
+     "Direction Down": 2283,
+     "Direction Up": 2283,
+     "FutureNews": 2283,
+     "FuturePrice": 2283,
+     "PastNews": 2283,
+     "PastPrice": 2283,
+     "Price or Not": 2283
+    }
+   }
+  }
+ },
+ "leakage": {
+  "per_subtask": {
+   "Asset Comparision": {
+    "n_train": 7988,
+    "n_test": 2283,
+    "leaked": 1632,
+    "leak_free": 651,
+    "leak_share": 0.7148488830486203,
+    "label_agreement_on_leaked": 1631,
+    "label_agreement_pct": 99.9
+   },
+   "Direction Constant": {
+    "n_train": 7988,
+    "n_test": 2283,
+    "leaked": 1632,
+    "leak_free": 651,
+    "leak_share": 0.7148488830486203,
+    "label_agreement_on_leaked": 1629,
+    "label_agreement_pct": 99.8
+   },
+   "Direction Down": {
+    "n_train": 7988,
+    "n_test": 2283,
+    "leaked": 1632,
+    "leak_free": 651,
+    "leak_share": 0.7148488830486203,
+    "label_agreement_on_leaked": 1628,
+    "label_agreement_pct": 99.8
+   },
+   "Direction Up": {
+    "n_train": 7988,
+    "n_test": 2283,
+    "leaked": 1632,
+    "leak_free": 651,
+    "leak_share": 0.7148488830486203,
+    "label_agreement_on_leaked": 1627,
+    "label_agreement_pct": 99.7
+   },
+   "FutureNews": {
+    "n_train": 7988,
+    "n_test": 2283,
+    "leaked": 1632,
+    "leak_free": 651,
+    "leak_share": 0.7148488830486203,
+    "label_agreement_on_leaked": 1632,
+    "label_agreement_pct": 100.0
+   },
+   "FuturePrice": {
+    "n_train": 7988,
+    "n_test": 2283,
+    "leaked": 1632,
+    "leak_free": 651,
+    "leak_share": 0.7148488830486203,
+    "label_agreement_on_leaked": 1632,
+    "label_agreement_pct": 100.0
+   },
+   "PastNews": {
+    "n_train": 7988,
+    "n_test": 2283,
+    "leaked": 1632,
+    "leak_free": 651,
+    "leak_share": 0.7148488830486203,
+    "label_agreement_on_leaked": 1632,
+    "label_agreement_pct": 100.0
+   },
+   "PastPrice": {
+    "n_train": 7988,
+    "n_test": 2283,
+    "leaked": 1632,
+    "leak_free": 651,
+    "leak_share": 0.7148488830486203,
+    "label_agreement_on_leaked": 1632,
+    "label_agreement_pct": 100.0
+   },
+   "Price or Not": {
+    "n_train": 7988,
+    "n_test": 2283,
+    "leaked": 1632,
+    "leak_free": 651,
+    "leak_share": 0.7148488830486203,
+    "label_agreement_on_leaked": 1632,
+    "label_agreement_pct": 100.0
+   }
+  },
+  "total_test_rows": 20547,
+  "total_leaked_rows": 14688,
+  "total_leak_share": 0.7148488830486203,
+  "leak_free_rows_per_subtask": 651,
+  "supplementary_test_rows_in_train_or_valid": 16677,
+  "supplementary_test_rows_in_train_or_valid_share": 0.8116513359614542
+ },
+ "within_train_duplicates": {
+  "subtask": "Direction Up",
+  "headlines_appearing_more_than_once": 159,
+  "headlines_with_conflicting_labels": 8
+ },
+ "reproduces_published_claim": true,
+ "mismatches": [],
+ "runtime_seconds": 12.2
+}

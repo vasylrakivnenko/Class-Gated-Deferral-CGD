@@ -1,0 +1,166 @@
+{
+ "audit": "beavertails_contamination",
+ "claim_backed": [
+  "SCOPE.md: BeaverTails: 99.8% of test rows share a prompt with train",
+  "SCOPE.md: 27.7% disagree on is_safe, 23.9% on non_violent_unethical_behavior",
+  "CASCADE_DIAL.md: BeaverTails at 99.8%"
+ ],
+ "dataset": {
+  "repo": "PKU-Alignment/BeaverTails",
+  "revision": "8401fe609d288129cc684a9b3be6a93e41cfe678",
+  "repo_type": "dataset",
+  "snapshot_files": {
+   ".gitattributes": {
+    "sha256": "f4e703ea6e44bbebe53aceed2a89c11e40b88b7ae130c480c89860ab805ffc8f",
+    "bytes": 2307
+   },
+   ".gitignore": {
+    "sha256": "344f316430016e6b60348dbe60b98aef4f4924854b08904ff06184760ea0c6f2",
+    "bytes": 21
+   },
+   "README.md": {
+    "sha256": "92bce76909c3abb6e7ca2bbb1240f6b03da0a531cde8c03b3bbf7cb20c9a7bef",
+    "bytes": 6951
+   },
+   "images/dataset-distribution.png": {
+    "sha256": "dc3b2856b178b541c0d52a2a5e10cfac9c8eef535e65404cdd85e7bd1151c91e",
+    "bytes": 449995
+   },
+   "round0/30k/test.jsonl.gz": {
+    "sha256": "0ce619bf4c421c12e578445b1fb8d1aedf4bf05ca3eb985f4ddf498a784769ff",
+    "bytes": 545222
+   },
+   "round0/30k/train.jsonl.gz": {
+    "sha256": "2e24b85dd599224eeb7379da297223bad50e11fea9fee6a7fdb4bd26aedec315",
+    "bytes": 4948694
+   },
+   "round0/330k/test.jsonl.xz": {
+    "sha256": "1c726c662b85bf4761913041fe9e098f80e5206344864597dbde86bc9a1bfc96",
+    "bytes": 2436728
+   },
+   "round0/330k/train.jsonl.xz": {
+    "sha256": "12f04c9200000929ebbc616c29cb53331f6df36e7341d73e4a12cffac0eb1c08",
+    "bytes": 31061396
+   }
+  }
+ },
+ "content_fingerprints": {
+  "30k_test": "1015dcfaab0ae70c856f1d3c720880f8e729e0815a70223b1bdced085868be46",
+  "30k_train": "47c86f0373392026128ebf5c0a16b9edc5b0f7b0f567c8e9fd12a7cb6459e315",
+  "330k_test": "f4092be66b82413ae1e9b214f303affcef86034184af24254e8919e72775bae2",
+  "330k_train": "1783eaf50b28caecceca9d9363b9e7949e3d71bc0ca98e2b6797ddd0b44e07dc"
+ },
+ "environment": {
+  "utc": "2026-09-22T06:35:11+00:00",
+  "python": "3.12.8",
+  "platform": "macOS-26.6.1-arm64-arm-64bit",
+  "machine": "arm64",
+  "packages": {
+   "datasets": "5.0.1",
+   "huggingface_hub": "1.30.0",
+   "numpy": "2.5.3",
+   "pyarrow": "25.0.1"
+  },
+  "git_commit": "12ed998c0c53018951964cf6e19e643131072258",
+  "git_branch": "recover/post-oom-checkpoint",
+  "git_dirty": true,
+  "audit_code_dirty": false,
+  "audit_code_uncommitted": []
+ },
+ "verified_against_published_claim": true,
+ "leakage": {
+  "330k": {
+   "n_train_rows": 300567,
+   "n_test_rows": 33396,
+   "unique_train_prompts": 16188,
+   "unique_test_prompts": 7766,
+   "shared_prompts": 7759,
+   "test_rows_whose_prompt_is_in_train": 33324,
+   "test_rows_whose_prompt_is_in_train_share": 0.9978440531800216,
+   "test_rows_whose_pair_is_in_train": 0,
+   "test_rows_whose_pair_is_in_train_share": 0.0,
+   "responses_per_train_prompt": 6.16098344452681
+  },
+  "30k": {
+   "n_train_rows": 27186,
+   "n_test_rows": 3021,
+   "unique_train_prompts": 7766,
+   "unique_test_prompts": 2526,
+   "shared_prompts": 2518,
+   "test_rows_whose_prompt_is_in_train": 2997,
+   "test_rows_whose_prompt_is_in_train_share": 0.9920556107249255,
+   "test_rows_whose_pair_is_in_train": 12,
+   "test_rows_whose_pair_is_in_train_share": 0.003972194637537239,
+   "responses_per_train_prompt": 3.4917589492660315
+  }
+ },
+ "duplicates": {
+  "categories": [
+   "animal_abuse",
+   "child_abuse",
+   "controversial_topics,politics",
+   "discrimination,stereotype,injustice",
+   "drug_abuse,weapons,banned_substance",
+   "financial_crime,property_crime,theft",
+   "hate_speech,offensive_language",
+   "misinformation_regarding_ethics,laws_and_safety",
+   "non_violent_unethical_behavior",
+   "privacy_violation",
+   "self_harm",
+   "sexually_explicit,adult_content",
+   "terrorism,organized_crime",
+   "violence,aiding_and_abetting,incitement"
+  ],
+  "unique_texts": 99734,
+  "texts_appearing_more_than_once": 99734,
+  "copies_per_text": {
+   "3": 99360,
+   "4": 54,
+   "6": 242,
+   "9": 51,
+   "12": 20,
+   "15": 3,
+   "18": 3,
+   "21": 1
+  },
+  "copies_agree_on_full_category_vector": 46953,
+  "copies_agree_on_is_safe": 72142,
+  "disagree_pct": {
+   "animal_abuse": 1.0,
+   "child_abuse": 0.7,
+   "controversial_topics,politics": 5.8,
+   "discrimination,stereotype,injustice": 9.0,
+   "drug_abuse,weapons,banned_substance": 5.2,
+   "financial_crime,property_crime,theft": 8.1,
+   "hate_speech,offensive_language": 10.7,
+   "misinformation_regarding_ethics,laws_and_safety": 3.4,
+   "non_violent_unethical_behavior": 23.9,
+   "privacy_violation": 3.8,
+   "self_harm": 0.8,
+   "sexually_explicit,adult_content": 3.1,
+   "terrorism,organized_crime": 1.9,
+   "violence,aiding_and_abetting,incitement": 16.2,
+   "is_safe": 27.7
+  },
+  "majority_vote_accuracy_pct": {
+   "animal_abuse": 99.7,
+   "child_abuse": 99.8,
+   "controversial_topics,politics": 98.1,
+   "discrimination,stereotype,injustice": 97.0,
+   "drug_abuse,weapons,banned_substance": 98.3,
+   "financial_crime,property_crime,theft": 97.3,
+   "hate_speech,offensive_language": 96.4,
+   "misinformation_regarding_ethics,laws_and_safety": 98.9,
+   "non_violent_unethical_behavior": 92.1,
+   "privacy_violation": 98.7,
+   "self_harm": 99.7,
+   "sexually_explicit,adult_content": 99.0,
+   "terrorism,organized_crime": 99.4,
+   "violence,aiding_and_abetting,incitement": 94.6,
+   "is_safe": 90.8
+  }
+ },
+ "reproduces_published_claim": true,
+ "mismatches": [],
+ "runtime_seconds": 70.6
+}

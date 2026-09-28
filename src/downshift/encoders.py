@@ -60,8 +60,21 @@ def _cost_per_1k(items_per_second: float) -> float:
     return seconds_per_1k / 3600.0 * CPU_INSTANCE_USD_PER_HOUR
 
 
+def _max_proba(clf, X) -> list[float] | None:
+    """Max predicted probability per item, or None if the estimator has none.
+
+    Costs one extra forward pass over an already-fitted model and makes the
+    difference between a row that can be routed and one that cannot.
+    """
+    try:
+        return [float(v) for v in clf.predict_proba(X).max(axis=1)]
+    except Exception:
+        return None
+
+
 def _result(key: str, label: str, preds: list[str], gold: list[str],
-            train_seconds: float, items_per_second: float, note: str) -> EvalResult:
+            train_seconds: float, items_per_second: float, note: str,
+            confidence: list[float] | None = None) -> EvalResult:
     correct = np.array([p == g for p, g in zip(preds, gold)], dtype=bool)
     hosted = _cost_per_1k(items_per_second)
     if hosted > 0:
@@ -69,7 +82,7 @@ def _result(key: str, label: str, preds: list[str], gold: list[str],
                 f"served on a small CPU instance it would be about ${hosted:.5f}/1k.")
     return EvalResult(
         model_key=key, label=label, split="test", n=len(gold),
-        correct=correct, predictions=preds, gold=gold,
+        correct=correct, predictions=preds, gold=gold, confidence=confidence,
         accuracy=accuracy_ci(correct),
         mean_in_tokens=0.0, mean_out_tokens=0.0,
         total_in_tokens=0, total_out_tokens=0,
@@ -144,10 +157,12 @@ def run_tfidf(train, test, seed: int = 0) -> EvalResult:
 
     t1 = time.time()
     preds = list(clf.predict(X_test))
+    conf = _max_proba(clf, X_test)
     infer = time.time() - t1
 
     return _result("tfidf-logreg", "TF-IDF + logistic regression", preds, y_test,
                    train_seconds, len(X_test) / max(infer, 1e-6),
+                   confidence=conf,
                    note=f"Trained on {len(X_train)} examples in {train_seconds:.1f}s. No GPU, no API.")
 
 
@@ -173,10 +188,12 @@ def run_frozen_embeddings(train, test, model_name: str = "intfloat/multilingual-
     emb_test = encoder.encode([f"query: {t}" for t in X_test],
                               batch_size=64, show_progress_bar=False, normalize_embeddings=True)
     preds = list(clf.predict(emb_test))
+    conf = _max_proba(clf, emb_test)
     infer = time.time() - t1
 
     return _result("frozen-embed", "Frozen embeddings + logreg", preds, y_test,
                    train_seconds, len(X_test) / max(infer, 1e-6),
+                   confidence=conf,
                    note=f"{model_name}, weights frozen. Trained head on {len(X_train)} examples in {train_seconds:.1f}s.")
 
 
@@ -231,8 +248,17 @@ def run_finetuned_encoder(train, test, model_name: str = "jhu-clsp/ettin-encoder
     loss_fn = torch.nn.CrossEntropyLoss(weight=weights)
     opt = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=0.01)
     total_steps = max(len(loader) * epochs, 1)
-    sched = torch.optim.lr_scheduler.OneCycleLR(opt, max_lr=lr, total_steps=total_steps,
-                                                pct_start=0.1, anneal_strategy="linear")
+    # OneCycleLR computes `(step_num - start_step) / (end_step - start_step)`, and at
+    # very small step counts the warmup and anneal phases collapse onto the same step
+    # so that denominator is zero. Verified: total_steps=1 raises ZeroDivisionError
+    # from inside `__init__` (it calls `_initial_step` -> `get_lr`), which crashes the
+    # row rather than degrading it. A dataset small enough to hit this has nothing to
+    # schedule anyway, so run a constant learning rate instead of refusing to train.
+    sched = None
+    if total_steps >= 3:
+        sched = torch.optim.lr_scheduler.OneCycleLR(
+            opt, max_lr=lr, total_steps=total_steps, pct_start=0.1,
+            anneal_strategy="linear")
 
     t0 = time.time()
     model.train()
@@ -244,21 +270,26 @@ def run_finetuned_encoder(train, test, model_name: str = "jhu-clsp/ettin-encoder
             loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             opt.step()
-            sched.step()
+            if sched is not None:
+                sched.step()
     train_seconds = time.time() - t0
 
     model.eval()
     t_ids, t_mask = encode(X_test)
     preds: list[str] = []
+    conf: list[float] = []
     t1 = time.time()
     with torch.no_grad():
         for i in range(0, len(X_test), 64):
             out = model(input_ids=t_ids[i:i + 64].to(device),
                         attention_mask=t_mask[i:i + 64].to(device))
-            preds.extend(labels[j] for j in out.logits.argmax(-1).tolist())
+            probs = torch.softmax(out.logits.float(), dim=-1).cpu()
+            preds.extend(labels[j] for j in probs.argmax(-1).tolist())
+            conf.extend(float(v) for v in probs.max(-1).values.tolist())
     infer = time.time() - t1
 
     return _result("finetuned-encoder", f"Fine-tuned encoder ({model_name.split('/')[-1]})",
                    preds, y_test, train_seconds, len(X_test) / max(infer, 1e-6),
+                   confidence=conf,
                    note=f"{model_name} fine-tuned on {len(X_train)} examples, "
                         f"{epochs} epochs, {train_seconds:.0f}s on {device}.")

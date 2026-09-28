@@ -17,6 +17,32 @@ from downshift.evaluate import row_cost_per_1k_items
 from downshift.program import record_prompt_changed
 from downshift.experiment import _family_for, ALWAYS_LABEL_KEYS, cost_basis_for
 
+
+def _drop_unpriced(rows):
+    """Keep the plotter's refusal out of the end of a finished script.
+
+    `plot_cost_vs_accuracy` rejects NaN and negative costs, and NaN became
+    reachable for any row whose every call failed, not just registry rows with
+    no rate card. Every script that charts from results.json has to make the
+    same call run_experiment makes, or re-charting a finished run dies at the
+    very last step.
+    """
+    import math
+    keep, drop = [], []
+    for r in rows:
+        c = r.cost_per_1k
+        (keep if c is not None and not math.isnan(c) and c >= 0 else drop).append(r)
+    for r in keep:
+        if r.linked_from is not None:
+            t = r.linked_from[0]
+            if t is None or math.isnan(t) or t < 0:
+                r.linked_from = None
+    if drop:
+        print(f"  NOTE: {len(drop)} row(s) left off the chart for want of a verified "
+              f"price: {[r.label for r in drop]}")
+    return keep
+
+
 # Follows DS_TASK the same way add_model.py's default does, so running with no
 # path argument re-renders whichever task's run is currently active.
 DEFAULT_RESULTS = f"runs/{os.environ.get('DS_TASK', 'financial_phrasebank')}/results.json"
@@ -56,8 +82,7 @@ def main(path: str = DEFAULT_RESULTS, bar: float | None = None) -> None:
                 payload.get("optimizations", {}).get(base_key))))
 
     out = payload.get("chart") or f"runs/{task['key']}/cost_vs_accuracy.png"
-    plot_cost_vs_accuracy(
-        rows, out,
+    plot_cost_vs_accuracy(_drop_unpriced(rows), out,
         majority_baseline=task["majority_accuracy"],
         accuracy_bar=bar if bar is not None else payload.get("accuracy_bar"),
         title="Cheapest model that clears the bar",

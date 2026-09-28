@@ -1,0 +1,64 @@
+Rebuild the four Online Cascade Learning evaluation streams, and prove they
+are the ones the paper measured.
+
+  Nie, Ding, Hu, Jermaine, Chaudhuri. "Online Cascade Learning for Efficient
+  Inference over Streams." ICML 2024, PMLR 235:38071-38090.
+
+Why this file exists. We want to run our class-aware deferral gate against
+OCL's policies on OCL's own benchmark, at their budgets, under their metric.
+That is only worth doing if we are demonstrably running on their data, and
+their data is awkward to establish:
+
+  * the repo ships the LLM annotation streams but NOT the `*_preprocessed.csv`
+    files its own configs read. Those are in a Google Drive archive linked from
+    the README -- a mutable URL, no revision, no checksum published.
+  * the annotation streams are bare label-per-line text files. They carry no
+    key, so they are only meaningful if the row order of the CSV they were
+    generated against is exactly preserved.
+
+So alignment cannot be assumed; it has to be demonstrated. The demonstration is
+that every cell of the paper's Table 1 LLM row comes back, for both teacher
+models, under the repo's own `postprocess()` logic:
+
+    IMDB  94.15 / 93.33     HateSpeech  83.34|83.28 / 77.81|82.19
+    ISEAR 70.34 / 68.23     FEVER       79.98 / 77.15
+
+Eight cells across four datasets and two unrelated teachers. A misaligned
+stream scores at chance, so this is not a weak test -- an earlier attempt to
+rebuild ISEAR from public sources scored 0.1542 against a 0.1556 shuffled
+control, which is how we knew to keep looking for the authors' own file.
+
+Two things here were measured rather than assumed:
+
+  * DISPLAY CONVENTION. Three of the four tasks round to two decimals; ISEAR
+    truncates. ISEAR/GPT-3.5 is 70.3496 -- printed 70.34, where rounding gives
+    70.35 -- and ISEAR/Llama-2 is 68.2364, printed 68.23 where rounding gives
+    68.24. Both ISEAR cells are off by exactly +0.01 under rounding and both
+    are exact under truncation, so this is a real per-task difference in how
+    the table was produced, not a fudge to make one number fit. The regression
+    test asserts on the integer correct-counts, which are convention-free; the
+    printed strings are recorded alongside them for the reader.
+  * MALFORMED ANNOTATIONS. Two ISEAR GPT-3.5 rows read 'sadnessjoy' and
+    'sadnessfear'. OCL's postprocess resolves these by first-substring-match
+    over an insertion-ordered dict, so they become joy and sadness rather than
+    being dropped. Replicated exactly; dropping them changes the count.
+
+OCL repo pinned at 285e03fc98afabdf7768558d33ee7b5f662b5f19
+preprocessed archive: https://drive.usercontent.google.com/download?id=1vQR7pqVqmYndHkfpcEpwCSWYDXON0gkl&export=download
+
+
+task           rows  teacher  correct unparsed  accuracy   paper
+imdb          25000  gpt3.5     23538        0     94.15   94.15  ok
+imdb          25000  llama2     23333      862     93.33   93.33  ok
+hatespeech    10703  gpt3.5      8920        0     83.34   83.34  ok
+                                  996     (tp)     83.28   83.28  ok  recall
+hatespeech    10703  llama2      8328        0     77.81   77.81  ok
+                                  983     (tp)     82.19   82.19  ok  recall
+isear          7666  gpt3.5      5393        0     70.34   70.34  ok
+isear          7666  llama2      5231      241     68.23   68.23  ok
+fever          6512  gpt3.5      5208        0     79.98   79.98  ok
+fever          6512  llama2      5024        0     77.15   77.15  ok
+
+wrote /Users/vasyl/zadumai/ocl_compare/results/reconstruct.json (0.4s)
+
+All Table 1 cells reproduced. The streams are the paper's.

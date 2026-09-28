@@ -1,0 +1,335 @@
+{
+  "sources": {
+    "data/raw/cuad_governing_law/test.tsv": {
+      "url": "https://huggingface.co/datasets/nguha/legalbench/resolve/daec8237410aa23e3faf4bc41ad8b3a7e1696826/data/cuad_governing_law/test.tsv",
+      "sha256": "4fac99c3756da4ab033d1ef803f9a423580296ea4df1050d8bd1d3821992db27",
+      "bytes": 327097
+    },
+    "data/raw/cuad_governing_law/train.tsv": {
+      "url": "https://huggingface.co/datasets/nguha/legalbench/resolve/daec8237410aa23e3faf4bc41ad8b3a7e1696826/data/cuad_governing_law/train.tsv",
+      "sha256": "cdd3d1b477022acebfc3b1afe2d704a1a9ea5d099a32060000bc9507a4e5c4e3",
+      "bytes": 2380
+    },
+    "data/raw/cuad_insurance/test.tsv": {
+      "url": "https://huggingface.co/datasets/nguha/legalbench/resolve/daec8237410aa23e3faf4bc41ad8b3a7e1696826/data/cuad_insurance/test.tsv",
+      "sha256": "7916237f36a2e19a1a889e4a695892304f90dbe28fdc743a16480a1ed80883c9",
+      "bytes": 464050
+    },
+    "data/raw/cuad_insurance/train.tsv": {
+      "url": "https://huggingface.co/datasets/nguha/legalbench/resolve/daec8237410aa23e3faf4bc41ad8b3a7e1696826/data/cuad_insurance/train.tsv",
+      "sha256": "95494178d3579382eba81fb847d0212edbb577b72b7101d67e12422bc3430b87",
+      "bytes": 2501
+    },
+    "data/raw/cuad_ip_ownership_assignment/test.tsv": {
+      "url": "https://huggingface.co/datasets/nguha/legalbench/resolve/daec8237410aa23e3faf4bc41ad8b3a7e1696826/data/cuad_ip_ownership_assignment/test.tsv",
+      "sha256": "e0d349390887c4e0fb0b5cecd375978a032afdf9397e812960fd241018fb3744",
+      "bytes": 288334
+    },
+    "data/raw/cuad_ip_ownership_assignment/train.tsv": {
+      "url": "https://huggingface.co/datasets/nguha/legalbench/resolve/daec8237410aa23e3faf4bc41ad8b3a7e1696826/data/cuad_ip_ownership_assignment/train.tsv",
+      "sha256": "ce13cc694b70a13a45e36dcb51fcdedb04db01078e974fb8523f7685d3fbd172",
+      "bytes": 4724
+    },
+    "data/raw/cuad_license_grant/test.tsv": {
+      "url": "https://huggingface.co/datasets/nguha/legalbench/resolve/daec8237410aa23e3faf4bc41ad8b3a7e1696826/data/cuad_license_grant/test.tsv",
+      "sha256": "3ff3f62419debe4d3fa250e1c3229d6c23c0b19b3e44d9bab9deef1280a0104d",
+      "bytes": 693806
+    },
+    "data/raw/cuad_license_grant/train.tsv": {
+      "url": "https://huggingface.co/datasets/nguha/legalbench/resolve/daec8237410aa23e3faf4bc41ad8b3a7e1696826/data/cuad_license_grant/train.tsv",
+      "sha256": "f7cb795c0a3dac073833c9d98e1c1b2c37570031a25d6eda6dc2ce0e0f6b43a6",
+      "bytes": 3660
+    },
+    "data/raw/cuad_minimum_commitment/test.tsv": {
+      "url": "https://huggingface.co/datasets/nguha/legalbench/resolve/daec8237410aa23e3faf4bc41ad8b3a7e1696826/data/cuad_minimum_commitment/test.tsv",
+      "sha256": "33ff851a66e2bcf15c5f8826ce863607f557c3456e01c4154f02ab5cba6e401d",
+      "bytes": 345570
+    },
+    "data/raw/cuad_minimum_commitment/train.tsv": {
+      "url": "https://huggingface.co/datasets/nguha/legalbench/resolve/daec8237410aa23e3faf4bc41ad8b3a7e1696826/data/cuad_minimum_commitment/train.tsv",
+      "sha256": "188a5f73942703f78bf4f2a8ba8e404c85ebc1b12aa4129b072526c4be6164a6",
+      "bytes": 2834
+    },
+    "data/raw/cuad_non-compete/test.tsv": {
+      "url": "https://huggingface.co/datasets/nguha/legalbench/resolve/daec8237410aa23e3faf4bc41ad8b3a7e1696826/data/cuad_non-compete/test.tsv",
+      "sha256": "dfa4259818477955cb93591e981621c8c2361836543015a875affc61ff915475",
+      "bytes": 206266
+    },
+    "data/raw/cuad_non-compete/train.tsv": {
+      "url": "https://huggingface.co/datasets/nguha/legalbench/resolve/daec8237410aa23e3faf4bc41ad8b3a7e1696826/data/cuad_non-compete/train.tsv",
+      "sha256": "ddd3b7ffdca492dcd0321af000dc5fd124982c8a61e083887b7fcf562b44c7d0",
+      "bytes": 3635
+    },
+    "data/raw/cuad_non-transferable_license/test.tsv": {
+      "url": "https://huggingface.co/datasets/nguha/legalbench/resolve/daec8237410aa23e3faf4bc41ad8b3a7e1696826/data/cuad_non-transferable_license/test.tsv",
+      "sha256": "3319a071ce7a79d9e0e10e6f4d6f19db77cf26ec7a3d6a1543ee9fa502405f6d",
+      "bytes": 263428
+    },
+    "data/raw/cuad_non-transferable_license/train.tsv": {
+      "url": "https://huggingface.co/datasets/nguha/legalbench/resolve/daec8237410aa23e3faf4bc41ad8b3a7e1696826/data/cuad_non-transferable_license/train.tsv",
+      "sha256": "1486935bfc539bec2778c2e5dc91ba9acbe6a750bdce050c4d240d3e756a1d41",
+      "bytes": 3619
+    },
+    "data/raw/cuad_post-termination_services/test.tsv": {
+      "url": "https://huggingface.co/datasets/nguha/legalbench/resolve/daec8237410aa23e3faf4bc41ad8b3a7e1696826/data/cuad_post-termination_services/test.tsv",
+      "sha256": "9d7498a4d56467f7d27801a4277a285af3d70e40872b93ee2c1bdfaa4df65a7c",
+      "bytes": 410351
+    },
+    "data/raw/cuad_post-termination_services/train.tsv": {
+      "url": "https://huggingface.co/datasets/nguha/legalbench/resolve/daec8237410aa23e3faf4bc41ad8b3a7e1696826/data/cuad_post-termination_services/train.tsv",
+      "sha256": "dc82a8ccdfc15918b70878119f7e6c020c73baed7d04719f6614bfa0552fb24e",
+      "bytes": 3323
+    },
+    "data/raw/cuad_renewal_term/test.tsv": {
+      "url": "https://huggingface.co/datasets/nguha/legalbench/resolve/daec8237410aa23e3faf4bc41ad8b3a7e1696826/data/cuad_renewal_term/test.tsv",
+      "sha256": "6fb198bc01dafe0e91a6123c33d9e61255417d9f354ef5b0d75b2f32f00e7efd",
+      "bytes": 164385
+    },
+    "data/raw/cuad_renewal_term/train.tsv": {
+      "url": "https://huggingface.co/datasets/nguha/legalbench/resolve/daec8237410aa23e3faf4bc41ad8b3a7e1696826/data/cuad_renewal_term/train.tsv",
+      "sha256": "715f0e9a2b4915493da12f283041b7fc4d308e38fb787231de469a8f95637f58",
+      "bytes": 2135
+    },
+    "data/raw/cuad_revenue-profit_sharing/test.tsv": {
+      "url": "https://huggingface.co/datasets/nguha/legalbench/resolve/daec8237410aa23e3faf4bc41ad8b3a7e1696826/data/cuad_revenue-profit_sharing/test.tsv",
+      "sha256": "1f71cdf8855b6ac34306fbdc51b299fdffde21996879963aef64311371c670ce",
+      "bytes": 355035
+    },
+    "data/raw/cuad_revenue-profit_sharing/train.tsv": {
+      "url": "https://huggingface.co/datasets/nguha/legalbench/resolve/daec8237410aa23e3faf4bc41ad8b3a7e1696826/data/cuad_revenue-profit_sharing/train.tsv",
+      "sha256": "a3512423aa82fd491b3a46a442e996f2147aebce97c15ab4a931c52f92ec3323",
+      "bytes": 2541
+    },
+    "data/raw/cuad_rofr-rofo-rofn/test.tsv": {
+      "url": "https://huggingface.co/datasets/nguha/legalbench/resolve/daec8237410aa23e3faf4bc41ad8b3a7e1696826/data/cuad_rofr-rofo-rofn/test.tsv",
+      "sha256": "83d0f7aa60eaf2aeee7389e1d06043ca89cb3d6d2e9c157d0cccc0f2a02f3738",
+      "bytes": 330613
+    },
+    "data/raw/cuad_rofr-rofo-rofn/train.tsv": {
+      "url": "https://huggingface.co/datasets/nguha/legalbench/resolve/daec8237410aa23e3faf4bc41ad8b3a7e1696826/data/cuad_rofr-rofo-rofn/train.tsv",
+      "sha256": "e2efb25465b2880ad00798aac15ff89984914042483abb2f8b20ad93d72c9ae7",
+      "bytes": 2777
+    },
+    "data/raw/cuad_termination_for_convenience/test.tsv": {
+      "url": "https://huggingface.co/datasets/nguha/legalbench/resolve/daec8237410aa23e3faf4bc41ad8b3a7e1696826/data/cuad_termination_for_convenience/test.tsv",
+      "sha256": "5a30680ccfa56873b8d28af75b40d4910c15fa32d95bbcbf36e3d2e93b2f0b96",
+      "bytes": 176292
+    },
+    "data/raw/cuad_termination_for_convenience/train.tsv": {
+      "url": "https://huggingface.co/datasets/nguha/legalbench/resolve/daec8237410aa23e3faf4bc41ad8b3a7e1696826/data/cuad_termination_for_convenience/train.tsv",
+      "sha256": "0f70a6ef99c559bf06150fe7cd813cc8e914795c0a0331f969cdba8fe13639e0",
+      "bytes": 1466
+    },
+    "data/raw/cuad_volume_restriction/test.tsv": {
+      "url": "https://huggingface.co/datasets/nguha/legalbench/resolve/daec8237410aa23e3faf4bc41ad8b3a7e1696826/data/cuad_volume_restriction/test.tsv",
+      "sha256": "2735b8109a5c27ac18433905b8e438dc06eab3af25cbec29e66f584338368064",
+      "bytes": 125823
+    },
+    "data/raw/cuad_volume_restriction/train.tsv": {
+      "url": "https://huggingface.co/datasets/nguha/legalbench/resolve/daec8237410aa23e3faf4bc41ad8b3a7e1696826/data/cuad_volume_restriction/train.tsv",
+      "sha256": "e0c4fbb3104ea68d0a66767867094a96a4254a91c2c52dab4665646a8defc798",
+      "bytes": 1357
+    },
+    "data/raw/cuad_warranty_duration/test.tsv": {
+      "url": "https://huggingface.co/datasets/nguha/legalbench/resolve/daec8237410aa23e3faf4bc41ad8b3a7e1696826/data/cuad_warranty_duration/test.tsv",
+      "sha256": "42c7f4abfbf9706165dc20d5708f01e317cea942e9737c08cfdeb2c85f803df0",
+      "bytes": 139020
+    },
+    "data/raw/cuad_warranty_duration/train.tsv": {
+      "url": "https://huggingface.co/datasets/nguha/legalbench/resolve/daec8237410aa23e3faf4bc41ad8b3a7e1696826/data/cuad_warranty_duration/train.tsv",
+      "sha256": "b35a20414e41e3d2b6c695b93bf075237cc290b30d34260fe5aa560f47d9a34d",
+      "bytes": 1779
+    },
+    "data/raw/definition_classification/test.tsv": {
+      "url": "https://huggingface.co/datasets/nguha/legalbench/resolve/daec8237410aa23e3faf4bc41ad8b3a7e1696826/data/definition_classification/test.tsv",
+      "sha256": "2508d4943b2b0d67b8ab5cefa732a4802c3201820e448a73697deb8fdbbde832",
+      "bytes": 360417
+    },
+    "data/raw/definition_classification/train.tsv": {
+      "url": "https://huggingface.co/datasets/nguha/legalbench/resolve/daec8237410aa23e3faf4bc41ad8b3a7e1696826/data/definition_classification/train.tsv",
+      "sha256": "9375082e81c47c3c46db40f11cdc33ff8fefa83886876fc6de72affcfcb090f4",
+      "bytes": 1772
+    },
+    "data/raw/function_of_decision_section/test.tsv": {
+      "url": "https://huggingface.co/datasets/nguha/legalbench/resolve/daec8237410aa23e3faf4bc41ad8b3a7e1696826/data/function_of_decision_section/test.tsv",
+      "sha256": "f7eaa4d5e115a979e4fce9a76dcdfbb9733f0df66ab2e3729452136674c77e24",
+      "bytes": 206047
+    },
+    "data/raw/function_of_decision_section/train.tsv": {
+      "url": "https://huggingface.co/datasets/nguha/legalbench/resolve/daec8237410aa23e3faf4bc41ad8b3a7e1696826/data/function_of_decision_section/train.tsv",
+      "sha256": "44de3b4b7248a324781a48c8711a543d2be0991b6697ac3b3ab68873818b85b4",
+      "bytes": 1495
+    },
+    "data/raw/learned_hands_traffic/test.tsv": {
+      "url": "https://huggingface.co/datasets/nguha/legalbench/resolve/daec8237410aa23e3faf4bc41ad8b3a7e1696826/data/learned_hands_traffic/test.tsv",
+      "sha256": "91ee298c75404ff48dc190f80a8a981068eb5fad29bd61583b02b79fc6809549",
+      "bytes": 663341
+    },
+    "data/raw/learned_hands_traffic/train.tsv": {
+      "url": "https://huggingface.co/datasets/nguha/legalbench/resolve/daec8237410aa23e3faf4bc41ad8b3a7e1696826/data/learned_hands_traffic/train.tsv",
+      "sha256": "6d75a71d8a155ff83bb6fb931518052aa17cad56eec068f753617cd7496c714f",
+      "bytes": 6222
+    },
+    "data/raw/opp115_user_choice_control/test.tsv": {
+      "url": "https://huggingface.co/datasets/nguha/legalbench/resolve/daec8237410aa23e3faf4bc41ad8b3a7e1696826/data/opp115_user_choice_control/test.tsv",
+      "sha256": "c5d40394c2d14b22bceef28649a838af1f5879704b0ab58d7c7f642dd8cb3efc",
+      "bytes": 612500
+    },
+    "data/raw/opp115_user_choice_control/train.tsv": {
+      "url": "https://huggingface.co/datasets/nguha/legalbench/resolve/daec8237410aa23e3faf4bc41ad8b3a7e1696826/data/opp115_user_choice_control/train.tsv",
+      "sha256": "b6515302d7ed20b5416f807c4914d3ba509b6c4c7ce59a69d23bb0ded91624e2",
+      "bytes": 4207
+    },
+    "data/raw/supply_chain_disclosure_disclosed_audits/test.tsv": {
+      "url": "https://huggingface.co/datasets/nguha/legalbench/resolve/daec8237410aa23e3faf4bc41ad8b3a7e1696826/data/supply_chain_disclosure_disclosed_audits/test.tsv",
+      "sha256": "bf179e1d11d9ece1ee7939b65df6ad043be714bcfd0a1ed5ba91cb147cdfffc2",
+      "bytes": 1339133
+    },
+    "data/raw/supply_chain_disclosure_disclosed_audits/train.tsv": {
+      "url": "https://huggingface.co/datasets/nguha/legalbench/resolve/daec8237410aa23e3faf4bc41ad8b3a7e1696826/data/supply_chain_disclosure_disclosed_audits/train.tsv",
+      "sha256": "2b63f14f681b7cfff85d4c7770200cd0cb8caf4bec6fe5e89ecd5dec59f199cf",
+      "bytes": 24370
+    },
+    "data/raw/supply_chain_disclosure_disclosed_certification/test.tsv": {
+      "url": "https://huggingface.co/datasets/nguha/legalbench/resolve/daec8237410aa23e3faf4bc41ad8b3a7e1696826/data/supply_chain_disclosure_disclosed_certification/test.tsv",
+      "sha256": "fa37531b95a8eee6146a20bf5d94d353d9cef5c09908d5d4f13d5a87ee02b1bb",
+      "bytes": 1340162
+    },
+    "data/raw/supply_chain_disclosure_disclosed_certification/train.tsv": {
+      "url": "https://huggingface.co/datasets/nguha/legalbench/resolve/daec8237410aa23e3faf4bc41ad8b3a7e1696826/data/supply_chain_disclosure_disclosed_certification/train.tsv",
+      "sha256": "4157325632d5dd545f59a8eb08ab08a017d68af7f26075371dfd5e460a5c13ab",
+      "bytes": 17953
+    },
+    "data/raw/supply_chain_disclosure_disclosed_training/test.tsv": {
+      "url": "https://huggingface.co/datasets/nguha/legalbench/resolve/daec8237410aa23e3faf4bc41ad8b3a7e1696826/data/supply_chain_disclosure_disclosed_training/test.tsv",
+      "sha256": "aa982e7a46cfd710c817348cd7eba57cf5201a2f637075c6117f0192c39da5bb",
+      "bytes": 1336428
+    },
+    "data/raw/supply_chain_disclosure_disclosed_training/train.tsv": {
+      "url": "https://huggingface.co/datasets/nguha/legalbench/resolve/daec8237410aa23e3faf4bc41ad8b3a7e1696826/data/supply_chain_disclosure_disclosed_training/train.tsv",
+      "sha256": "3e1d97b71406e6e2fed2d56ce2735a1296997864bb48dead42ed7e6aa19c96dc",
+      "bytes": 27059
+    },
+    "data/raw/supply_chain_disclosure_disclosed_verification/test.tsv": {
+      "url": "https://huggingface.co/datasets/nguha/legalbench/resolve/daec8237410aa23e3faf4bc41ad8b3a7e1696826/data/supply_chain_disclosure_disclosed_verification/test.tsv",
+      "sha256": "d06ad23291a3371dc7a42ebd2dc736204d563eb52c99cbf4d7e907d0007ea72b",
+      "bytes": 1338089
+    },
+    "data/raw/supply_chain_disclosure_disclosed_verification/train.tsv": {
+      "url": "https://huggingface.co/datasets/nguha/legalbench/resolve/daec8237410aa23e3faf4bc41ad8b3a7e1696826/data/supply_chain_disclosure_disclosed_verification/train.tsv",
+      "sha256": "20b84300a841aef6617a0011ab5be7599fa0421345f3afbff780c55bea52abc5",
+      "bytes": 25351
+    },
+    "data/task_instructions/cuad_governing_law.txt": {
+      "url": "https://raw.githubusercontent.com/HazyResearch/legalbench/b46bf4ffae90524b2b72aaa30e7745fe9db64481/tasks/cuad_governing_law/base_prompt.txt",
+      "sha256": "f1322d3c68efe49f88f32119796fbd4982ec07e7d2ec1c7c245ad38f5140f8e9",
+      "bytes": 2064
+    },
+    "data/task_instructions/cuad_insurance.txt": {
+      "url": "https://raw.githubusercontent.com/HazyResearch/legalbench/b46bf4ffae90524b2b72aaa30e7745fe9db64481/tasks/cuad_insurance/base_prompt.txt",
+      "sha256": "3e39d07c993dd9825b6851df001c98293a65826374c2cd3386d765111b9f1dbb",
+      "bytes": 2183
+    },
+    "data/task_instructions/cuad_ip_ownership_assignment.txt": {
+      "url": "https://raw.githubusercontent.com/HazyResearch/legalbench/b46bf4ffae90524b2b72aaa30e7745fe9db64481/tasks/cuad_ip_ownership_assignment/base_prompt.txt",
+      "sha256": "2104708752edc9ba9ddaa1e2e52ebf051feabb7fd229fbf6832e4851d5ab081f",
+      "bytes": 4495
+    },
+    "data/task_instructions/cuad_license_grant.txt": {
+      "url": "https://raw.githubusercontent.com/HazyResearch/legalbench/b46bf4ffae90524b2b72aaa30e7745fe9db64481/tasks/cuad_license_grant/base_prompt.txt",
+      "sha256": "e0c421d6162247febc28e5d700bd089b086311d21cccecf85399a897f9534c14",
+      "bytes": 3404
+    },
+    "data/task_instructions/cuad_minimum_commitment.txt": {
+      "url": "https://raw.githubusercontent.com/HazyResearch/legalbench/b46bf4ffae90524b2b72aaa30e7745fe9db64481/tasks/cuad_minimum_commitment/base_prompt.txt",
+      "sha256": "065ba96ce2db4e0a7cfc79d75eb3b4465cff69407947a09f1e5c842242654da9",
+      "bytes": 2475
+    },
+    "data/task_instructions/cuad_non-compete.txt": {
+      "url": "https://raw.githubusercontent.com/HazyResearch/legalbench/b46bf4ffae90524b2b72aaa30e7745fe9db64481/tasks/cuad_non-compete/base_prompt.txt",
+      "sha256": "e6cce8fb5c04077cdf7bba336db4874096fd56755a36d15f016e373e649d3568",
+      "bytes": 3380
+    },
+    "data/task_instructions/cuad_non-transferable_license.txt": {
+      "url": "https://raw.githubusercontent.com/HazyResearch/legalbench/b46bf4ffae90524b2b72aaa30e7745fe9db64481/tasks/cuad_non-transferable_license/base_prompt.txt",
+      "sha256": "b8b231a4472d1bda4656efbb4b7f53f1ff31653cf1ea9f89011fd80dc7f4694e",
+      "bytes": 3309
+    },
+    "data/task_instructions/cuad_post-termination_services.txt": {
+      "url": "https://raw.githubusercontent.com/HazyResearch/legalbench/b46bf4ffae90524b2b72aaa30e7745fe9db64481/tasks/cuad_post-termination_services/base_prompt.txt",
+      "sha256": "2ebe92d9dd877303a2855da03d17c97264d9a918d3a96eaee92f4480befb7677",
+      "bytes": 3141
+    },
+    "data/task_instructions/cuad_renewal_term.txt": {
+      "url": "https://raw.githubusercontent.com/HazyResearch/legalbench/b46bf4ffae90524b2b72aaa30e7745fe9db64481/tasks/cuad_renewal_term/base_prompt.txt",
+      "sha256": "89b14fc645e3651aaf0ba5ab30f7b5521e5f969899bc19f0fa965e08890f4223",
+      "bytes": 1842
+    },
+    "data/task_instructions/cuad_revenue-profit_sharing.txt": {
+      "url": "https://raw.githubusercontent.com/HazyResearch/legalbench/b46bf4ffae90524b2b72aaa30e7745fe9db64481/tasks/cuad_revenue-profit_sharing/base_prompt.txt",
+      "sha256": "04d8138830dc417d74cd8f3b13101344609791f1d0c41013eeffee7de034bdb3",
+      "bytes": 2240
+    },
+    "data/task_instructions/cuad_rofr-rofo-rofn.txt": {
+      "url": "https://raw.githubusercontent.com/HazyResearch/legalbench/b46bf4ffae90524b2b72aaa30e7745fe9db64481/tasks/cuad_rofr-rofo-rofn/base_prompt.txt",
+      "sha256": "4107edf6347b2240d06c74479d11312abaac02e22624433c5b9adb034c402bb5",
+      "bytes": 2671
+    },
+    "data/task_instructions/cuad_termination_for_convenience.txt": {
+      "url": "https://raw.githubusercontent.com/HazyResearch/legalbench/b46bf4ffae90524b2b72aaa30e7745fe9db64481/tasks/cuad_termination_for_convenience/base_prompt.txt",
+      "sha256": "c0649a6fb7ddc03f7ddc79e9bef5b62eda26a53dff75cc6da37d4777b4d68040",
+      "bytes": 1211
+    },
+    "data/task_instructions/cuad_volume_restriction.txt": {
+      "url": "https://raw.githubusercontent.com/HazyResearch/legalbench/b46bf4ffae90524b2b72aaa30e7745fe9db64481/tasks/cuad_volume_restriction/base_prompt.txt",
+      "sha256": "ef96b7e2bbf325d75b27df76f85610bc501dc0f1e3e8fb8c3b73de0dee426982",
+      "bytes": 1108
+    },
+    "data/task_instructions/cuad_warranty_duration.txt": {
+      "url": "https://raw.githubusercontent.com/HazyResearch/legalbench/b46bf4ffae90524b2b72aaa30e7745fe9db64481/tasks/cuad_warranty_duration/base_prompt.txt",
+      "sha256": "467e3cd87f347aed9258ebf6d86c3f5af1b5fdbf02e43765ec4769ebd65e8ef1",
+      "bytes": 1513
+    },
+    "data/task_instructions/definition_classification.txt": {
+      "url": "https://raw.githubusercontent.com/HazyResearch/legalbench/b46bf4ffae90524b2b72aaa30e7745fe9db64481/tasks/definition_classification/base_prompt.txt",
+      "sha256": "74b5c52694643d3cfc0c3aa41ea0a1c51091ecdf36e0053443159ea736c0fa59",
+      "bytes": 1949
+    },
+    "data/task_instructions/function_of_decision_section.txt": {
+      "url": "https://raw.githubusercontent.com/HazyResearch/legalbench/b46bf4ffae90524b2b72aaa30e7745fe9db64481/tasks/function_of_decision_section/base_prompt.txt",
+      "sha256": "a85268192036e98d0fdf3eeb5efaaa0d70589e588d43f6f002e5bf38b5ab02aa",
+      "bytes": 2220
+    },
+    "data/task_instructions/learned_hands_traffic.txt": {
+      "url": "https://raw.githubusercontent.com/HazyResearch/legalbench/b46bf4ffae90524b2b72aaa30e7745fe9db64481/tasks/learned_hands_traffic/base_prompt.txt",
+      "sha256": "0ec3a66c48be87ae34049a6b19fc2c284e362bc5324768fdc85a75afda40f404",
+      "bytes": 6547
+    },
+    "data/task_instructions/opp115_user_choice_control.txt": {
+      "url": "https://raw.githubusercontent.com/HazyResearch/legalbench/b46bf4ffae90524b2b72aaa30e7745fe9db64481/tasks/opp115_user_choice_control/base_prompt.txt",
+      "sha256": "01fe079dae7fa71fc7a9664407087f3c8a8ac982b2fbab2533545efbd77ca21a",
+      "bytes": 1836
+    },
+    "data/task_instructions/supply_chain_disclosure_disclosed_audits.txt": {
+      "url": "https://raw.githubusercontent.com/HazyResearch/legalbench/b46bf4ffae90524b2b72aaa30e7745fe9db64481/tasks/supply_chain_disclosure_disclosed_audits/base_prompt.txt",
+      "sha256": "e4f4cc1eb953a7928217ca6961c73071272154ee157bb2760295be4a76edad1b",
+      "bytes": 419
+    },
+    "data/task_instructions/supply_chain_disclosure_disclosed_certification.txt": {
+      "url": "https://raw.githubusercontent.com/HazyResearch/legalbench/b46bf4ffae90524b2b72aaa30e7745fe9db64481/tasks/supply_chain_disclosure_disclosed_certification/base_prompt.txt",
+      "sha256": "af5c3f858ad48d77bcc76320866280c520d04747c837b30dc6df525bed8c780c",
+      "bytes": 402
+    },
+    "data/task_instructions/supply_chain_disclosure_disclosed_training.txt": {
+      "url": "https://raw.githubusercontent.com/HazyResearch/legalbench/b46bf4ffae90524b2b72aaa30e7745fe9db64481/tasks/supply_chain_disclosure_disclosed_training/base_prompt.txt",
+      "sha256": "05a8092e4cde6f9e9b7e108a7b2bb14626389fb982bad458f296a9ad2c8b984e",
+      "bytes": 427
+    },
+    "data/task_instructions/supply_chain_disclosure_disclosed_verification.txt": {
+      "url": "https://raw.githubusercontent.com/HazyResearch/legalbench/b46bf4ffae90524b2b72aaa30e7745fe9db64481/tasks/supply_chain_disclosure_disclosed_verification/base_prompt.txt",
+      "sha256": "e61485dca8739597f550ffe1d36def5678152b0d725c8d214dfe2dc6f410f0c5",
+      "bytes": 434
+    }
+  },
+  "errors": []
+}

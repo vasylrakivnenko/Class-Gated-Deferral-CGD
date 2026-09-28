@@ -1,0 +1,17 @@
+{
+  "source_directory": "/Users/vasyl/zadumai/legalbench_map",
+  "files_sha256": {
+    "cli.py": "95871861a868f4641ae11044b458f083c5b5330be8c9428ea8e94d2c438befba",
+    "core/__init__.py": "cb7bec02b4546f92c738a8e880b4979f661779c0df5ceb5941b23b9e751ef4f4",
+    "core/conformal.py": "9e2858e0bf157ffe67a2130c3ee439bfa06af33bfce31c90b7fda338b9cb8417",
+    "core/cv.py": "23f347ca32881ad209ca965fdc99be4832d67957361fd41be1e700270a01c724",
+    "core/data.py": "cd9d7f57d2887e593f76a4e2e68f501cef536e0d4a1f8dfce01c56a2593a70bb",
+    "core/metrics.py": "05c612bfca778d5a524449b8c27db50f202e8320ba59731f0655d88d39584fad",
+    "core/outputs.py": "c7ae100416d6e83dd406768556a4d2be3ccb887aac7cdbddd477c9abe7f0cd3b",
+    "core/verdict.py": "fc77759fd7d77a2a2ba28ec9b2f6fc061f59874234bdf8545ab41b9c8571be94",
+    "candidates/tfidf_logreg.py": "79d1547b515afd5b77f5548e93beffd46e2d20957a78966d1760658c80fc27f0",
+    "candidates/baselines.py": "eeaf13eacd93b934c363d5b3c9ec546ddeed97aec77c243a706c134cd48d2712"
+  },
+  "original_registry_sha256": "6d1fc5fe6d4075c462a9b2efaf39057919b03ac2e82ed7f5e8c1e9722e017f2c",
+  "note": "Unmodified snapshot of existing runner, core, TF-IDF and majority candidate code; all new task data and output live separately."
+}

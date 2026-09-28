@@ -1,0 +1,45 @@
+
+==============================================================================
+imdb  n=25000  training labels = LLM calls  (labels from the LLM itself)
+==============================================================================
+       N   budget     ours     sd      OCL    delta  baseline    delta   warm    bias
+    1300     5.2%   0.9426 0.0016   0.8795  +0.0631    0.8673  +0.0753    25% +0.0000
+    3800    15.2%   0.9460 0.0005   0.9248  +0.0212    0.8880  +0.0580    25% +0.0001
+    5200    20.8%   0.9453 0.0006   0.9301  +0.0152    0.8995  +0.0458    40% +0.0003
+  -> beats OCL on 3/3 cells at MATCHED labels and calls   (warm-up split picked on 5 held-out streams, scored on 5 others)
+
+==============================================================================
+hatespeech  n=10703  training labels = LLM calls  (labels from the LLM itself)
+==============================================================================
+       N   budget     ours     sd      OCL    delta  baseline    delta   warm    bias
+     600     5.6%   0.7841 0.0139   0.8266  -0.0425    0.8261  -0.0420    25% +0.0019
+    2700    25.2%   0.7931 0.0087   0.8535  -0.0604    0.7748  +0.0183    25% +0.0016
+    4900    45.8%   0.8123 0.0012   0.8326  -0.0203    0.8155  -0.0032    25% +0.0015
+  -> beats OCL on 0/3 cells at MATCHED labels and calls   (warm-up split picked on 5 held-out streams, scored on 5 others)
+  G1: a constant 'no' predictor scores 0.8883 accuracy here, above every system in the table -- accuracy above is not a ranking.
+         N  ours rec   OCL rec  ours bal   OCL bal    delta
+       600    0.7689    0.8236    0.7775    0.8253  -0.0478
+      2700    0.8381    0.7720    0.8128    0.8179  -0.0051
+      4900    0.8425    0.8103    0.8255    0.8229  +0.0026
+  -> on the metric that ranks anything here: 1/3
+
+==============================================================================
+isear  n=7666  training labels = LLM calls  (labels from the LLM itself)
+==============================================================================
+       N   budget     ours     sd      OCL    delta  baseline    delta   warm    bias
+    1200    15.7%   0.6390 0.0053   0.6078  +0.0312    0.5656  +0.0734    85% +0.0017
+    1500    19.6%   0.6463 0.0059   0.6534  -0.0071    0.6042  +0.0421   100% +0.0004
+    2700    35.2%   0.6682 0.0025   0.6975  -0.0293    0.6178  +0.0504    70% +0.0005
+  -> beats OCL on 1/3 cells at MATCHED labels and calls   (warm-up split picked on 5 held-out streams, scored on 5 others)
+
+==============================================================================
+fever  n=6512  training labels = LLM calls  (labels from the LLM itself)
+==============================================================================
+       N   budget     ours     sd      OCL    delta  baseline    delta   warm    bias
+     700    10.7%   0.6805 0.0123   0.6195  +0.0610    0.6169  +0.0636   100% +0.0049
+    2000    30.7%   0.7237 0.0071   0.7186  +0.0051    0.6978  +0.0259    40% +0.0069
+    2800    43.0%   0.7464 0.0063   0.7849  -0.0385    0.7667  -0.0203    40% +0.0082
+  -> beats OCL on 2/3 cells at MATCHED labels and calls   (warm-up split picked on 5 held-out streams, scored on 5 others)
+
+OVERALL: 6/12 cells beat OCL at matched label budget
+wrote /Users/vasyl/zadumai/ocl_compare/results/label_matched_llm.json (30s)

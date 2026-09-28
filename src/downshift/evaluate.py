@@ -232,6 +232,14 @@ class EvalResult:
     # exactly one place and encoders.py needs no per-item arithmetic of its own.
     cost_per_1k_items: float | None = None
 
+    # Per-item confidence in the prediction, 0-1, or None when the row cannot
+    # produce one. Added because every downstream routing question needs it and
+    # nothing could ask: the free rows discarded their probability distributions,
+    # so the cascade pages had to be built on the TF-IDF row even though the
+    # encoder beats it on 6 of 7 datasets, and two independent analyses had to
+    # monkey-patch sklearn and torch to recover what was already computed.
+    confidence: list[float] | None = field(default=None, repr=False)
+
     def __post_init__(self):
         if self.cost_per_1k_items is None:
             # n_calls == 0 means nothing was billed per call, so there is no

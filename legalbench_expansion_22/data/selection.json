@@ -1,0 +1,32 @@
+{
+  "cohort": "legalbench_expansion_22",
+  "selected_on": "2026-09-20",
+  "task_count": 22,
+  "tasks": [
+    "cuad_governing_law",
+    "cuad_insurance",
+    "cuad_ip_ownership_assignment",
+    "cuad_license_grant",
+    "cuad_minimum_commitment",
+    "cuad_non-compete",
+    "cuad_non-transferable_license",
+    "cuad_post-termination_services",
+    "cuad_renewal_term",
+    "cuad_revenue-profit_sharing",
+    "cuad_rofr-rofo-rofn",
+    "cuad_termination_for_convenience",
+    "cuad_volume_restriction",
+    "cuad_warranty_duration",
+    "definition_classification",
+    "function_of_decision_section",
+    "learned_hands_traffic",
+    "opp115_user_choice_control",
+    "supply_chain_disclosure_disclosed_audits",
+    "supply_chain_disclosure_disclosed_certification",
+    "supply_chain_disclosure_disclosed_training",
+    "supply_chain_disclosure_disclosed_verification"
+  ],
+  "github_revision": "b46bf4ffae90524b2b72aaa30e7745fe9db64481",
+  "hf_data_revision": "daec8237410aa23e3faf4bc41ad8b3a7e1696826",
+  "selection": "20 omitted tasks meeting the prior 300-item threshold, plus definition_classification and function_of_decision_section; no performance-based selection."
+}

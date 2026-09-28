@@ -1,0 +1,494 @@
+
+loaded banking77: 13,083 items, 77 classes, expert=no
+  source: HuggingFace legacy-datasets/banking77 (Casanueva et al. 2020), train+test pooled
+    pair-scoring: 65,415 pairs x ~14 tokens = 915,810 units, within the 4,000,000 budget
+
+==============================================================================
+banking77 [trained on gold]  n=13083  classes=77  imbalance 1:3.03
+==============================================================================
+  headline metric: accuracy  (resolution +/-0.0066)
+
+  candidates (balanced accuracy):
+    bge-large-en-v1.5+logreg    0.9232  <- best
+    bge-small-en-v1.5+logreg    0.9107
+    tfidf+logreg                0.9014
+    nli+logreg                  0.8206
+    constant-majority           0.0130
+
+  G3 n/a (multiclass)
+  G4 pass: members disagree on 12.5% of items.
+    oracle 0.9607 vs independence null 0.9996
+  G5 n/a: no expert predictions for this dataset
+  G7 pass: every class's vote is right more often than not (worst 74.0%).
+
+  class-aware layer (vs bge-large-en-v1.5+logreg 0.9232):
+    selection_dcs_lca   0.9062  -0.0170 CI [-0.0208,-0.0132] p=0.000 holm=True
+    stacking            0.9213  -0.0019 CI [-0.0053,+0.0015] p=0.286 holm=False
+    -> no construction beats bge-large-en-v1.5+logreg; ship the single model
+
+  DESlib on the same pool (baseline: bge-large-en-v1.5+logreg 0.9232)
+    DESlib LCA                  0.9289  +0.0058 CI [+0.0028,+0.0088] p=0.000  holm=True  [under the +/-0.0066 unpaired floor]
+    DESlib OLA                  0.9092  -0.0140 CI [-0.0181,-0.0101] p=0.000  holm=True
+    DESlib KNORA-E              0.9263  +0.0031 CI [+0.0003,+0.0060] p=0.027  holm=True  [under the +/-0.0066 unpaired floor]
+    DESlib Oracle (ceiling)     0.9607  +0.0375 CI [+0.0343,+0.0408] p=0.000
+    -> DESlib beats the best single model (bge-large-en-v1.5+logreg) with DESlib LCA, DESlib KNORA-E
+       not shipped: DESlib LCA, DESlib KNORA-E beat the baseline on a paired test but stay inside the unpaired resolution floor
+
+  competence board -- P(correct | this model PREDICTS class c), by class
+    class                              n       tfidf bge-small-e bge-large-e         nli   spread          best
+    card acceptance                  135       0.809       0.869       0.895       0.519    0.376 bge-large-en-
+    card delivery estimate           178       0.827       0.896       0.919       0.669    0.250 bge-large-en-
+    supported cards and currencie    170       0.889       0.905       0.918       0.679    0.239 bge-large-en-
+    topping up by card               151       0.795       0.793       0.834       0.619    0.215 bge-large-en-
+    fiat currency support            204       0.923       0.907       0.927       0.716    0.211 bge-large-en-
+    extra charge on statement        220       0.861       0.871       0.931       0.725    0.206 bge-large-en-
+    declined transfer                190       0.920       0.929       0.904       0.726    0.203 bge-small-en-
+    transfer not received by reci    203       0.865       0.783       0.828       0.670    0.195         tfidf
+    pending transfer                 191       0.811       0.883       0.894       0.703    0.190 bge-large-en-
+    country support                  173       0.936       0.954       0.966       0.777    0.188 bge-large-en-
+    transfer timing                  231       0.822       0.726       0.765       0.635    0.187         tfidf
+    disposable card limits           156       0.931       0.954       0.962       0.781    0.181 bge-large-en-
+    get disposable virtual card      133       0.925       0.929       0.937       0.761    0.176 bge-large-en-
+    contactless not working           81       0.954       0.978       0.981       0.816    0.166 bge-large-en-
+    direct debit payment not reco    197       0.958       0.962       0.968       0.804    0.164 bge-large-en-
+    card linking                     180       0.940       0.949       0.956       0.795    0.162 bge-large-en-
+    reverted card payment?           204       0.904       0.910       0.925       0.765    0.160 bge-large-en-
+    receiving money                  130       0.945       0.946       0.949       0.791    0.158 bge-large-en-
+    declined card payment            225       0.862       0.797       0.785       0.705    0.156         tfidf
+    card not working                 166       0.807       0.873       0.883       0.728    0.156 bge-large-en-
+    order physical card              161       0.866       0.890       0.896       0.744    0.152 bge-large-en-
+    cash withdrawal not recognise    209       0.878       0.923       0.944       0.792    0.152 bge-large-en-
+    apple pay or google pay          163       0.989       0.984       0.980       0.848    0.141         tfidf
+    transfer fee charged             197       0.922       0.960       0.961       0.821    0.140 bge-large-en-
+    atm support                      133       0.932       0.952       0.975       0.839    0.136 bge-large-en-
+    top up by bank transfer charg    160       0.844       0.872       0.884       0.752    0.132 bge-large-en-
+    visa or mastercard               167       0.979       0.979       0.986       0.858    0.128 bge-large-en-
+    pin blocked                      159       0.937       0.937       0.950       0.823    0.127 bge-large-en-
+    pending top up                   186       0.878       0.925       0.912       0.803    0.122 bge-small-en-
+    lost or stolen card              142       0.824       0.797       0.837       0.718    0.119 bge-large-en-
+    top up by card charge            165       0.905       0.907       0.919       0.802    0.117 bge-large-en-
+    pending card payment             221       0.906       0.901       0.935       0.819    0.116 bge-large-en-
+    virtual card not working          84       0.959       0.970       0.973       0.859    0.114 bge-large-en-
+    top up failed                    201       0.817       0.815       0.841       0.727    0.113 bge-large-en-
+    card payment not recognised      225       0.819       0.830       0.836       0.728    0.108 bge-large-en-
+    exchange rate                    161       0.883       0.937       0.939       0.831    0.108 bge-large-en-
+    getting spare card               169       0.941       0.948       0.955       0.847    0.108 bge-large-en-
+    top up reverted                  177       0.905       0.931       0.914       0.829    0.102 bge-small-en-
+    pending cash withdrawal          168       0.946       0.967       0.970       0.869    0.101 bge-large-en-
+    card arrival                     200       0.856       0.889       0.897       0.798    0.100 bge-large-en-
+    failed transfer                  210       0.770       0.792       0.792       0.695    0.097 bge-small-en-
+    get physical card                160       0.878       0.938       0.967       0.871    0.096 bge-large-en-
+    beneficiary not allowed          188       0.923       0.850       0.901       0.827    0.096         tfidf
+    card swallowed                   106       0.919       0.922       0.970       0.876    0.094 bge-large-en-
+    wrong exchange rate for cash     180       0.899       0.951       0.975       0.882    0.093 bge-large-en-
+    unable to verify identity        142       0.850       0.914       0.940       0.867    0.090 bge-large-en-
+    automatic top up                 161       0.978       0.984       0.986       0.897    0.089 bge-large-en-
+    card about to expire             180       0.958       0.901       0.921       0.874    0.084         tfidf
+    why verify identity              159       0.851       0.927       0.907       0.848    0.079 bge-small-en-
+    card payment wrong exchange r    224       0.935       0.891       0.910       0.858    0.077         tfidf
+    wrong amount of cash received    229       0.952       0.900       0.928       0.878    0.074         tfidf
+    cancel transfer                  207       0.925       0.939       0.957       0.885    0.072 bge-large-en-
+    compromised card                 154       0.787       0.779       0.761       0.719    0.068         tfidf
+    transfer into account            166       0.842       0.861       0.908       0.841    0.067 bge-large-en-
+    verify my identity               153       0.843       0.856       0.891       0.825    0.065 bge-large-en-
+    transaction charged twice        216       0.953       0.975       0.980       0.917    0.064 bge-large-en-
+    exchange via app                 166       0.889       0.883       0.911       0.851    0.060 bge-large-en-
+    exchange charge                  166       0.891       0.941       0.938       0.881    0.060 bge-small-en-
+    declined cash withdrawal         222       0.892       0.928       0.923       0.872    0.055 bge-small-en-
+    request refund                   211       0.943       0.940       0.954       0.901    0.053 bge-large-en-
+    verify top up                    169       0.958       0.979       0.981       0.932    0.049 bge-large-en-
+    activate my card                 196       0.981       0.964       0.965       0.932    0.048         tfidf
+    change pin                       166       0.972       0.979       0.980       0.932    0.048 bge-large-en-
+    age limit                        152       0.965       0.983       0.985       0.942    0.042 bge-large-en-
+    Refund not showing up            202       0.968       0.973       0.974       0.934    0.040 bge-large-en-
+    card payment fee charged         250       0.891       0.870       0.868       0.852    0.040         tfidf
+    lost or stolen phone             159       0.961       0.984       0.974       0.946    0.038 bge-small-en-
+    top up limits                    144       0.921       0.951       0.959       0.922    0.038 bge-large-en-
+    terminate account                152       0.948       0.971       0.985       0.973    0.037 bge-large-en-
+    balance not updated after che    244       0.896       0.879       0.915       0.884    0.036 bge-large-en-
+    top up by cash or cheque         152       0.917       0.931       0.926       0.896    0.035 bge-small-en-
+    verify source of funds           153       0.942       0.960       0.962       0.933    0.029 bge-large-en-
+    edit personal details            162       0.962       0.979       0.986       0.958    0.028 bge-large-en-
+    getting virtual card             154       0.874       0.890       0.897       0.870    0.027 bge-large-en-
+    cash withdrawal charge           227       0.916       0.912       0.936       0.918    0.025 bge-large-en-
+    balance not updated after ban    216       0.801       0.787       0.804       0.783    0.021 bge-large-en-
+    passcode forgotten               150       0.970       0.977       0.961       0.966    0.016 bge-small-en-
+    classes owned (highest shrunk competence): bge-large-en-v1.5 56, tfidf 11, bge-small-en-v1.5 10, nli 0
+    spread across classes: median 0.101, max 0.376, min 0.016
+    excluding nli (owns 0 classes): median 0.029, max 0.095   <- the spread a selection rule can actually use
+
+  no expert predictions -- cascade stages skipped
+  >> ship: bge-large-en-v1.5+logreg
+
+loaded fever: 6,512 items, 2 classes, expert=yes
+  source: Online Cascade Learning (Nie et al., ICML 2024), stream 'fever'; repo pinned at 285e03fc98afabdf7768558d33ee7b5f662b5f19
+    pair-scoring: 13,024 pairs x ~11 tokens = 143,264 units, within the 4,000,000 budget
+
+==============================================================================
+fever [trained on gold]  n=6512  classes=2  imbalance 1:1.00
+==============================================================================
+  headline metric: accuracy  (resolution +/-0.0062)
+
+  candidates (balanced accuracy):
+    bge-large-en-v1.5+logreg    0.7349  <- best
+    bge-small-en-v1.5+logreg    0.7128
+    nli+logreg                  0.6980
+    tfidf+logreg                0.6829
+    constant-majority           0.5000
+
+  G3 pass: at least one pair is not ROC-ordered, so some genuine complementarity exists.
+  G4 pass: members disagree on 28.2% of items.
+    oracle 0.9320 vs independence null 0.9906
+  G5 FAIL: per-class advantage is flat (spread 0.0207); a class-aware SELECTION layer has nothing to act on. Budget-constrained class-aware allocation is a separate rule, reported on the dial regardless.
+  G7 pass: every class's vote is right more often than not (worst 70.3%).
+
+  DESlib on the same pool (baseline: bge-large-en-v1.5+logreg 0.7349)
+    DESlib LCA                  0.7217  -0.0132 CI [-0.0233,-0.0029] p=0.013  holm=True
+    DESlib OLA                  0.7074  -0.0275 CI [-0.0381,-0.0172] p=0.000  holm=True
+    DESlib KNORA-E              0.7209  -0.0140 CI [-0.0241,-0.0045] p=0.007  holm=True
+    DESlib Oracle (ceiling)     0.9320  +0.1971 CI [+0.1873,+0.2067] p=0.000
+    -> no DESlib method beats the best single model (bge-large-en-v1.5+logreg)
+
+  bge-large-en-v1.5+logreg vs expert LLM: 0.7349 vs 0.7997  delta -0.0648 CI [-0.0781,-0.0516] p=0.000
+  non-inferiority at 2pts: clearly worse by more than the 2% margin
+
+  deferral dial -- balanced accuracy by share sent to the LLM
+     LLM share      confidence          margin       committee     class-aware  per-class-conf precision-floor   gain/+10% spend
+          0.0%          0.7349          0.7349          0.7349          0.7349          0.7349          0.7869                --
+          4.9%          0.7468          0.7468          0.7522          0.7452          0.7461          0.7852           +0.0244
+         10.0%          0.7567          0.7567          0.7654          0.7541          0.7585          0.7767           +0.0195
+         20.1%          0.7794          0.7794          0.7844          0.7650          0.7780          0.7346           +0.0224
+         30.0%          0.7938          0.7938          0.8016          0.7689          0.7932          0.7347           +0.0145
+         50.0%          0.8151          0.8151          0.8131          0.7868          0.8177          0.7347           +0.0106
+         75.0%          0.8109          0.8109          0.8133          0.8183          0.8192          0.7347           -0.0017
+        100.0%          0.7997          0.7997          0.7997          0.7997          0.7997          0.7347           -0.0045
+    note: confidence and margin are identical at every budget (on 2 classes margin is a monotone transform of confidence, so it cannot order items differently)
+    curve max (OPTIMISTIC -- chosen by looking at its own score, 48 configs): 0.8192 at 61.9% via per_class_conf
+    NESTED (rule+budget picked on training folds only): 0.8177 at 70.1% LLM  [selection bias +0.0015]
+      per_class_conf admitted by train-fold G8 in 0/5 folds
+      per-fold picks: class_aware/confidence, budgets [0.75, 0.75, 0.75, 0.5, 0.75], stable=False
+    reference: free alone 0.7349, LLM alone 0.7997
+    CHEAPEST EQUIVALENT: 50.0% of traffic scores 0.8151 via confidence, 0.0041 BELOW the best point and inside the +/-0.0062 this dataset resolves  -- 20% less traffic to the LLM for a difference this dataset cannot measure
+
+  conformal prediction sets at 90% target coverage
+    variant     marginal  worst class  classes under  singletons  set size
+    split         0.9003       0.8589         1/2          60.9%      1.39
+    mondrian      0.9011       0.9000         1/2          59.7%      1.40
+    -> Mondrian still misses 1 class(es); split conformal misses 1 while its marginal coverage reads 0.9003
+    G8 FAIL: with the answers in hand a per-class threshold gains -0.0125 at a 70% budget, but shuffled classes buy -0.0183 of that -- only +0.0058 is real, inside the +/-0.0062 this dataset resolves. No estimator recovers headroom that is not there.
+      oracle global 0.8152 vs oracle per-class 0.8027
+    board+dial at a 70% budget (70.1% actually spent) -- per predicted class:
+      class 0:  89.5% of   2758 items escalated  (54% of the spend)
+      class 1:  55.9% of   3754 items escalated  (46% of the spend)
+
+  competence board -- P(correct | this model PREDICTS class c)
+    candidate                            c0       c1
+    tfidf+logreg                      0.698    0.670
+    bge-small-en-v1.5+logreg          0.760    0.680
+    bge-large-en-v1.5+logreg          0.777    0.703
+    nli+logreg                        0.723    0.678
+    EXPERT(own class)                 0.749    0.877
+    (items claimed, all models)        3010     3502
+    -> FREE winner | it says c        0.750    0.719
+    -> EXPERT | free says c           0.847    0.758
+    free board (best claim wins the item): 0.7270   +expert on 2/2 classes: 0.7997  at 100.0% LLM
+    classes handed to the LLM: [0, 1]   per fold [[0, 1], [0, 1], [0, 1], [0, 1], [0, 1]]  stable=True
+    vs free board: +0.0727
+    vs LLM alone: +0.0000  [G6: +0.0000 is inside the +/-0.0062 this dataset can resolve -- not a difference]
+    beats BOTH ends by a resolvable margin? True  (vs free +0.0828, vs LLM +0.0180, floor +/-0.0062)
+
+  per-class guaranteed coverage (free share | guarantee holds):
+    absolute bar 0.80  free  73.8%  balanced 0.7861  holds=True
+    absolute bar 0.90  free  36.4%  balanced 0.8093  holds=True
+    absolute bar 0.95  free  20.4%  balanced 0.8010  holds=False
+    within 0% of LLM   free  59.0%  balanced 0.7869  holds=True  deferred classes 0
+    within 5% of LLM   free  68.7%  balanced 0.7852  holds=True  deferred classes 0
+    within 10% of LLM   free  79.1%  balanced 0.7767  holds=True  deferred classes 0
+    within 20% of LLM   free  99.7%  balanced 0.7346  holds=True  deferred classes 0
+
+  >> ship: bge-large-en-v1.5+logreg
+  >> build class-aware layer: False
+     G5 FAIL: per-class advantage is flat (spread 0.0207); a class-aware SELECTION layer has nothing to act on. Budget-constrained class-aware allocation is a separate rule, reported on the dial regardless.
+
+loaded hatespeech: 10,703 items, 2 classes, expert=yes
+  source: Online Cascade Learning (Nie et al., ICML 2024), stream 'hatespeech'; repo pinned at 285e03fc98afabdf7768558d33ee7b5f662b5f19
+    pair-scoring: 21,406 pairs x ~22 tokens = 470,932 units, within the 4,000,000 budget
+
+==============================================================================
+hatespeech [trained on gold]  n=10703  classes=2  imbalance 1:7.95
+==============================================================================
+  ! G1: a constant '0' predictor scores 0.8883 accuracy. Raw accuracy ranks systems by closeness to degenerate prediction on this dataset -- headline metric forced to balanced accuracy.
+  ! G2: 257 rows (2.40%) share text with another row; CV is grouped so copies cannot straddle a fold.
+  headline metric: balanced_accuracy  (resolution +/-0.0102)
+
+  candidates (balanced accuracy):
+    bge-large-en-v1.5+logreg    0.8460  <- best
+    bge-small-en-v1.5+logreg    0.8273
+    nli+logreg                  0.7890
+    tfidf+logreg                0.7671
+    constant-majority           0.5000
+
+  G3 pass: at least one pair is not ROC-ordered, so some genuine complementarity exists.
+  G4 pass: members disagree on 15.0% of items.
+    oracle 0.9568 vs independence null 0.9985
+  G5 pass: spread 0.3055 across 2 classes, cheap arm wins 1.
+  G7 FAIL: a vote for the weakest class is right only 40.7% of the time. Reliability-based selection will avoid that class and drift to the majority.
+
+  DESlib on the same pool (baseline: bge-large-en-v1.5+logreg 0.8460)
+    DESlib LCA                  0.8168  -0.0292 CI [-0.0398,-0.0188] p=0.000  holm=True
+    DESlib OLA                  0.7876  -0.0583 CI [-0.0715,-0.0448] p=0.000  holm=True
+    DESlib KNORA-E              0.8063  -0.0397 CI [-0.0518,-0.0272] p=0.000  holm=True
+    DESlib Oracle (ceiling)     0.9568  +0.1109 CI [+0.1019,+0.1199] p=0.000
+    -> no DESlib method beats the best single model (bge-large-en-v1.5+logreg)
+
+  bge-large-en-v1.5+logreg vs expert LLM: 0.8460 vs 0.8331  delta +0.0128 CI [-0.0002,+0.0259] p=0.055
+  non-inferiority at 2pts: non-inferior (and not worse on the point estimate)
+
+  deferral dial -- balanced accuracy by share sent to the LLM
+     LLM share      confidence          margin       committee     class-aware  per-class-conf precision-floor   gain/+10% spend
+          0.0%          0.8460          0.8460          0.8460          0.8460          0.8460          0.8460                --
+          5.0%          0.8538          0.8538          0.8552          0.8497          0.8502          0.8460           +0.0156
+         10.0%          0.8602          0.8602          0.8566          0.8505          0.8510          0.8460           +0.0130
+         20.0%          0.8642          0.8642          0.8581          0.8356          0.8366          0.8460           +0.0039
+         30.0%          0.8626          0.8626          0.8481          0.8294          0.8419          0.8460           -0.0016
+         50.0%          0.8484          0.8484          0.8414          0.8294          0.8419          0.8460           -0.0071
+         75.0%          0.8374          0.8374          0.8356          0.8294          0.8419          0.8460           -0.0044
+        100.0%          0.8331          0.8331          0.8331          0.8331          0.8331          0.8460           -0.0017
+    note: confidence and margin are identical at every budget (on 2 classes margin is a monotone transform of confidence, so it cannot order items differently)
+    curve max (OPTIMISTIC -- chosen by looking at its own score, 48 configs): 0.8642 at 20.0% via confidence
+    NESTED (rule+budget picked on training folds only): 0.8630 at 22.0% LLM  [selection bias +0.0012]
+      per_class_conf admitted by train-fold G8 in 0/5 folds
+      per-fold picks: confidence, budgets [0.2, 0.3, 0.2, 0.2, 0.2], stable=False
+    reference: free alone 0.8460, LLM alone 0.8331
+    CHEAPEST EQUIVALENT: 5.0% of traffic scores 0.8552 via committee, 0.0090 BELOW the best point and inside the +/-0.0102 this dataset resolves  -- 17% less traffic to the LLM for a difference this dataset cannot measure
+
+  conformal prediction sets at 90% target coverage
+    variant     marginal  worst class  classes under  singletons  set size
+    split         0.9001       0.8992         1/2          87.5%      1.12
+    mondrian      0.9003       0.9002         0/2          88.1%      1.12
+    -> Mondrian holds for every class; split conformal misses 1 while its marginal coverage reads 0.9001
+    G8 FAIL: with the answers in hand a per-class threshold gains -0.0000 at a 22% budget, but shuffled classes buy -0.0018 of that -- only +0.0018 is real, inside the +/-0.0102 this dataset resolves. No estimator recovers headroom that is not there.
+      oracle global 0.8637 vs oracle per-class 0.8637
+    board+dial at a 22% budget (22.0% actually spent) -- per predicted class:
+      class 0:  16.4% of   8216 items escalated  (57% of the spend)
+      class 1:  40.6% of   2487 items escalated  (43% of the spend)
+
+  competence board -- P(correct | this model PREDICTS class c)
+    candidate                            c0       c1
+    tfidf+logreg                      0.952    0.434
+    bge-small-en-v1.5+logreg          0.975    0.374
+    bge-large-en-v1.5+logreg          0.977    0.411
+    nli+logreg                        0.960    0.396
+    EXPERT(own class)                 0.975    0.390
+    (items claimed, all models)        8917     1786
+    -> FREE winner | it says c        0.978    0.382
+    -> EXPERT | free says c           0.898    0.639
+    free board (best claim wins the item): 0.8397   +expert on 1/2 classes: 0.8482  at 60.4% LLM
+    classes handed to the LLM: [0]   per fold [[0], [0], [0], [0], []]  stable=False
+    vs free board: +0.0085  [G6: +0.0085 is inside the +/-0.0102 this dataset can resolve -- not a difference]
+    vs LLM alone: +0.0151
+    beats BOTH ends by a resolvable margin? True  (vs free +0.0171, vs LLM +0.0299, floor +/-0.0102)
+
+  per-class guaranteed coverage (free share | guarantee holds):
+    absolute bar 0.80  free  80.7%  balanced 0.8357  holds=True
+    absolute bar 0.90  free  77.9%  balanced 0.8302  holds=False
+    absolute bar 0.95  free  76.9%  balanced 0.8294  holds=False
+    within 0% of LLM   free 100.0%  balanced 0.8460  holds=True  deferred classes 0
+    within 5% of LLM   free 100.0%  balanced 0.8460  holds=True  deferred classes 0
+    within 10% of LLM   free 100.0%  balanced 0.8460  holds=True  deferred classes 0
+    within 20% of LLM   free 100.0%  balanced 0.8460  holds=True  deferred classes 0
+
+  >> ship: bge-large-en-v1.5+logreg
+  >> build class-aware layer: False
+     G7 FAIL: a vote for the weakest class is right only 40.7% of the time. Reliability-based selection will avoid that class and drift to the majority.
+
+loaded imdb: 25,000 items, 2 classes, expert=yes
+  source: Online Cascade Learning (Nie et al., ICML 2024), stream 'imdb'; repo pinned at 285e03fc98afabdf7768558d33ee7b5f662b5f19
+    pair-scoring: 50,000 pairs x ~256 tokens = 12,800,000 units, over the 4,000,000 budget -- skipped; pair scorers are not worth hours on a long-document task
+
+==============================================================================
+imdb [trained on gold]  n=25000  classes=2  imbalance 1:1.00
+==============================================================================
+  ! G2: 188 rows (0.75%) share text with another row; CV is grouped so copies cannot straddle a fold.
+  headline metric: accuracy  (resolution +/-0.0032)
+
+  candidates (balanced accuracy):
+    bge-large-en-v1.5+logreg    0.9420  <- best
+    bge-small-en-v1.5+logreg    0.9287
+    tfidf+logreg                0.9003
+    constant-majority           0.5000
+
+  G3 pass: at least one pair is not ROC-ordered, so some genuine complementarity exists.
+  G4 FAIL: members agree 92.3% of the time -- one classifier repeated. Selection has almost nothing to choose between.
+    oracle 0.9734 vs independence null 0.9996
+  G5 FAIL: per-class advantage is flat (spread 0.0268); a class-aware SELECTION layer has nothing to act on. Budget-constrained class-aware allocation is a separate rule, reported on the dial regardless.
+  G7 pass: every class's vote is right more often than not (worst 93.9%).
+
+  DESlib on the same pool (baseline: bge-large-en-v1.5+logreg 0.9420)
+    DESlib LCA                  0.9364  -0.0057 CI [-0.0079,-0.0034] p=0.000  holm=True
+    DESlib OLA                  0.9164  -0.0257 CI [-0.0286,-0.0227] p=0.000  holm=True
+    DESlib KNORA-E              0.9367  -0.0053 CI [-0.0075,-0.0032] p=0.000  holm=True
+    DESlib Oracle (ceiling)     0.9734  +0.0314 CI [+0.0292,+0.0336] p=0.000
+    -> no DESlib method beats the best single model (bge-large-en-v1.5+logreg)
+
+  bge-large-en-v1.5+logreg vs expert LLM: 0.9420 vs 0.9415  delta +0.0005 CI [-0.0025,+0.0036] p=0.743
+  non-inferiority at 2pts: non-inferior (and not worse on the point estimate)
+
+  deferral dial -- balanced accuracy by share sent to the LLM
+     LLM share      confidence          margin       committee     class-aware  per-class-conf precision-floor   gain/+10% spend
+          0.0%          0.9420          0.9420          0.9420          0.9420          0.9420          0.9450                --
+          5.0%          0.9486          0.9486          0.9502          0.9474          0.9488          0.9421           +0.0130
+         10.0%          0.9508          0.9508          0.9509          0.9484          0.9498          0.9421           +0.0044
+         20.0%          0.9478          0.9478          0.9488          0.9484          0.9488          0.9421           -0.0030
+         30.0%          0.9453          0.9453          0.9454          0.9484          0.9488          0.9421           -0.0025
+         50.0%          0.9429          0.9429          0.9430          0.9485          0.9488          0.9421           -0.0012
+         75.0%          0.9416          0.9416          0.9416          0.9485          0.9488          0.9421           -0.0005
+        100.0%          0.9415          0.9415          0.9415          0.9415          0.9415          0.9421           -0.0000
+    note: confidence and margin are identical at every budget (on 2 classes margin is a monotone transform of confidence, so it cannot order items differently)
+    curve max (OPTIMISTIC -- chosen by looking at its own score, 48 configs): 0.9509 at 10.0% via committee
+    NESTED (rule+budget picked on training folds only): 0.9504 at 10.0% LLM  [selection bias +0.0006]
+      per_class_conf admitted by train-fold G8 in 0/5 folds
+      per-fold picks: committee/confidence, budgets [0.1, 0.1, 0.1, 0.1, 0.1], stable=False
+    reference: free alone 0.9420, LLM alone 0.9415
+    CHEAPEST EQUIVALENT: 5.0% of traffic scores 0.9502 via committee, 0.0008 BELOW the best point and inside the +/-0.0032 this dataset resolves  -- 5% less traffic to the LLM for a difference this dataset cannot measure
+
+  conformal prediction sets at 90% target coverage
+    variant     marginal  worst class  classes under  singletons  set size
+    split         0.9000       0.8973         1/2          93.1%      0.93
+    mondrian      0.8998       0.8993         1/2          93.1%      0.93
+    -> Mondrian still misses 1 class(es); split conformal misses 1 while its marginal coverage reads 0.9000
+    G8 FAIL: with the answers in hand a per-class threshold gains +0.0005 at a 10% budget, but shuffled classes buy -0.0001 of that -- only +0.0006 is real, inside the +/-0.0032 this dataset resolves. No estimator recovers headroom that is not there.
+      oracle global 0.9508 vs oracle per-class 0.9514
+    board+dial at a 10% budget (10.0% actually spent) -- per predicted class:
+      class 0:   9.9% of  12407 items escalated  (49% of the spend)
+      class 1:  10.1% of  12593 items escalated  (51% of the spend)
+
+  competence board -- P(correct | this model PREDICTS class c)
+    candidate                            c0       c1
+    tfidf+logreg                      0.907    0.894
+    bge-small-en-v1.5+logreg          0.930    0.928
+    bge-large-en-v1.5+logreg          0.945    0.939
+    EXPERT(own class)                 0.917    0.969
+    (items claimed, all models)       12293    12707
+    -> FREE winner | it says c        0.945    0.939
+    -> EXPERT | free says c           0.958    0.925
+    free board (best claim wins the item): 0.9420   +expert on 1/2 classes: 0.9485  at 49.6% LLM
+    classes handed to the LLM: [0]   per fold [[0], [0], [0], [0], [0]]  stable=True
+    vs free board: +0.0064
+    vs LLM alone: +0.0070
+    beats BOTH ends by a resolvable margin? True  (vs free +0.0083, vs LLM +0.0088, floor +/-0.0032)
+
+  per-class guaranteed coverage (free share | guarantee holds):
+    absolute bar 0.80  free 100.0%  balanced 0.9421  holds=True
+    absolute bar 0.90  free 100.0%  balanced 0.9421  holds=True
+    absolute bar 0.95  free  98.0%  balanced 0.9453  holds=True
+    within 0% of LLM   free  95.4%  balanced 0.9450  holds=True  deferred classes 0
+    within 5% of LLM   free 100.0%  balanced 0.9421  holds=True  deferred classes 0
+    within 10% of LLM   free 100.0%  balanced 0.9421  holds=True  deferred classes 0
+    within 20% of LLM   free 100.0%  balanced 0.9421  holds=True  deferred classes 0
+
+  >> ship: bge-large-en-v1.5+logreg
+  >> build class-aware layer: False
+     G4 FAIL: members agree 92.3% of the time -- one classifier repeated. Selection has almost nothing to choose between.; G5 FAIL: per-class advantage is flat (spread 0.0268); a class-aware SELECTION layer has nothing to act on. Budget-constrained class-aware allocation is a separate rule, reported on the dial regardless.
+
+loaded isear: 7,666 items, 7 classes, expert=yes
+  source: Online Cascade Learning (Nie et al., ICML 2024), stream 'isear'; repo pinned at 285e03fc98afabdf7768558d33ee7b5f662b5f19
+    pair-scoring: 53,662 pairs x ~28 tokens = 1,502,536 units, within the 4,000,000 budget
+
+==============================================================================
+isear [trained on gold]  n=7666  classes=7  imbalance 1:1.00
+==============================================================================
+  ! G2: 218 rows (2.84%) share text with another row; CV is grouped so copies cannot straddle a fold.
+  headline metric: accuracy  (resolution +/-0.0057)
+
+  candidates (balanced accuracy):
+    bge-large-en-v1.5+logreg    0.6879  <- best
+    bge-small-en-v1.5+logreg    0.6302
+    nli+logreg                  0.6163
+    tfidf+logreg                0.6011
+    constant-majority           0.1429
+
+  G3 n/a (multiclass)
+  G4 pass: members disagree on 33.9% of items.
+    oracle 0.8272 vs independence null 0.9710
+  G5 pass: spread 0.0765 across 7 classes, cheap arm wins 3.
+  G7 pass: every class's vote is right more often than not (worst 58.7%).
+
+  class-aware layer (vs bge-large-en-v1.5+logreg 0.6879):
+    selection_dcs_lca   0.6642  -0.0237 CI [-0.0305,-0.0169] p=0.000 holm=True
+    stacking            0.6975  +0.0097 CI [+0.0031,+0.0160] p=0.004 holm=True
+    -> stacking beats the best single model by +0.0097 and survives Holm
+
+  DESlib on the same pool (baseline: bge-large-en-v1.5+logreg 0.6879)
+    DESlib LCA                  0.6511  -0.0368 CI [-0.0451,-0.0284] p=0.000  holm=True
+    DESlib OLA                  0.6463  -0.0416 CI [-0.0500,-0.0333] p=0.000  holm=True
+    DESlib KNORA-E              0.6683  -0.0196 CI [-0.0267,-0.0125] p=0.000  holm=True
+    DESlib Oracle (ceiling)     0.8272  +0.1393 CI [+0.1317,+0.1469] p=0.000
+    -> no DESlib method beats the best single model (bge-large-en-v1.5+logreg)
+
+  stacking vs expert LLM: 0.6975 vs 0.7036  delta -0.0061 CI [-0.0158,+0.0037] p=0.237
+  non-inferiority at 2pts: non-inferior within the 2% margin
+
+  deferral dial -- balanced accuracy by share sent to the LLM
+     LLM share      confidence          margin       committee     class-aware  per-class-conf precision-floor   gain/+10% spend
+          0.0%          0.6975          0.6975          0.6975          0.6975          0.6975          0.7046                --
+          5.0%          0.7042          0.7044          0.7035          0.7024          0.7029          0.7045           +0.0134
+         10.1%          0.7069          0.7060          0.7089          0.7037          0.7061          0.7021           +0.0054
+         20.0%          0.7142          0.7135          0.7129          0.7073          0.7153          0.6984           +0.0074
+         30.0%          0.7169          0.7178          0.7131          0.7064          0.7182          0.6980           +0.0026
+         50.1%          0.7119          0.7122          0.7106          0.7135          0.7167          0.6980           -0.0025
+         75.0%          0.7051          0.7051          0.7053          0.7115          0.7167          0.6980           -0.0027
+        100.0%          0.7036          0.7036          0.7036          0.7036          0.7036          0.6980           -0.0006
+    curve max (OPTIMISTIC -- chosen by looking at its own score, 48 configs): 0.7182 at 30.0% via per_class_conf
+    NESTED (rule+budget picked on training folds only): 0.7165 at 30.1% LLM  [selection bias +0.0017]
+      per_class_conf admitted by train-fold G8 in 0/5 folds
+      per-fold picks: confidence/margin, budgets [0.3, 0.3, 0.3, 0.3, 0.3], stable=False
+    reference: free alone 0.6975, LLM alone 0.7036
+    CHEAPEST EQUIVALENT: 20.0% of traffic scores 0.7142 via confidence, 0.0039 BELOW the best point and inside the +/-0.0057 this dataset resolves  -- 10% less traffic to the LLM for a difference this dataset cannot measure
+
+  conformal prediction sets at 90% target coverage
+    variant     marginal  worst class  classes under  singletons  set size
+    split         0.8999       0.8732         5/7          47.4%      2.09
+    mondrian      0.9016       0.8994         2/7          46.3%      2.19
+    -> Mondrian still misses 2 class(es); split conformal misses 5 while its marginal coverage reads 0.8999
+    G8 FAIL: with the answers in hand a per-class threshold gains +0.0102 at a 30% budget, but shuffled classes buy +0.0058 of that -- only +0.0043 is real, inside the +/-0.0057 this dataset resolves. No estimator recovers headroom that is not there.
+      oracle global 0.7158 vs oracle per-class 0.7260
+    board+dial at a 30% budget (30.1% actually spent) -- per predicted class:
+      class 0:  10.1% of   1139 items escalated  (5% of the spend)
+      class 1:  24.1% of   1069 items escalated  (11% of the spend)
+      class 2:  47.8% of   1253 items escalated  (26% of the spend)
+      class 3:  37.9% of   1047 items escalated  (17% of the spend)
+      class 4:  45.1% of   1045 items escalated  (20% of the spend)
+      class 5:  16.6% of   1077 items escalated  (8% of the spend)
+      class 6:  27.7% of   1036 items escalated  (12% of the spend)
+
+  competence board -- P(correct | this model PREDICTS class c)
+    candidate                            c0       c1       c2       c3       c4       c5       c6
+    tfidf+logreg                      0.698    0.663    0.486    0.499    0.550    0.695    0.614
+    bge-small-en-v1.5+logreg          0.774    0.695    0.507    0.545    0.509    0.715    0.635
+    bge-large-en-v1.5+logreg          0.831    0.698    0.589    0.621    0.597    0.778    0.680
+    nli+logreg                        0.757    0.621    0.479    0.517    0.515    0.725    0.667
+    EXPERT(own class)                 0.896    0.560    0.627    0.632    0.728    0.808    0.787
+    (items claimed, all models)        1200     1005     1187     1130      920     1135     1089
+    -> FREE winner | it says c        0.833    0.699    0.587    0.620    0.595    0.780    0.680
+    -> EXPERT | free says c           0.868    0.750    0.571    0.667    0.570    0.819    0.653
+    free board (best claim wins the item): 0.6879   +expert on 4/7 classes: 0.7132  at 58.3% LLM
+    classes handed to the LLM: [0, 1, 3, 5]   per fold [[0, 1, 3, 5], [0, 1, 3, 5], [0, 1, 3, 5], [0, 1, 3, 5], [0, 1, 3, 5]]  stable=True
+    vs free board: +0.0253
+    vs LLM alone: +0.0096
+    beats BOTH ends by a resolvable margin? True  (vs free +0.0189, vs LLM +0.0129, floor +/-0.0057)
+
+  per-class guaranteed coverage (free share | guarantee holds):
+    absolute bar 0.80  free  69.8%  balanced 0.7075  holds=True
+    absolute bar 0.90  free  50.3%  balanced 0.7061  holds=False
+    absolute bar 0.95  free  36.4%  balanced 0.7058  holds=False
+    within 0% of LLM   free  87.8%  balanced 0.7046  holds=False  deferred classes 0
+    within 5% of LLM   free  93.3%  balanced 0.7045  holds=True  deferred classes 0
+    within 10% of LLM   free  96.9%  balanced 0.7021  holds=True  deferred classes 0
+    within 20% of LLM   free  99.8%  balanced 0.6984  holds=True  deferred classes 0
+
+  >> ship: stacking
+  >> build class-aware layer: True
+     all gates open -- a class-aware layer has something to work with
+
+wrote /Users/vasyl/zadumai/ocl_compare/results/pipeline.json (278s)

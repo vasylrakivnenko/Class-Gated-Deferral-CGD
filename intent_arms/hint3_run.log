@@ -1,0 +1,237 @@
+[13:29:29] verifying metric stack against the authors' own results/ files (D1)
+[13:29:30]   max abs deviation over 675 published numbers: 2.220e-16
+[13:29:30] === sofmattress ===
+[13:29:30]   arm: majority
+[13:29:30]   arm: tfidf_lr
+[13:29:30]   arm: frozen_e5_lr
+[13:29:39]   arm: ettin_encoder
+[transformers] [1mModernBertForSequenceClassification LOAD REPORT[0m from: jhu-clsp/ettin-encoder-68m
+Key               | Status     | 
+------------------+------------+-
+decoder.bias      | UNEXPECTED | 
+decoder.weight    | UNEXPECTED | 
+classifier.weight | MISSING    | 
+classifier.bias   | MISSING    | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+[13:30:36]   [sofmattress] encoder CV fold 0 done in 57s
+[transformers] [1mModernBertForSequenceClassification LOAD REPORT[0m from: jhu-clsp/ettin-encoder-68m
+Key               | Status     | 
+------------------+------------+-
+decoder.bias      | UNEXPECTED | 
+decoder.weight    | UNEXPECTED | 
+classifier.weight | MISSING    | 
+classifier.bias   | MISSING    | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+[13:31:32]   [sofmattress] encoder CV fold 1 done in 57s
+[transformers] [1mModernBertForSequenceClassification LOAD REPORT[0m from: jhu-clsp/ettin-encoder-68m
+Key               | Status     | 
+------------------+------------+-
+decoder.bias      | UNEXPECTED | 
+decoder.weight    | UNEXPECTED | 
+classifier.weight | MISSING    | 
+classifier.bias   | MISSING    | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+[13:32:29]   [sofmattress] encoder CV fold 2 done in 56s
+[transformers] [1mModernBertForSequenceClassification LOAD REPORT[0m from: jhu-clsp/ettin-encoder-68m
+Key               | Status     | 
+------------------+------------+-
+decoder.bias      | UNEXPECTED | 
+decoder.weight    | UNEXPECTED | 
+classifier.weight | MISSING    | 
+classifier.bias   | MISSING    | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+[13:33:22]   [sofmattress] encoder CV fold 3 done in 54s
+[transformers] [1mModernBertForSequenceClassification LOAD REPORT[0m from: jhu-clsp/ettin-encoder-68m
+Key               | Status     | 
+------------------+------------+-
+decoder.bias      | UNEXPECTED | 
+decoder.weight    | UNEXPECTED | 
+classifier.weight | MISSING    | 
+classifier.bias   | MISSING    | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+[13:34:19]   [sofmattress] encoder CV fold 4 done in 57s
+[transformers] [1mModernBertForSequenceClassification LOAD REPORT[0m from: jhu-clsp/ettin-encoder-68m
+Key               | Status     | 
+------------------+------------+-
+decoder.bias      | UNEXPECTED | 
+decoder.weight    | UNEXPECTED | 
+classifier.weight | MISSING    | 
+classifier.bias   | MISSING    | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+[13:35:30]   [sofmattress] encoder final fit done in 70s
+[13:35:34]   shipped row = frozen_e5_lr  t*=0.1261
+[13:35:34] === curekart ===
+[13:35:34]   arm: majority
+[13:35:34]   arm: tfidf_lr
+[13:35:35]   arm: frozen_e5_lr
+[13:35:36]   arm: ettin_encoder
+[transformers] [1mModernBertForSequenceClassification LOAD REPORT[0m from: jhu-clsp/ettin-encoder-68m
+Key               | Status     | 
+------------------+------------+-
+decoder.bias      | UNEXPECTED | 
+decoder.weight    | UNEXPECTED | 
+classifier.weight | MISSING    | 
+classifier.bias   | MISSING    | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+[13:37:16]   [curekart] encoder CV fold 0 done in 100s
+[transformers] [1mModernBertForSequenceClassification LOAD REPORT[0m from: jhu-clsp/ettin-encoder-68m
+Key               | Status     | 
+------------------+------------+-
+decoder.bias      | UNEXPECTED | 
+decoder.weight    | UNEXPECTED | 
+classifier.weight | MISSING    | 
+classifier.bias   | MISSING    | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+[13:39:03]   [curekart] encoder CV fold 1 done in 107s
+[transformers] [1mModernBertForSequenceClassification LOAD REPORT[0m from: jhu-clsp/ettin-encoder-68m
+Key               | Status     | 
+------------------+------------+-
+decoder.bias      | UNEXPECTED | 
+decoder.weight    | UNEXPECTED | 
+classifier.weight | MISSING    | 
+classifier.bias   | MISSING    | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+[13:41:48]   [curekart] encoder CV fold 2 done in 165s
+[transformers] [1mModernBertForSequenceClassification LOAD REPORT[0m from: jhu-clsp/ettin-encoder-68m
+Key               | Status     | 
+------------------+------------+-
+decoder.bias      | UNEXPECTED | 
+decoder.weight    | UNEXPECTED | 
+classifier.weight | MISSING    | 
+classifier.bias   | MISSING    | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+[13:44:39]   [curekart] encoder CV fold 3 done in 171s
+[transformers] [1mModernBertForSequenceClassification LOAD REPORT[0m from: jhu-clsp/ettin-encoder-68m
+Key               | Status     | 
+------------------+------------+-
+decoder.bias      | UNEXPECTED | 
+decoder.weight    | UNEXPECTED | 
+classifier.weight | MISSING    | 
+classifier.bias   | MISSING    | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+[13:47:31]   [curekart] encoder CV fold 4 done in 173s
+[transformers] [1mModernBertForSequenceClassification LOAD REPORT[0m from: jhu-clsp/ettin-encoder-68m
+Key               | Status     | 
+------------------+------------+-
+decoder.bias      | UNEXPECTED | 
+decoder.weight    | UNEXPECTED | 
+classifier.weight | MISSING    | 
+classifier.bias   | MISSING    | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+[13:51:38]   [curekart] encoder final fit done in 247s
+[13:51:46]   shipped row = frozen_e5_lr  t*=0.1170
+[13:51:46] === powerplay11 ===
+[13:51:46]   arm: majority
+[13:51:46]   arm: tfidf_lr
+[13:51:47]   arm: frozen_e5_lr
+[13:51:49]   arm: ettin_encoder
+[transformers] [1mModernBertForSequenceClassification LOAD REPORT[0m from: jhu-clsp/ettin-encoder-68m
+Key               | Status     | 
+------------------+------------+-
+decoder.bias      | UNEXPECTED | 
+decoder.weight    | UNEXPECTED | 
+classifier.weight | MISSING    | 
+classifier.bias   | MISSING    | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+[13:54:33]   [powerplay11] encoder CV fold 0 done in 164s
+[transformers] [1mModernBertForSequenceClassification LOAD REPORT[0m from: jhu-clsp/ettin-encoder-68m
+Key               | Status     | 
+------------------+------------+-
+decoder.bias      | UNEXPECTED | 
+decoder.weight    | UNEXPECTED | 
+classifier.weight | MISSING    | 
+classifier.bias   | MISSING    | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+[13:57:16]   [powerplay11] encoder CV fold 1 done in 163s
+[transformers] [1mModernBertForSequenceClassification LOAD REPORT[0m from: jhu-clsp/ettin-encoder-68m
+Key               | Status     | 
+------------------+------------+-
+decoder.bias      | UNEXPECTED | 
+decoder.weight    | UNEXPECTED | 
+classifier.weight | MISSING    | 
+classifier.bias   | MISSING    | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+[13:59:58]   [powerplay11] encoder CV fold 2 done in 162s
+[transformers] [1mModernBertForSequenceClassification LOAD REPORT[0m from: jhu-clsp/ettin-encoder-68m
+Key               | Status     | 
+------------------+------------+-
+decoder.bias      | UNEXPECTED | 
+decoder.weight    | UNEXPECTED | 
+classifier.weight | MISSING    | 
+classifier.bias   | MISSING    | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+[14:02:13]   [powerplay11] encoder CV fold 3 done in 135s
+[transformers] [1mModernBertForSequenceClassification LOAD REPORT[0m from: jhu-clsp/ettin-encoder-68m
+Key               | Status     | 
+------------------+------------+-
+decoder.bias      | UNEXPECTED | 
+decoder.weight    | UNEXPECTED | 
+classifier.weight | MISSING    | 
+classifier.bias   | MISSING    | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+[14:04:23]   [powerplay11] encoder CV fold 4 done in 131s
+[transformers] [1mModernBertForSequenceClassification LOAD REPORT[0m from: jhu-clsp/ettin-encoder-68m
+Key               | Status     | 
+------------------+------------+-
+decoder.bias      | UNEXPECTED | 
+decoder.weight    | UNEXPECTED | 
+classifier.weight | MISSING    | 
+classifier.bias   | MISSING    | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+[14:07:13]   [powerplay11] encoder final fit done in 169s
+[14:07:20]   shipped row = frozen_e5_lr  t*=0.0505
+[14:07:20] wrote /private/tmp/claude-501/-Users-vasyl-zadumai/12e40f00-be9f-4f43-9226-7a491b668aef/scratchpad/hint3.json

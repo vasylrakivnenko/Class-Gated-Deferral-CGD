@@ -1,0 +1,199 @@
+{
+ "what": "Reconstruction of the four Online Cascade Learning (Nie et al., ICML 2024) evaluation streams, verified against Table 1.",
+ "paper": "https://proceedings.mlr.press/v235/nie24a.html",
+ "code": "https://github.com/Flitternie/online_cascade_learning",
+ "ocl_commit": "285e03fc98afabdf7768558d33ee7b5f662b5f19",
+ "verified_against_published_claim": true,
+ "sources": {
+  "preprocessed_archive": {
+   "url": "https://drive.usercontent.google.com/download?id=1vQR7pqVqmYndHkfpcEpwCSWYDXON0gkl&export=download",
+   "sha256": "c8a31ebdc474eb285243a6499ab0fd59bedae9290d5cddf2ea7198061d92d404",
+   "bytes": 13712029
+  },
+  "imdb_gpt3.5": {
+   "url": "https://raw.githubusercontent.com/Flitternie/online_cascade_learning/285e03fc98afabdf7768558d33ee7b5f662b5f19/data/llm_anntations/imdb_gpt3.5_turbo_1106.txt",
+   "sha256": "e355af8351d2e98a60630e88c80ff340349b55d0a8412f2184488f1d1e42c8d7",
+   "bytes": 225000
+  },
+  "imdb_llama2": {
+   "url": "https://raw.githubusercontent.com/Flitternie/online_cascade_learning/285e03fc98afabdf7768558d33ee7b5f662b5f19/data/llm_anntations/imdb_llama2_70b_chat.txt",
+   "sha256": "cf62a99acc312fffbd9fe3c99004243deb30af426f37f196b86c84e9ddef8038",
+   "bytes": 50862
+  },
+  "hatespeech_gpt3.5": {
+   "url": "https://raw.githubusercontent.com/Flitternie/online_cascade_learning/285e03fc98afabdf7768558d33ee7b5f662b5f19/data/llm_anntations/hatespeech_gpt3.5_turbo_1106.txt",
+   "sha256": "bc7ea34a5157dcea3f8b0ba629dfb6afa95537f5da25484a74c21f09b5a85948",
+   "bytes": 34688
+  },
+  "hatespeech_llama2": {
+   "url": "https://raw.githubusercontent.com/Flitternie/online_cascade_learning/285e03fc98afabdf7768558d33ee7b5f662b5f19/data/llm_anntations/hatespeech_llama2_70b_chat.txt",
+   "sha256": "33557dafe0926a71e8c436244d24a778a9d783e3fa7e73cdc7ec83762d3415a9",
+   "bytes": 21406
+  },
+  "isear_gpt3.5": {
+   "url": "https://raw.githubusercontent.com/Flitternie/online_cascade_learning/285e03fc98afabdf7768558d33ee7b5f662b5f19/data/llm_anntations/isear_gpt3.5_turbo_1106.txt",
+   "sha256": "80028b1034d5b44801ddb83c4c9cece4346b7a45673731dfe783f79628cff595",
+   "bytes": 47522
+  },
+  "isear_llama2": {
+   "url": "https://raw.githubusercontent.com/Flitternie/online_cascade_learning/285e03fc98afabdf7768558d33ee7b5f662b5f19/data/llm_anntations/isear_llama2_70b_chat.txt",
+   "sha256": "14fa40a4351ecda17d8d62dda8c052ec658f8aec4522497ea5b950364e41039f",
+   "bytes": 15573
+  },
+  "fever_gpt3.5": {
+   "url": "https://raw.githubusercontent.com/Flitternie/online_cascade_learning/285e03fc98afabdf7768558d33ee7b5f662b5f19/data/llm_anntations/fever_gpt3.5_turbo_1106.txt",
+   "sha256": "dada9d5e61783e14b0e35da344483f41d13621ef3da5f0a2d6cd0baf0c41c155",
+   "bytes": 36493
+  },
+  "fever_llama2": {
+   "url": "https://raw.githubusercontent.com/Flitternie/online_cascade_learning/285e03fc98afabdf7768558d33ee7b5f662b5f19/data/llm_anntations/fever_llama2_70b_chat.txt",
+   "sha256": "eb78c908d73b2fc0be437b4e1db1b9a83e5b4db2aa0d82bc9597875a04170fd3",
+   "bytes": 13024
+  }
+ },
+ "environment": {
+  "utc": "2026-09-24T01:55:35+00:00",
+  "python": "3.12.8",
+  "platform": "macOS-26.6.1-arm64-arm-64bit",
+  "machine": "arm64",
+  "packages": {
+   "numpy": "2.5.3",
+   "pandas": "3.0.5",
+   "scikit-learn": null
+  },
+  "git_commit": "e795cc29ec371ad41304849242d53a7dc665502b",
+  "git_branch": "recover/post-oom-checkpoint",
+  "git_dirty": true,
+  "audit_code_dirty": false,
+  "audit_code_uncommitted": []
+ },
+ "expected": {
+  "imdb": {
+   "n_rows": 25000,
+   "n_positive": 12500,
+   "gpt3.5": {
+    "n_correct": 23538,
+    "n_unparsed": 0,
+    "paper_accuracy": "94.15"
+   },
+   "llama2": {
+    "n_correct": 23333,
+    "n_unparsed": 862,
+    "paper_accuracy": "93.33"
+   }
+  },
+  "hatespeech": {
+   "n_rows": 10703,
+   "n_positive": 1196,
+   "gpt3.5": {
+    "n_correct": 8920,
+    "n_unparsed": 0,
+    "paper_accuracy": "83.34",
+    "n_true_positive": 996,
+    "paper_recall": "83.28"
+   },
+   "llama2": {
+    "n_correct": 8328,
+    "n_unparsed": 0,
+    "paper_accuracy": "77.81",
+    "n_true_positive": 983,
+    "paper_recall": "82.19"
+   }
+  },
+  "isear": {
+   "n_rows": 7666,
+   "n_classes": 7,
+   "gpt3.5": {
+    "n_correct": 5393,
+    "n_unparsed": 0,
+    "paper_accuracy": "70.34"
+   },
+   "llama2": {
+    "n_correct": 5231,
+    "n_unparsed": 241,
+    "paper_accuracy": "68.23"
+   }
+  },
+  "fever": {
+   "n_rows": 6512,
+   "gpt3.5": {
+    "n_correct": 5208,
+    "n_unparsed": 0,
+    "paper_accuracy": "79.98"
+   },
+   "llama2": {
+    "n_correct": 5024,
+    "n_unparsed": 0,
+    "paper_accuracy": "77.15"
+   }
+  }
+ },
+ "measured": {
+  "imdb": {
+   "n_rows": 25000,
+   "n_positive": 12500,
+   "gpt3.5": {
+    "n_correct": 23538,
+    "n_unparsed": 0,
+    "paper_accuracy": "94.15"
+   },
+   "llama2": {
+    "n_correct": 23333,
+    "n_unparsed": 862,
+    "paper_accuracy": "93.33"
+   },
+   "content_fingerprint": "5a107542351a8e8511c2d4aab2c619b78780f9865122245c190d8b833bfc0c00"
+  },
+  "hatespeech": {
+   "n_rows": 10703,
+   "n_positive": 1196,
+   "gpt3.5": {
+    "n_correct": 8920,
+    "n_unparsed": 0,
+    "paper_accuracy": "83.34",
+    "n_true_positive": 996,
+    "paper_recall": "83.28"
+   },
+   "llama2": {
+    "n_correct": 8328,
+    "n_unparsed": 0,
+    "paper_accuracy": "77.81",
+    "n_true_positive": 983,
+    "paper_recall": "82.19"
+   },
+   "content_fingerprint": "bd2c5bb45e58096995d128cf1bcd9a86fe37b262c4c2d560d9cc0b0246599d26"
+  },
+  "isear": {
+   "n_rows": 7666,
+   "n_classes": 7,
+   "gpt3.5": {
+    "n_correct": 5393,
+    "n_unparsed": 0,
+    "paper_accuracy": "70.34"
+   },
+   "llama2": {
+    "n_correct": 5231,
+    "n_unparsed": 241,
+    "paper_accuracy": "68.23"
+   },
+   "content_fingerprint": "719cf9dc751f860f7c5eb0e27940b866bbdce1219c00582d44dfb06730f00905"
+  },
+  "fever": {
+   "n_rows": 6512,
+   "gpt3.5": {
+    "n_correct": 5208,
+    "n_unparsed": 0,
+    "paper_accuracy": "79.98"
+   },
+   "llama2": {
+    "n_correct": 5024,
+    "n_unparsed": 0,
+    "paper_accuracy": "77.15"
+   },
+   "content_fingerprint": "a968c7ce49e336dbd7879116b37b00e05c59b0a90164ed8cfc5d4e9db2c484ad"
+  }
+ },
+ "reproduces_published_claim": true,
+ "mismatches": [],
+ "runtime_seconds": 0.4
+}

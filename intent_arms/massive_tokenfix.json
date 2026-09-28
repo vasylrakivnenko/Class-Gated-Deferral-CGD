@@ -1,0 +1,57 @@
+{
+ "hi-IN": {
+  "word_default_acc": 0.5796906523201076,
+  "word_default_macro_f1": 0.5394348259308359,
+  "word_default_features": 14113,
+  "word_markaware_acc": 0.8117014122394082,
+  "word_markaware_macro_f1": 0.768883862068642,
+  "word_markaware_features": 35640,
+  "delta_acc": 0.23201075991930054,
+  "char_only_acc": 0.8211163416274377,
+  "union_acc": 0.8184263618022865
+ },
+ "th-TH": {
+  "word_default_acc": 0.7094821788836584,
+  "word_default_macro_f1": 0.6851578129947187,
+  "word_default_features": 38006,
+  "word_markaware_acc": 0.6361802286482852,
+  "word_markaware_macro_f1": 0.6259957322234436,
+  "word_markaware_features": 30612,
+  "delta_acc": -0.07330195023537323,
+  "char_only_acc": 0.8090114324142569,
+  "union_acc": 0.8043039677202422
+ },
+ "en-US": {
+  "word_default_acc": 0.827841291190316,
+  "word_default_macro_f1": 0.7930826854366728,
+  "word_default_features": 29040,
+  "word_markaware_acc": 0.8301950235373234,
+  "word_markaware_macro_f1": 0.7808912194598374,
+  "word_markaware_features": 29661,
+  "delta_acc": 0.00235373234700742,
+  "char_only_acc": 0.8375924680564896,
+  "union_acc": 0.843981170141224
+ },
+ "ru-RU": {
+  "word_default_acc": 0.7915265635507733,
+  "word_default_macro_f1": 0.7500180307428537,
+  "word_default_features": 36060,
+  "word_markaware_acc": 0.7901815736381977,
+  "word_markaware_macro_f1": 0.7507625977306612,
+  "word_markaware_features": 36363,
+  "delta_acc": -0.0013449899125755893,
+  "char_only_acc": 0.8207800941492939,
+  "union_acc": 0.8207800941492939
+ },
+ "zh-CN": {
+  "word_default_acc": 0.14593140551445863,
+  "word_default_macro_f1": 0.1583106581978627,
+  "word_default_features": 11579,
+  "word_markaware_acc": 0.14458641560188298,
+  "word_markaware_macro_f1": 0.15707860932106546,
+  "word_markaware_features": 11531,
+  "delta_acc": -0.0013449899125756448,
+  "char_only_acc": 0.7599193006052455,
+  "union_acc": 0.7464694014794889
+ }
+}

@@ -1,0 +1,224 @@
+# PROPOSED config block for Arm B0 -- NOT merged into configs/default.yaml.
+#
+# configs/default.yaml is coordinator-owned and a previous run of this project
+# lost an agent's config block to exactly that race (DECISIONS.md). So this file
+# holds the keys `src/reflex/featurize.py` and `src/reflex/arm_b0.py` read, for
+# the coordinator to merge verbatim as ONE new top-level block `baseline_b0`.
+#
+# MERGE NOTES FOR THE COORDINATOR
+#   1. `baseline_b0` is a NEW top-level key. PyYAML silently keeps only the LAST
+#      of two duplicate top-level keys and raises nothing (D18), so check it does
+#      not already exist before pasting.
+#   2. Nothing here overrides an existing key. In particular `select.head_context`
+#      is untouched -- that block is the ENCODER's per-head plan and is owned by
+#      select.py; `baseline_b0` is the TF-IDF arm's. They deliberately use the
+#      same spelling (`K`, `tag_recency`, `recency_buckets`) so the two plans can
+#      be diffed by eye, and they currently DISAGREE on one cell: see `action`.
+#   3. No bare on/off/yes/no values (D18), no `#` inside an unquoted key (D18).
+#
+# WHAT IS MEASURED AND WHAT IS NOT
+#   Values marked [MEASURED] come from the frozen probe harness (dev n=13,284,
+#   CI half-width 0.68 points, digest 08ad053a37a67cc36aeec16e0a02306c) recorded
+#   in DECISIONS D2b / D6 / D7. Values marked [UNPINNED] are choices the record
+#   does not fix; the default and the reasoning are given so that, per D6, a
+#   number can never be quoted without the configuration that produced it.
+#   The headline bars themselves are NOT duplicated here -- they already live in
+#   `report.probe_cheap_bars` / `report.probe_constant_bars`, and arm_b0 reads
+#   them from there rather than keeping a second copy that could drift.
+
+baseline_b0:
+
+  # ---- PER-HEAD PLAN --------------------------------------------------------
+  # Each head at its own winning config. Two axes (window size, order
+  # sensitivity) independently split the same way: nextstep and action are LOCAL
+  # and ORDERED, intent is GLOBAL and ORDER-INVARIANT.
+  #
+  # K: `full` or an int (the last K turns); `first2+last6` and `{first: 2,
+  # last: 6}` also parse, for the D2b head+tail rows.
+  # tag_recency: prefix every word token with its turn's recency bucket.
+  # recency_buckets: MAXB. Buckets are r0..r{MAXB}, so 3 means FOUR buckets.
+  plan:
+    nextstep:
+      K: 6
+      tag_recency: true
+      recency_buckets: 3
+      # [MEASURED] D7 "the ship configuration, verified twice": 0.8351 (agent) /
+      # 0.8345 (maintainer, independent re-measurement), 0.06 points apart.
+      # +2.8 over the best plain TF-IDF bar (k6, 0.8071) and +4.5 over the
+      # 33.7M-param frozen-encoder MLP (0.7900), both far outside CI.
+      # The two cheap biases COMPOSE: plain full .7855 -> plain k6 .8071 ->
+      # tagged full .8296 -> tagged k6 .8345-.8351.
+
+    intent:
+      K: full
+      tag_recency: false
+      recency_buckets: 3      # inert while tag_recency is false; kept so an
+                              # ablation only flips one key
+      # [MEASURED] D2b/D6/D7: full thread 0.8074 vs k6 0.6153 -- the window is
+      # worth +19.2 points. Tagging HURTS here (0.7981 vs 0.8078) and a refit on
+      # scrambled turns loses only 0.8 points, inside CI: intent genuinely does
+      # not care about order. Its label-blind constant is 0.0226, not 0.7227.
+      # The head+tail shortcut does NOT substitute: first2 alone 0.5531 (below
+      # even k6), first2+last6 0.7293 (7.8 short), first4+last6 0.7863 (2.1
+      # short, and costs nextstep 1.6). Intent evidence is DISTRIBUTED.
+
+    action:
+      K: full
+      tag_recency: true
+      recency_buckets: 3
+      # [MEASURED] D7 continued: tagged, full window = 0.8136, and a refit on
+      # scrambled turns loses 4.7 points -- order information is DESTROYED, not
+      # merely misaligned. 0.8136 is the highest action number in the record and
+      # is the value already in `report.probe_cheap_bars`.
+      #
+      # OPEN, AND THE ONE DISAGREEMENT WITH select.head_context.plan:
+      # tagged + k6 on ACTION was never measured. select.head_context.plan.action
+      # says `K: 6`, resting on the PLAIN-TF-IDF row (k6 0.8086 vs full 0.8013,
+      # a 0.7-point gap inside the 0.68 CI) and on D7's prose. On nextstep the
+      # same move was worth +0.5 (tagged full .8296 -> tagged k6 .8345). So k6
+      # may well win for action too -- but it is unmeasured, and D6 exists
+      # because a bar was once quoted at a window it was not measured at. This
+      # block ships the MEASURED cell. Flip `K` to 6 to run the probe; do not
+      # flip it because nextstep did.
+
+    # skeleton (H5) and template (H7) are deliberately ABSENT. D2b and D7 both
+    # say they are unmeasured on every axis and must be measured before being
+    # given a window or a tagging choice -- do not inherit a default. arm_b0
+    # raises if a plan names them.
+
+  # ---- SHARED FEATURIZER DEFAULTS ------------------------------------------
+  defaults:
+    recency_mode: word        # [MEASURED] word = tag every token, which is what
+                              # D7 measured on TF-IDF. `turn` tags the line once
+                              # (what an encoder input can afford) and is
+                              # UNMEASURED on TF-IDF. Mirrors
+                              # select.head_context.recency_mode.
+
+    include_state: false      # [UNPINNED -- read this one before quoting a score]
+                              # build_context appends a `state|` line summarizing
+                              # the WHOLE prefix (disclosed fields + every action
+                              # so far), and K truncates the TURN LIST only.
+                              # Including it would leak whole-thread information
+                              # into every k6 condition and dissolve the very
+                              # contrast D2b measures (that the full thread COSTS
+                              # nextstep 2.1 points). Every window in the D2b/D7
+                              # tables is expressed purely as a turn count, so the
+                              # probe was near-certainly turns-only. Inferred, not
+                              # verified. Set true to test it -- but then it is a
+                              # different configuration and the 0.8345 bar does
+                              # not travel with it.
+
+    include_speaker: true     # [UNPINNED] the `agent|` / `customer|` / `action|`
+                              # prefix contributes its word token, which is what
+                              # sklearn's default analyzer would have extracted
+                              # from ContextWindow.text. Turning it off changes
+                              # the plain arm too, so it is not a tagging knob.
+
+    tag_speaker: false        # [UNPINNED] matches reflex.select._tag_turn, which
+                              # tags only the body. The speaker is still
+                              # recoverable per bucket through bigrams
+                              # ("agent r0|hi" says the most recent turn is an
+                              # agent turn), which is consistent with D7's
+                              # finding that tagging SUBSUMES prev-speaker
+                              # (tagging +4.26/+2.89 vs explicit prev-speaker
+                              # features +1.17/+0.68, and the structured
+                              # features add nothing on top: +0.26/+0.05).
+
+    lowercase: true           # [UNPINNED] sklearn's default. ABCD delexed text is
+                              # already largely lowercase.
+
+  # ---- VECTORIZER -----------------------------------------------------------
+  tfidf:
+    ngram_range: [1, 2]       # [MEASURED] word 1-2grams throughout. D7 quantifies
+                              # its own plain-TF-IDF shuffle control as "only 5.5%
+                              # of uni+bigram mass can respond at all (the bigrams
+                              # straddling turn junctions)" -- so those straddling
+                              # bigrams are part of the measured representation and
+                              # featurize.py inserts NO barrier token between turns.
+
+    min_df: 1                 # [UNPINNED -- the first thing to reconcile]
+                              # sklearn's default. The only handle the record gives
+                              # on the probe's pruning is its vocabulary sizes:
+                              # 56k features plain/full, growing to 148k at MAXB=8.
+                              # At min_df=1 over ~38,795 train rows of uni+bigrams
+                              # this will very likely exceed 56k, which would mean
+                              # the probe pruned. RecencyTfidfFeaturizer.n_features
+                              # exists for that check; run it against 56k before
+                              # claiming reproduction of 0.8345.
+    max_df: 1.0               # [UNPINNED] sklearn default.
+    max_features: null        # [UNPINNED] sklearn default; no cap.
+    sublinear_tf: false       # [UNPINNED] sklearn default.
+    use_idf: true             # [UNPINNED] sklearn default.
+    norm: l2                  # [UNPINNED] sklearn default.
+
+  # ---- CLASSIFIER -----------------------------------------------------------
+  classifier:
+    C: 1.0                    # [UNPINNED] D7 says the tagged and plain arms used
+                              # the "same C" and never names it. sklearn default.
+    solver: lbfgs             # [UNPINNED] sklearn's own default: multinomial and
+                              # deterministic. TWO THINGS MEASURED HERE, both about
+                              # the 55-way intent head:
+                              #  (a) `liblinear` -- the obvious choice for sparse
+                              #      text, and what a 2020-era "TF-IDF + logreg"
+                              #      usually meant -- CANNOT fit a multiclass
+                              #      problem at all on the sklearn installed here
+                              #      (1.9.0): it raises "does not support multiclass
+                              #      classification (n_classes >= 3)". Verified by
+                              #      running it. If the frozen probe used liblinear
+                              #      on an older sklearn, reproducing it needs
+                              #      `ovr: true` below, not the same solver string.
+                              #  (b) lbfgs holds DENSE n_classes x n_features state.
+                              #      At D7's 148k tagged features x 55 intents that
+                              #      is ~65 MB per vector and L-BFGS keeps roughly
+                              #      twenty: order 1 GB for the intent head alone,
+                              #      before the data matrix. Worth knowing before
+                              #      the first full-corpus fit on a machine that
+                              #      OOM'd tonight.
+    ovr: false                # [UNPINNED] true wraps the solver in
+                              # OneVsRestClassifier: one binary fit at a time,
+                              # ~1.2 MB of coefficients each instead of ~1 GB of
+                              # L-BFGS state, still deterministic, and the
+                              # historically standard TF-IDF text baseline. OFF by
+                              # default only because the record does not pin it and
+                              # sklearn's default is multinomial. This is the key to
+                              # reach for if the intent head will not fit in memory.
+    max_iter: 1000            # [UNPINNED] above sklearn's default of 100 on
+                              # purpose. D5: a fine-tuned encoder once scored BELOW
+                              # its own frozen version purely by failing to
+                              # converge, so convergence is checked before a result
+                              # is attributed to a representation. arm_b0 records a
+                              # per-head `converged` flag from sklearn's
+                              # ConvergenceWarning and reports it in describe().
+    tol: 0.0001               # [UNPINNED] sklearn default.
+    class_weight: null        # [UNPINNED] sklearn default. NOT "balanced": the
+                              # label-blind constant guard (D5) is only meaningful
+                              # against an unreweighted accuracy.
+    random_state: 0           # [UNPINNED] determinism, not tuning.
+
+  # ---- ROW SET --------------------------------------------------------------
+  rows:
+    include_synthetic_end: false
+                              # [DERIVED, not verified -- the reasoning matters]
+                              # The record gives the SAME label-blind constant,
+                              # 0.7227, for nextstep and for action. ABCD's
+                              # nextstep is 1:1 with the speaker, so
+                              # "retrieve_utterance" and "action is None" are the
+                              # same set of turns and the two constants coincide
+                              # exactly -- but only while the synthetic
+                              # end_conversation turn is absent. Including it adds
+                              # one row per conversation that is end_conversation
+                              # (lowering the nextstep constant) AND action-None
+                              # (raising the action constant), so they could no
+                              # longer be equal. Their equality is the evidence.
+                              # Compare D14, which excludes the synthetic turn from
+                              # the official action denominator for an independent
+                              # reason (comparability with published numbers).
+
+    action_null_class: "__none__"
+                              # [DERIVED, same argument] the action head is scored
+                              # over the SAME rows as nextstep with an explicit
+                              # null class, not only over take_action turns. If it
+                              # were scored on take_action turns alone its constant
+                              # would be the majority BUTTON's share, which is
+                              # nothing like 0.7227. Quoted so YAML cannot read the
+                              # leading underscores as anything else.

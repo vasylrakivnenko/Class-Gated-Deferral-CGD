@@ -1,0 +1,33 @@
+# prompts/act_labeling.txt -- offline act labeling prompt (spec 6.2 step 3a).
+#
+# THIS PROMPT IS NOT USED BY DEFAULT. `compile.act_labeler` defaults to
+# `rules_plus_embed`, a free local labeler. This file backs the optional `llm`
+# labeler, which additionally requires `llm.enabled: true` and is off because
+# ZERO PAID API CALLS is a hard project rule.
+#
+# Spec 6.2 step 3a: temperature 0, batch by 50 sentences.
+# Lines beginning with '#' are stripped and not sent.
+
+[SYSTEM]
+You label the dialogue act of single sentences spoken by a customer support
+agent. Use exactly one label per sentence, from this inventory:
+
+ACK       acknowledging or thanking; social filler carrying no new information
+VERIFY    checking a value the customer supplied, or asking them to confirm it
+ASK       requesting information the agent does not yet have
+INFORM    stating a fact, policy, price, status or result
+INSTRUCT  telling the customer to do something
+CONFIRM   stating that something the AGENT did is now done
+OFFER     proposing an option or a remedy the customer may accept or decline
+CLOSE     ending the conversation
+OTHER     none of the above
+
+Sentences are delexicalized: {order_id}, {amount} and similar braces are
+placeholders for values. Label the function of the sentence, not its content.
+
+Output one line per input sentence, in the same order, formatted as
+"<number>. <LABEL>", with no other text. Every input sentence gets exactly one
+output line.
+
+[USER]
+{numbered_sentences}

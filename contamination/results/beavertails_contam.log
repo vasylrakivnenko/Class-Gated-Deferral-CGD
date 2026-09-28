@@ -1,0 +1,57 @@
+dataset : PKU-Alignment/BeaverTails @ 8401fe609d288129cc684a9b3be6a93e41cfe678
+files   : 8 in snapshot
+          f4e703ea6e44bbeb         2,307  .gitattributes
+          344f316430016e6b            21  .gitignore
+          92bce76909c3abb6         6,951  README.md
+          dc3b2856b178b541       449,995  images/dataset-distribution.png
+          0ce619bf4c421c12       545,222  round0/30k/test.jsonl.gz
+          2e24b85dd599224e     4,948,694  round0/30k/train.jsonl.gz
+          1c726c662b85bf47     2,436,728  round0/330k/test.jsonl.xz
+          12f04c9200000929    31,061,396  round0/330k/train.jsonl.xz
+env     : python 3.12.8, datasets 5.0.1, commit 12ed998c (dirty)
+
+content fingerprints (prompt+response, row order):
+          1015dcfaab0ae70c856f1d3c720880f8  30k_test (3,021 rows)
+          47c86f0373392026128ebf5c0a16b9ed  30k_train (27,186 rows)
+          f4092be66b82413ae1e9b214f303affc  330k_test (33,396 rows)
+          1783eaf50b28caecceca9d9363b9e794  330k_train (300,567 rows)
+
+=== 330k_train / 330k_test ===
+  unique prompts: train 16,188  test 7,766  shared 7,759
+  TEST ROWS whose prompt appears in train: 33,324/33,396 = 99.8%
+  TEST ROWS whose (prompt,response) PAIR appears in train: 0/33,396 = 0.0%
+  responses per prompt: train 6.2
+
+=== 30k_train / 30k_test ===
+  unique prompts: train 7,766  test 2,526  shared 2,518
+  TEST ROWS whose prompt appears in train: 2,997/3,021 = 99.2%
+  TEST ROWS whose (prompt,response) PAIR appears in train: 12/3,021 = 0.4%
+  responses per prompt: train 3.5
+
+unique texts: 99,734; texts appearing >1x: 99,734
+copies per text: {'3': 99360, '4': 54, '6': 242, '9': 51, '12': 20, '15': 3, '18': 3, '21': 1}
+
+of the 99,734 repeated texts:
+  all copies identical on the full 14-vector: 46,953 (47.1%)
+  all copies identical on is_safe:            72,142 (72.3%)
+
+category                                            disagree%  maxvote acc
+animal_abuse                                             1.0%        99.7%
+child_abuse                                              0.7%        99.8%
+controversial_topics,politics                            5.8%        98.1%
+discrimination,stereotype,injustice                      9.0%        97.0%
+drug_abuse,weapons,banned_substance                      5.2%        98.3%
+financial_crime,property_crime,theft                     8.1%        97.3%
+hate_speech,offensive_language                          10.7%        96.4%
+misinformation_regarding_ethics,laws_and_safety          3.4%        98.9%
+non_violent_unethical_behavior                          23.9%        92.1%
+privacy_violation                                        3.8%        98.7%
+self_harm                                                0.8%        99.7%
+sexually_explicit,adult_content                          3.1%        99.0%
+terrorism,organized_crime                                1.9%        99.4%
+violence,aiding_and_abetting,incitement                 16.2%        94.6%
+is_safe                                                 27.7%        90.8%
+
+wrote /Users/vasyl/zadumai/contamination/results/beavertails_contam.json (70.6s)
+
+OK: every published number reproduced exactly.

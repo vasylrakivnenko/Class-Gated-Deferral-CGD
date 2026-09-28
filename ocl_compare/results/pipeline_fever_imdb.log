@@ -1,0 +1,82 @@
+Run the class-aware AutoML pipeline over the reconstructed OCL streams.
+
+`src/downshift/classpipe.py` holds the reusable analysis; this file holds only
+what is specific to these four datasets. Point it at any (texts, gold, expert)
+triple and it does the same thing.
+    nli fever: 0/13,024 pairs
+    nli fever: 12,800/13,024 pairs
+    rerank fever: 0/13,024 pairs
+    rerank fever: 12,800/13,024 pairs
+
+==============================================================================
+fever  n=6512  classes=2  imbalance 1:1.00
+==============================================================================
+  headline metric: accuracy  (resolution +/-0.0062)
+
+  candidates (balanced accuracy):
+    bge-large-en-v1.5+logreg    0.7349  <- best
+    bge-small-en-v1.5+logreg    0.7128
+    nli+logreg                  0.6980
+    tfidf+logreg                0.6829
+    rerank+logreg               0.5210
+    constant-majority           0.5000
+
+  G3 pass: at least one pair is not ROC-ordered, so some genuine complementarity exists.
+  G4 pass: members disagree on 35.4% of items.
+    oracle 0.9578 vs independence null 0.9964
+  G5 FAIL: per-class advantage is flat (spread 0.0207); the rule can only escalate everything or nothing.
+  G7 pass: every class's vote is right more often than not (worst 70.3%).
+
+  bge-large-en-v1.5+logreg vs expert LLM: 0.7349 vs 0.7997  delta -0.0648 CI [-0.0781,-0.0516] p=0.000
+  non-inferiority at 2pts: clearly worse by more than the 2% margin
+
+  per-class guaranteed coverage (free share | guarantee holds):
+    bar 0.80  free  73.8%  balanced 0.7861  holds=True
+    bar 0.90  free  36.4%  balanced 0.8093  holds=True
+    bar 0.95  free  20.4%  balanced 0.8010  holds=False
+
+  >> ship: bge-large-en-v1.5+logreg
+  >> build class-aware layer: False
+     G5 FAIL: per-class advantage is flat (spread 0.0207); the rule can only escalate everything or nothing.
+    nli imdb: 0/50,000 pairs
+    nli imdb: 12,800/50,000 pairs
+    nli imdb: 25,600/50,000 pairs
+    nli imdb: 38,400/50,000 pairs
+    rerank imdb: 0/50,000 pairs
+    rerank imdb: 12,800/50,000 pairs
+    rerank imdb: 25,600/50,000 pairs
+    rerank imdb: 38,400/50,000 pairs
+
+==============================================================================
+imdb  n=25000  classes=2  imbalance 1:1.00
+==============================================================================
+  ! G2: 188 rows (0.75%) share text with another row; CV is grouped so copies cannot straddle a fold.
+  headline metric: accuracy  (resolution +/-0.0032)
+
+  candidates (balanced accuracy):
+    bge-large-en-v1.5+logreg    0.9420  <- best
+    bge-small-en-v1.5+logreg    0.9287
+    nli+logreg                  0.9071
+    tfidf+logreg                0.9003
+    rerank+logreg               0.6562
+    constant-majority           0.5000
+
+  G3 pass: at least one pair is not ROC-ordered, so some genuine complementarity exists.
+  G4 pass: members disagree on 18.7% of items.
+    oracle 0.9878 vs independence null 1.0000
+  G5 FAIL: per-class advantage is flat (spread 0.0268); the rule can only escalate everything or nothing.
+  G7 pass: every class's vote is right more often than not (worst 93.9%).
+
+  bge-large-en-v1.5+logreg vs expert LLM: 0.9420 vs 0.9415  delta +0.0005 CI [-0.0025,+0.0036] p=0.743
+  non-inferiority at 2pts: non-inferior (and not worse on the point estimate)
+
+  per-class guaranteed coverage (free share | guarantee holds):
+    bar 0.80  free 100.0%  balanced 0.9421  holds=True
+    bar 0.90  free 100.0%  balanced 0.9421  holds=True
+    bar 0.95  free  98.0%  balanced 0.9453  holds=True
+
+  >> ship: bge-large-en-v1.5+logreg
+  >> build class-aware layer: False
+     G5 FAIL: per-class advantage is flat (spread 0.0268); the rule can only escalate everything or nothing.
+
+wrote /Users/vasyl/zadumai/ocl_compare/results/pipeline_fever_imdb.json (29,981s)

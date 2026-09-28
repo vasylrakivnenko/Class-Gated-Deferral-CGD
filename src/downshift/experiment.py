@@ -82,6 +82,12 @@ class ExperimentConfig:
     out_dir: str = "runs"
 
 
+# GEPA rewrites the instruction mid-run: the seed prompt renders at 239 tokens on
+# Financial PhraseBank and the optimized rows on disk measure 570-790, so ~3.3x.
+# Rounded up, because the screen must not pass a prompt the run cannot send.
+GEPA_PROMPT_GROWTH = 3.5
+
+
 def _profile_for(key: str) -> str:
     """Which program wrapper this row runs under: DIRECT or REASONING.
 
@@ -123,10 +129,28 @@ def _budget_for(cfg: "ExperimentConfig", key: str, spec: ModelSpec) -> int:
     the budget to 16,000 for the OpenAI reasoning tier, and a screen that
     checked the configured number instead read as "checked" while checking a
     budget no request would ever carry.
+
+    The wrapper and the budget are SEPARATE decisions, and conflating them cost
+    the Grok pair its output room. `_profile_for` correctly stopped wrapping
+    `grok-4-1-fast-reasoning` in ChainOfThought, but the budget keyed off the
+    same answer, so a deployment that reasons natively dropped from 2,500
+    output tokens to 1,024 and would spend the whole cap inside its reasoning,
+    returning empty content that charts as a weak model rather than as a budget
+    that was never big enough.
+
+    So the budget asks a different question: will this DEPLOYMENT emit reasoning,
+    whoever asked it to? True when our prompt profile is REASONING, when the
+    registry flips a thinking switch, or when the vendor's own deployment name
+    says it reasons. The last clause deliberately catches both halves of a
+    vendor pair, including `-non-reasoning`: the pair exists to isolate the
+    weights, so both rows must be measured at one budget wide enough for either,
+    or the comparison is confounded by truncation on one side.
     """
     profile = _profile_for(key)
+    vendor_reasons = "reasoning" in key
     configured = (cfg.reasoning_max_tokens
-                  if profile == "reasoning" or spec.think else cfg.max_tokens)
+                  if profile == "reasoning" or spec.think or vendor_reasons
+                  else cfg.max_tokens)
     return requested_max_tokens(spec, configured)
 
 
@@ -402,17 +426,42 @@ def run_experiment(cfg: ExperimentConfig) -> dict:
             # screen had refused as arithmetically impossible was still handed
             # to GEPA and billed for hundreds of rollouts -- the one thing the
             # "refuse before spending" stage exists to prevent.
-            fine, why = spec.fits(mt, screen["demands"].p95_prompt_tokens)
+            # `screen["demands"]` is the SEED prompt at the p95, and both halves
+            # of that are wrong here. `screen_candidates` moved to
+            # `max_prompt_tokens` because the p95 lets up to 5% of items
+            # overflow, and `Task.demands` states that a caller screening the
+            # OPTIMIZED stage must pass the optimized instruction rather than
+            # reuse the cached one -- GEPA grows it from 239 to 570-790 tokens.
+            # The optimized text does not exist yet, so budget for the growth
+            # observed on the rows already on disk rather than pretend the seed
+            # prompt is the one being screened.
+            seed = screen["demands"]
+            grown = int(seed.max_prompt_tokens * GEPA_PROMPT_GROWTH)
+            fine, why = spec.fits(mt, grown)
             if not fine:
-                print(f"  skipping {spec.label}: {why}")
+                print(f"  skipping {spec.label}: {why} "
+                      f"(screened at {grown:,} prompt tokens, the seed's longest "
+                      f"item grown {GEPA_PROMPT_GROWTH:.1f}x for the optimized prompt)")
                 continue
             print(f"  optimizing {spec.label} ...", flush=True)
-            optimized, record = run_gepa(spec, task, profile, reflection,
-                                         max_metric_calls=cfg.max_metric_calls,
-                                         num_threads=cfg.num_threads, max_tokens=mt,
-                                         reflection_max_tokens=cfg.reflection_max_tokens,
-                                         seed=cfg.seed,
-                                         cost_penalty_margin=cfg.cost_penalty_margin)
+            # Guarded for the same reason the post-GEPA eval below is: `run_gepa`
+            # raises from `build_lm`'s gate, from `assert_ledger_intact`, and
+            # from `next(iter(program.named_predictors()))`, all outside its own
+            # try/finally. Unhandled, any of those discards every completed row,
+            # every paid baseline eval and the reflection spend that just
+            # finished -- the exact cost the guard three statements later exists
+            # to avoid.
+            try:
+                optimized, record = run_gepa(spec, task, profile, reflection,
+                                             max_metric_calls=cfg.max_metric_calls,
+                                             num_threads=cfg.num_threads, max_tokens=mt,
+                                             reflection_max_tokens=cfg.reflection_max_tokens,
+                                             seed=cfg.seed,
+                                             cost_penalty_margin=cfg.cost_penalty_margin)
+            except Exception as exc:
+                print(f"    GEPA FAILED for {spec.label}: {type(exc).__name__}: "
+                      f"{str(exc)[:160]}")
+                continue
             optimizations[key] = record
             if record.error:
                 print(f"    GEPA failed: {record.error[:160]}")
@@ -455,8 +504,15 @@ def run_experiment(cfg: ExperimentConfig) -> dict:
     # Auto-select needs something to select from; `max()` on an empty dict
     # raises, and "every candidate failed" should not surface as a bare
     # ValueError from the statistics block.
+    # Auto-select ranges over PROMPTED rows only. `results` also holds the free
+    # classical and encoder rows, and on banking77 the fine-tuned encoder is the
+    # most accurate row on the board (94.0% against 82.9% for the best LLM), so
+    # an unconstrained max() made "is this LLM non-inferior to a free TF-IDF row"
+    # the published question and derived the accuracy bar from a $0 row. The
+    # reference is the frontier model being displaced, by definition.
+    prompted = {k: v for k, v in results.items() if v.n_calls > 0}
     ref_key = cfg.reference_model or (
-        max(results, key=lambda k: results[k].accuracy.point) if results else "")
+        max(prompted, key=lambda k: prompted[k].accuracy.point) if prompted else "")
     ref = results.get(ref_key)
     comparisons: dict[str, dict] = {}
     if ref is not None:
@@ -576,13 +632,27 @@ def run_experiment(cfg: ExperimentConfig) -> dict:
     # over unfiltered, so a single candidate with no verified rate card (or one
     # whose every call errored, which now reports NaN rather than $0) raised
     # from the plotter at the very END of the run, after all the spending.
-    priced = [r for r in rows
-              if r.cost_per_1k is not None and not np.isnan(r.cost_per_1k)
-              and r.cost_per_1k >= 0]
-    if len(priced) != len(rows):
-        dropped = [r.label for r in rows if not any(r is p for p in priced)]
+    def _priced(v) -> bool:
+        return v is not None and not np.isnan(v) and v >= 0
+
+    # One pass, so `dropped` is not recovered by an O(n^2) identity re-scan of
+    # `priced`. (`r not in priced` would have been the obvious spelling and is
+    # wrong here: ChartRow is a plain dataclass, so two equal rows match by
+    # __eq__ and the wrong one gets reported.)
+    priced, dropped = [], []
+    for r in rows:
+        (priced if _priced(r.cost_per_1k) else dropped).append(r)
+    # An unpriced BASE row is filtered out above, but its cost was already
+    # captured into the "+gepa" row's arrow tail. chart.py resolves a
+    # non-positive tail to the axis floor, and `nan > 0` is False, so the arrow
+    # would still be drawn claiming the row moved up from "free".
+    for r in priced:
+        if r.linked_from is not None and not _priced(r.linked_from[0]):
+            r.linked_from = None
+    if dropped:
         print(f"  NOTE: {len(dropped)} row(s) kept out of the chart for want of a "
-              f"verified price (they stay in results.json): {dropped}")
+              f"verified price (they stay in results.json): "
+              f"{[r.label for r in dropped]}")
     rows = priced
 
     chart_path = str(out_dir / "cost_vs_accuracy.png")

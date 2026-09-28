@@ -21,6 +21,7 @@ identical held-out items and stay paired with the reference for McNemar.
 import json
 import os
 import sys
+from types import SimpleNamespace
 import time
 
 sys.path.insert(0, "src")
@@ -31,9 +32,36 @@ from downshift import stats
 from downshift.chart import ChartRow, cost_footnote, plot_cost_vs_accuracy
 from downshift.data import get_task, load_task, verify_or_record_split
 from downshift.evaluate import row_cost_per_1k_items, run_eval
-from downshift.experiment import ALWAYS_LABEL_KEYS, _family_for, cost_basis_for, _profile_for
+from downshift.experiment import (ALWAYS_LABEL_KEYS, _budget_for, _family_for,
+                                  _profile_for, cost_basis_for)
 from downshift.models import BY_KEY
 from downshift.program import build_program, record_prompt_changed
+
+
+def _drop_unpriced(rows):
+    """Keep the plotter's refusal out of the end of a finished script.
+
+    `plot_cost_vs_accuracy` rejects NaN and negative costs, and NaN became
+    reachable for any row whose every call failed, not just registry rows with
+    no rate card. Every script that charts from results.json has to make the
+    same call run_experiment makes, or re-charting a finished run dies at the
+    very last step.
+    """
+    import math
+    keep, drop = [], []
+    for r in rows:
+        c = r.cost_per_1k
+        (keep if c is not None and not math.isnan(c) and c >= 0 else drop).append(r)
+    for r in keep:
+        if r.linked_from is not None:
+            t = r.linked_from[0]
+            if t is None or math.isnan(t) or t < 0:
+                r.linked_from = None
+    if drop:
+        print(f"  NOTE: {len(drop)} row(s) left off the chart for want of a verified "
+              f"price: {[r.label for r in drop]}")
+    return keep
+
 
 TASK = os.environ.get("DS_TASK", "financial_phrasebank")
 RESULTS = f"runs/{TASK}/results.json"
@@ -84,7 +112,13 @@ for key in targets:
         print(f"  {key}: unavailable, left as-is")
         continue
     profile = _profile_for(base)
-    mt = cfg["reasoning_max_tokens"] if profile == "reasoning" or spec.think else cfg["max_tokens"]
+    # `_budget_for`, not a third copy of its body. The inline version here
+    # omitted `requested_max_tokens`'s reasoning-tier bump, so a gpt-5 row
+    # recorded and priced mt=1024 while build_lm silently sent 16,000, and it
+    # also missed the vendor-reasoning budget rule. Same helper as the screen.
+    mt = _budget_for(SimpleNamespace(**{k: cfg[k] for k in
+                                       ("max_tokens", "reasoning_max_tokens")}),
+                     base, spec)
 
     instruction = task_spec.description
     if key.endswith("+gepa"):
@@ -165,8 +199,7 @@ for key, res in results.items():
         ci_lo=res["accuracy"]["lo"], ci_hi=res["accuracy"]["hi"], linked_from=linked,
         always_label=(key in ALWAYS_LABEL_KEYS or key == ref_key),
         prompt_changed=record_prompt_changed(opts.get(base))))
-plot_cost_vs_accuracy(
-    rows, CHART, majority_baseline=payload["task"]["majority_accuracy"],
+plot_cost_vs_accuracy(_drop_unpriced(rows), CHART, majority_baseline=payload["task"]["majority_accuracy"],
     accuracy_bar=payload["accuracy_bar"], title="Cheapest model that clears the bar",
     subtitle=(f"{payload['task']['label']} - {payload['task']['n_test']} held-out test "
               f"items, never seen by the optimizer. Bars are 95% Wilson intervals."),

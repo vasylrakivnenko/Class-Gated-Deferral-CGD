@@ -1,0 +1,147 @@
+\documentclass[8pt]{extarticle}
+\usepackage[margin=0.55in]{geometry}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{times}
+\usepackage[T1]{fontenc}
+\usepackage{caption}
+\usepackage{amssymb}
+\usepackage{graphicx}
+
+\setlength{\parindent}{0pt}
+\captionsetup{font=small,skip=2pt,singlelinecheck=false}
+
+\makeatletter
+\newcommand{\rows}[1]{\@@input /Users/vasyl/zadumai/legalbench_map/results_cgd/#1_rows.tex }
+\makeatother
+\newcommand{\header}{%
+\textbf{Task} & \textbf{LLM} & \textbf{`Free' (CPU run) NLP alone} & \textbf{LLM alone} &
+\textbf{Confidence cascade (same budget)} & \textbf{CGD} & \textbf{$\Delta$ vs better} &
+\textbf{LLM-call share} & \textbf{Outcome} \\}
+
+\begin{document}
+
+\begin{center}
+{\Large\bfseries Class-Gated Deferral (CGD): Spending LLM Calls Only Where the LLM Is Better}\\[0.3em]
+{\normalsize Vasyl Rakivnenko, \ldots}\\[0.15em]
+{\small September 2026}
+\end{center}
+\vspace{0.35em}
+
+\begin{center}
+\begin{minipage}{0.74\linewidth}
+\begin{center}{\bfseries Abstract}\end{center}
+\noindent
+We introduce class-gated deferral (CGD), to our knowledge the first cascade
+algorithm that decides class by class, which model should answer: a
+computationally `free' (CPU-run) NLP classifier
+trained on the task's labels, or a large language model (LLM). For every
+class the classifier can predict, CGD checks which of the two models is more
+accurate on held-out data and hands that whole class to the winner, so LLM
+calls are spent only where the LLM is actually better. Uncertainty-based
+cascades, such as Online Cascade Learning~[5], work differently: they send
+the LLM whatever the free model is least sure about, even when the LLM is
+worse on those items. On
+LegalBench~[1], across nine task--LLM combinations, CGD beats both the free
+classifier and the LLM in seven, and it beats a confidence cascade with the
+same LLM budget in six, by up to 17 points of balanced accuracy. On
+CUAD~[3] contract clauses with a production API LLM, CGD again beats both
+models and outperforms a same-budget cascade by 4.8--8.1 points. On
+Financial PhraseBank~[4], it keeps the majority neutral class on the free
+classifier, cuts LLM calls by 60\%, and beats both components in 16 of 28
+LLM setups. The gain
+grows with how class-dependent the LLM's competence is ($r = 0.57$ across
+59 pairs), which suggests a simple test for when to gate by class.
+\end{minipage}
+\end{center}
+
+\vspace{1.0em}
+
+\begin{table}[h]
+\caption{LegalBench~[1], balanced accuracy (LegalBench's metric).
+\emph{Confidence cascade} gives the LLM the same share of items as CGD,
+escalating the free classifier's least-confident ones.
+opp115\_data\_retention comes from the OPP-115 privacy-policy corpus~[2].}
+\label{tab:legal}
+\centering
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{@{}l l r r r r r r c@{}}
+\toprule
+\header
+\midrule
+\rows{table1_legal}
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+\vspace{1.4em}
+\begin{table}[h]
+\caption{CUAD~[3] contract clauses with a production API LLM. Accuracy
+(the test sets are class-balanced, so this equals balanced accuracy).}
+\label{tab:cuad}
+\centering
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{@{}l l r r r r r r c@{}}
+\toprule
+\header
+\midrule
+\rows{table2_cuad}
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+\vspace{1.4em}
+\begin{table}[h]
+\caption{Financial PhraseBank~[4], accuracy. CGD keeps the neutral class on
+the free classifier and hands positive and negative items to the LLM
+(40\% of calls). Six of 28 LLM setups shown; CGD beats both components in
+16 of the 28.}
+\label{tab:fpb}
+\centering
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{@{}l l r r r r r r c@{}}
+\toprule
+\header
+\midrule
+\rows{table3_fpb}
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+\vspace{1.0em}
+\footnotesize
+\noindent \textbf{`Free' (CPU run) NLP alone}: a classifier trained on each
+task's labeled data (5-fold cross-validation for LegalBench and CUAD; a
+separate training split for Financial PhraseBank) that runs on CPU.
+\textbf{CGD} decides which predicted classes go to the LLM from both models'
+accuracy on the training folds; all routing decisions are out-of-fold,
+averaged over 10 fold splits ($\times$3 cross-validation repeats for
+LegalBench and CUAD).
+$^{*}$\,$p<0.05$ vs.\ the better single model; $^{\dagger}$\,$p<0.05$ vs.\ the
+same-budget cascade (paired McNemar test for accuracy, paired bootstrap for
+balanced accuracy). \emph{Tie}: within 0.5 points.
+
+\vspace{1em}
+\normalsize
+\noindent{\bfseries References}\\[0.3em]
+\noindent[1] N.~Guha, J.~Nyarko, D.~E.~Ho, C.~R\'e, et al. ``LegalBench:
+A Collaboratively Built Benchmark for Measuring Legal Reasoning in Large
+Language Models.'' arXiv:2308.11462, 2023.\\[0.3em]
+[2] S.~Wilson, F.~Schaub, A.~A.~Dara, F.~Liu, S.~Cherivirala, P.~G.~Leon,
+et al. ``The Creation and Analysis of a Website Privacy Policy Corpus.''
+ACL 2016, pp.~1330--1340.\\[0.3em]
+[3] D.~Hendrycks, C.~Burns, A.~Chen, S.~Ball. ``CUAD: An Expert-Annotated
+NLP Dataset for Legal Contract Review.'' NeurIPS 2021 Datasets and
+Benchmarks Track.\\[0.3em]
+[4] P.~Malo, A.~Sinha, P.~Korhonen, J.~Wallenius, P.~Takala. ``Good Debt or
+Bad Debt: Detecting Semantic Orientations in Economic Texts.'' Journal of
+the Association for Information Science and Technology 65(4):782--796,
+2014.\\[0.3em]
+[5] L.~Nie, Z.~Ding, E.~Hu, C.~Jermaine, S.~Chaudhuri. ``Online Cascade
+Learning for Efficient Inference over Streams.'' ICML 2024, PMLR
+235:38071--38090.
+
+\end{document}

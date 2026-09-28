@@ -1,0 +1,57 @@
+{
+  "max_k": 20,
+  "blocks": [
+    {
+      "label": "ALL (conditional)",
+      "n": 3985,
+      "skeleton_recall@1": 0.5821831869510665,
+      "compose_recall@1": 0.27728983688833125,
+      "skeleton_recall@5": 0.9420326223337516,
+      "compose_recall@5": 0.36537013801756585,
+      "skeleton_recall@10": 0.9836888331242158,
+      "compose_recall@10": 0.3741530740276035,
+      "skeleton_recall@20": 0.9952321204516938,
+      "compose_recall@20": 0.37465495608531996,
+      "oracle_skeleton_template_rate": 0.3751568381430364
+    },
+    {
+      "label": "unanimous (n_dis=0)",
+      "n": 1441,
+      "skeleton_recall@1": 0.630117973629424,
+      "compose_recall@1": 0.3157529493407356,
+      "skeleton_recall@5": 0.9646079111727967,
+      "compose_recall@5": 0.3705759888965996,
+      "skeleton_recall@10": 0.9895905621096461,
+      "compose_recall@10": 0.3754337265787647,
+      "skeleton_recall@20": 0.9979181124219292,
+      "compose_recall@20": 0.3754337265787647,
+      "oracle_skeleton_template_rate": 0.3754337265787647
+    },
+    {
+      "label": "n_dis=1",
+      "n": 1636,
+      "skeleton_recall@1": 0.6424205378973105,
+      "compose_recall@1": 0.3141809290953545,
+      "skeleton_recall@5": 0.9474327628361858,
+      "compose_recall@5": 0.39364303178484106,
+      "skeleton_recall@10": 0.9834963325183375,
+      "compose_recall@10": 0.4015892420537897,
+      "skeleton_recall@20": 0.9951100244498777,
+      "compose_recall@20": 0.4015892420537897,
+      "oracle_skeleton_template_rate": 0.402200488997555
+    },
+    {
+      "label": "both disagree (n_dis=2)",
+      "n": 908,
+      "skeleton_recall@1": 0.3975770925110132,
+      "compose_recall@1": 0.14977973568281938,
+      "skeleton_recall@5": 0.8964757709251101,
+      "compose_recall@5": 0.30616740088105726,
+      "skeleton_recall@10": 0.974669603524229,
+      "compose_recall@10": 0.32268722466960353,
+      "skeleton_recall@20": 0.9911894273127754,
+      "compose_recall@20": 0.3248898678414097,
+      "oracle_skeleton_template_rate": 0.32599118942731276
+    }
+  ]
+}

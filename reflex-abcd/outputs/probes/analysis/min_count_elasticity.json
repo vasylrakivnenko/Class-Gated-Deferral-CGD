@@ -1,0 +1,177 @@
+{
+  "splits": {
+    "dev": {
+      "curve": {
+        "16": {
+          "sentence_coverage": 0.43029928489449987,
+          "turn_coverage": 0.3902006429442412
+        },
+        "2": {
+          "sentence_coverage": 0.5011918425002208,
+          "turn_coverage": 0.4571555259949008
+        },
+        "3": {
+          "sentence_coverage": 0.4880374326829699,
+          "turn_coverage": 0.4442966411706019
+        },
+        "32": {
+          "sentence_coverage": 0.3999293722962832,
+          "turn_coverage": 0.3602704799911318
+        },
+        "4": {
+          "sentence_coverage": 0.4790324004590801,
+          "turn_coverage": 0.4348741824631416
+        },
+        "5": {
+          "sentence_coverage": 0.4719696300874018,
+          "turn_coverage": 0.42910985478328345
+        },
+        "8": {
+          "sentence_coverage": 0.4566081045290015,
+          "turn_coverage": 0.4151424454051657
+        }
+      },
+      "hit_count_histogram": {
+        "10-49": 830,
+        "2": 149,
+        "3-4": 182,
+        "5-9": 260,
+        "50+": 4256
+      },
+      "n_positions": 11327,
+      "n_turns": 9021
+    },
+    "test_novel": {
+      "curve": {
+        "16": {
+          "sentence_coverage": 0.4375,
+          "turn_coverage": 0.39236641221374047
+        },
+        "2": {
+          "sentence_coverage": 0.4879807692307692,
+          "turn_coverage": 0.44274809160305345
+        },
+        "3": {
+          "sentence_coverage": 0.47716346153846156,
+          "turn_coverage": 0.43206106870229005
+        },
+        "32": {
+          "sentence_coverage": 0.4026442307692308,
+          "turn_coverage": 0.35572519083969467
+        },
+        "4": {
+          "sentence_coverage": 0.46875,
+          "turn_coverage": 0.4213740458015267
+        },
+        "5": {
+          "sentence_coverage": 0.45913461538461536,
+          "turn_coverage": 0.4122137404580153
+        },
+        "8": {
+          "sentence_coverage": 0.44591346153846156,
+          "turn_coverage": 0.4015267175572519
+        }
+      },
+      "hit_count_histogram": {
+        "10-49": 54,
+        "2": 9,
+        "3-4": 15,
+        "5-9": 12,
+        "50+": 316
+      },
+      "n_positions": 832,
+      "n_turns": 655
+    },
+    "test_seen": {
+      "curve": {
+        "16": {
+          "sentence_coverage": 0.4252997926246506,
+          "turn_coverage": 0.3860951738103274
+        },
+        "2": {
+          "sentence_coverage": 0.4955369218285096,
+          "turn_coverage": 0.45190685116436047
+        },
+        "3": {
+          "sentence_coverage": 0.48363538003786855,
+          "turn_coverage": 0.44166947913151083
+        },
+        "32": {
+          "sentence_coverage": 0.3987016499864755,
+          "turn_coverage": 0.35977050286871415
+        },
+        "4": {
+          "sentence_coverage": 0.47597150843025876,
+          "turn_coverage": 0.4337945775677804
+        },
+        "5": {
+          "sentence_coverage": 0.4680371472364981,
+          "turn_coverage": 0.42625717178535266
+        },
+        "8": {
+          "sentence_coverage": 0.45334054638896404,
+          "turn_coverage": 0.4120823489706379
+        }
+      },
+      "hit_count_histogram": {
+        "10-49": 821,
+        "2": 132,
+        "3-4": 173,
+        "5-9": 255,
+        "50+": 4115
+      },
+      "n_positions": 11091,
+      "n_turns": 8889
+    },
+    "train": {
+      "curve": {
+        "16": {
+          "sentence_coverage": 0.48503174408355,
+          "turn_coverage": 0.44390086176598764
+        },
+        "2": {
+          "sentence_coverage": 0.6500898206933488,
+          "turn_coverage": 0.6067366763668058
+        },
+        "3": {
+          "sentence_coverage": 0.6029590618479631,
+          "turn_coverage": 0.5588967146050356
+        },
+        "32": {
+          "sentence_coverage": 0.4411032882184261,
+          "turn_coverage": 0.40026429364711175
+        },
+        "4": {
+          "sentence_coverage": 0.579259788224005,
+          "turn_coverage": 0.5347307157015732
+        },
+        "5": {
+          "sentence_coverage": 0.5625230130658425,
+          "turn_coverage": 0.5185778752477753
+        },
+        "8": {
+          "sentence_coverage": 0.5306896667150174,
+          "turn_coverage": 0.48691887028524033
+        }
+      },
+      "hit_count_histogram": {
+        "10-49": 9482,
+        "2": 4224,
+        "3-4": 3624,
+        "5-9": 4222,
+        "50+": 36711
+      },
+      "n_positions": 89623,
+      "n_turns": 71133
+    }
+  },
+  "thresholds": [
+    2,
+    3,
+    4,
+    5,
+    8,
+    16,
+    32
+  ]
+}

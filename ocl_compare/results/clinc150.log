@@ -1,0 +1,200 @@
+
+loaded clinc150: 22,500 items, 150 classes, expert=no
+  source: HuggingFace clinc/clinc_oos config 'plus' (Larson et al., EMNLP 2019), train+validation+test pooled, out-of-scope rows removed
+    pair-scoring: 112,500 pairs x ~9 tokens = 1,012,500 units, within the 4,000,000 budget
+    nli clinc150: shortlisted 150 labels -> 5, 112,500 pairs instead of 3,375,000
+    nli clinc150: 0/112,500 pairs
+    nli clinc150: 12,800/112,500 pairs
+    nli clinc150: 25,600/112,500 pairs
+    nli clinc150: 38,400/112,500 pairs
+    nli clinc150: 51,200/112,500 pairs
+    nli clinc150: 64,000/112,500 pairs
+    nli clinc150: 76,800/112,500 pairs
+    nli clinc150: 89,600/112,500 pairs
+    nli clinc150: 102,400/112,500 pairs
+
+==============================================================================
+clinc150 [trained on gold]  n=22500  classes=150  imbalance 1:1.00
+==============================================================================
+  ! G2: 10 rows (0.04%) share text with another row; CV is grouped so copies cannot straddle a fold.
+  headline metric: accuracy  (resolution +/-0.0033)
+
+  candidates (balanced accuracy):
+    bge-large-en-v1.5+logreg    0.9766  <- best
+    bge-small-en-v1.5+logreg    0.9652
+    tfidf+logreg                0.9440
+    nli+logreg                  0.8780
+    constant-majority           0.0067
+
+  G3 n/a (multiclass)
+  G4 FAIL: members agree 91.4% of the time -- one classifier repeated. Selection has almost nothing to choose between.
+    oracle 0.9895 vs independence null 1.0000
+  G5 n/a: no expert predictions for this dataset
+  G7 pass: every class's vote is right more often than not (worst 83.2%).
+
+  DESlib on the same pool (baseline: bge-large-en-v1.5+logreg 0.9766)
+    DESlib LCA                  0.9715  -0.0051 CI [-0.0068,-0.0033] p=0.000  holm=True
+    DESlib OLA                  0.9554  -0.0212 CI [-0.0236,-0.0187] p=0.000  holm=True
+    DESlib KNORA-E              0.9750  -0.0016 CI [-0.0030,-0.0001] p=0.041  holm=True  [under the +/-0.0033 unpaired floor]
+    DESlib Oracle (ceiling)     0.9895  +0.0129 CI [+0.0115,+0.0144] p=0.000
+    -> no DESlib method beats the best single model (bge-large-en-v1.5+logreg)
+
+  competence board -- P(correct | this model PREDICTS class c), by class
+    class                              n       tfidf bge-small-e bge-large-e         nli   spread          best
+    calendar                         177       0.918       0.899       0.956       0.637    0.318 bge-large-en-
+    change user name                 154       0.912       0.818       0.940       0.636    0.304 bge-large-en-
+    greeting                         159       0.864       0.916       0.940       0.651    0.289 bge-large-en-
+    change ai name                   161       0.954       0.827       0.848       0.670    0.284         tfidf
+    todo list                        152       0.888       0.914       0.957       0.684    0.272 bge-large-en-
+    user name                        150       0.912       0.947       0.979       0.709    0.270 bge-large-en-
+    todo list update                 156       0.874       0.889       0.954       0.685    0.269 bge-large-en-
+    current location                 175       0.872       0.966       0.985       0.726    0.259 bge-large-en-
+    balance                          165       0.945       0.961       0.963       0.711    0.252 bge-large-en-
+    pay bill                         171       0.917       0.961       0.985       0.746    0.239 bge-large-en-
+    what can i ask you               167       0.903       0.950       0.963       0.725    0.238 bge-large-en-
+    bill balance                     158       0.893       0.965       0.974       0.746    0.228 bge-large-en-
+    pto balance                      153       0.884       0.897       0.955       0.727    0.227 bge-large-en-
+    transactions                     145       0.954       0.983       0.985       0.767    0.218 bge-large-en-
+    reminder                         161       0.962       0.976       0.984       0.777    0.208 bge-large-en-
+    pto used                         152       0.933       0.930       0.951       0.744    0.206 bge-large-en-
+    next holiday                     158       0.932       0.950       0.974       0.773    0.201 bge-large-en-
+    order                            154       0.896       0.943       0.974       0.774    0.199 bge-large-en-
+    restaurant reservation           164       0.915       0.966       0.979       0.780    0.199 bge-large-en-
+    improve credit score             162       0.981       0.979       0.997       0.800    0.197 bge-large-en-
+    directions                       153       0.933       0.956       0.974       0.784    0.190 bge-large-en-
+    meeting schedule                 173       0.952       0.966       0.968       0.785    0.183 bge-large-en-
+    what is your name                158       0.853       0.920       0.933       0.759    0.174 bge-large-en-
+    new card                         161       0.962       0.966       0.962       0.793    0.173 bge-small-en-
+    calendar update                  152       0.916       0.961       0.974       0.803    0.171 bge-large-en-
+    travel notification              161       0.933       0.990       0.997       0.830    0.167 bge-large-en-
+    definition                       159       0.964       0.940       0.942       0.797    0.167         tfidf
+    bill due                         152       0.974       0.949       0.980       0.815    0.165 bge-large-en-
+    share location                   150       0.943       0.966       0.980       0.816    0.163 bge-large-en-
+    goodbye                          159       0.826       0.926       0.937       0.776    0.161 bge-large-en-
+    restaurant suggestion            171       0.826       0.945       0.952       0.794    0.159 bge-large-en-
+    pto request status               157       0.952       0.973       0.974       0.817    0.158 bge-large-en-
+    are you a bot                    167       0.953       0.967       0.980       0.827    0.153 bge-large-en-
+    meal suggestion                  151       0.929       0.966       0.973       0.824    0.150 bge-large-en-
+    repeat                           156       0.947       0.967       0.974       0.827    0.147 bge-large-en-
+    distance                         155       0.874       0.954       0.979       0.842    0.137 bge-large-en-
+    order status                     163       0.970       0.984       0.991       0.856    0.136 bge-large-en-
+    last maintenance                 153       0.923       0.984       0.991       0.859    0.132 bge-large-en-
+    how busy                         151       0.950       0.967       0.979       0.848    0.131 bge-large-en-
+    shopping list                    150       0.896       0.908       0.961       0.832    0.129 bge-large-en-
+    schedule meeting                 158       0.959       0.961       0.979       0.851    0.128 bge-large-en-
+    application status               151       0.958       0.996       0.991       0.869    0.127 bge-small-en-
+    rewards balance                  160       0.926       0.935       0.974       0.848    0.126 bge-large-en-
+    translate                        153       0.941       0.956       0.986       0.866    0.120 bge-large-en-
+    spending history                 158       0.909       0.934       0.930       0.815    0.119 bge-small-en-
+    cancel                           160       0.872       0.932       0.957       0.838    0.118 bge-large-en-
+    text                             150       0.987       0.984       0.991       0.874    0.117 bge-large-en-
+    reminder update                  164       0.898       0.887       0.894       0.784    0.114         tfidf
+    payday                           154       0.927       0.950       0.980       0.869    0.111 bge-large-en-
+    shopping list update             156       0.919       0.894       0.918       0.808    0.110         tfidf
+    change language                  155       0.936       0.956       0.991       0.881    0.110 bge-large-en-
+    travel suggestion                152       0.922       0.990       0.991       0.881    0.110 bge-large-en-
+    replacement card duration        152       0.917       0.954       0.979       0.870    0.110 bge-large-en-
+    timezone                         158       0.993       0.956       0.968       0.885    0.108         tfidf
+    yes                              147       0.885       0.960       0.991       0.925    0.107 bge-large-en-
+    no                               149       0.887       0.966       0.991       0.890    0.104 bge-large-en-
+    redeem rewards                   149       0.957       0.977       0.979       0.876    0.103 bge-large-en-
+    date                             156       0.925       0.990       0.991       0.888    0.103 bge-large-en-
+    credit score                     156       0.937       0.984       0.997       0.895    0.103 bge-large-en-
+    smart home                       150       0.946       0.977       0.967       0.877    0.101 bge-small-en-
+    freeze account                   154       0.935       0.956       0.985       0.888    0.098 bge-large-en-
+    travel alert                     155       0.964       0.990       0.997       0.900    0.097 bge-large-en-
+    account blocked                  151       0.935       0.978       0.985       0.890    0.096 bge-large-en-
+    where are you from               170       0.868       0.956       0.963       0.944    0.095 bge-large-en-
+    whisper mode                     154       0.993       0.953       0.973       0.900    0.093         tfidf
+    gas                              151       0.947       0.972       0.985       0.892    0.093 bge-large-en-
+    order checks                     153       0.988       0.990       0.997       0.905    0.092 bge-large-en-
+    what song                        158       0.932       0.978       0.991       0.900    0.091 bge-large-en-
+    credit limit                     155       0.942       0.945       0.985       0.895    0.091 bge-large-en-
+    maybe                            154       0.884       0.966       0.974       0.909    0.090 bge-large-en-
+    measurement conversion           156       0.943       0.978       0.985       0.897    0.088 bge-large-en-
+    restaurant reviews               149       0.958       0.978       0.985       0.898    0.088 bge-large-en-
+    book flight                      152       0.982       0.990       0.997       0.910    0.087 bge-large-en-
+    routing                          153       0.993       0.996       0.997       0.911    0.086 bge-large-en-
+    recipe                           163       0.868       0.950       0.946       0.865    0.085 bge-small-en-
+    accept reservations              163       0.946       0.919       0.921       0.861    0.085         tfidf
+    gas type                         158       0.937       0.984       0.991       0.908    0.084 bge-large-en-
+    income                           148       0.915       0.965       0.973       0.890    0.083 bge-large-en-
+    credit limit change              155       0.993       0.996       0.997       0.917    0.080 bge-large-en-
+    change accent                    154       0.969       0.972       0.979       0.900    0.080 bge-large-en-
+    time                             160       0.910       0.960       0.962       0.883    0.080 bge-large-en-
+    timer                            155       0.964       0.989       0.991       0.912    0.079 bge-large-en-
+    damaged card                     161       0.900       0.978       0.974       0.927    0.078 bge-small-en-
+    spelling                         143       0.987       0.989       0.985       0.911    0.078 bge-small-en-
+    ingredients list                 149       0.928       0.978       0.973       0.903    0.075 bge-small-en-
+    pto request                      151       0.958       0.990       0.991       0.918    0.074 bge-large-en-
+    report fraud                     152       0.968       0.967       0.980       0.909    0.071 bge-large-en-
+    change volume                    153       0.969       0.944       0.957       0.898    0.071         tfidf
+    book hotel                       154       0.959       0.967       0.963       0.897    0.069 bge-small-en-
+    make call                        160       0.922       0.908       0.931       0.864    0.067 bge-large-en-
+    transfer                         157       0.943       0.967       0.952       0.900    0.067 bge-small-en-
+    taxes                            161       0.970       0.979       0.980       0.915    0.065 bge-large-en-
+    calculator                       163       0.917       0.909       0.947       0.881    0.065 bge-large-en-
+    international visa               158       0.943       0.984       0.991       0.927    0.065 bge-large-en-
+    who made you                     157       0.909       0.955       0.973       0.923    0.064 bge-large-en-
+    report lost card                 153       0.958       0.972       0.985       0.922    0.063 bge-large-en-
+    meaning of life                  154       0.964       0.996       0.997       0.934    0.063 bge-large-en-
+    change speed                     153       0.942       0.978       0.985       0.924    0.062 bge-large-en-
+    confirm reservation              157       0.926       0.977       0.985       0.926    0.060 bge-large-en-
+    who do you work for              151       0.956       0.961       0.980       0.921    0.059 bge-large-en-
+    nutrition info                   150       0.993       0.996       0.997       0.939    0.059 bge-large-en-
+    play music                       149       0.956       0.976       0.991       0.932    0.059 bge-large-en-
+    fun fact                         155       0.948       0.973       0.991       0.933    0.058 bge-large-en-
+    what are your hobbies            153       0.970       0.984       0.991       0.934    0.057 bge-large-en-
+    insurance                        153       0.976       0.990       0.980       0.933    0.057 bge-small-en-
+    international fees               155       0.982       0.973       0.991       0.935    0.057 bge-large-en-
+    direct deposit                   156       0.976       0.990       0.991       0.935    0.056 bge-large-en-
+    schedule maintenance             149       0.975       0.977       0.974       0.921    0.056 bge-small-en-
+    reset settings                   157       0.982       0.984       0.986       0.930    0.056 bge-large-en-
+    find phone                       154       0.953       0.996       0.991       0.940    0.056 bge-small-en-
+    oil change how                   156       0.937       0.984       0.991       0.946    0.055 bge-large-en-
+    cook time                        152       0.924       0.978       0.974       0.949    0.055 bge-small-en-
+    oil change when                  164       0.909       0.915       0.947       0.893    0.054 bge-large-en-
+    sync device                      152       0.964       0.990       0.997       0.944    0.053 bge-large-en-
+    weather                          155       0.927       0.973       0.969       0.923    0.050 bge-small-en-
+    expiration date                  154       0.942       0.978       0.991       0.944    0.049 bge-large-en-
+    thank you                        147       0.931       0.978       0.979       0.931    0.048 bge-large-en-
+    flight status                    152       0.981       0.990       0.991       0.945    0.046 bge-large-en-
+    mpg                              154       0.981       0.984       0.985       0.940    0.045 bge-large-en-
+    traffic                          157       0.981       0.979       0.986       0.941    0.045 bge-large-en-
+    insurance change                 156       0.948       0.990       0.991       0.967    0.043 bge-large-en-
+    uber                             153       0.993       0.990       0.991       0.951    0.042         tfidf
+    next song                        149       0.993       0.984       0.997       0.955    0.042 bge-large-en-
+    jump start                       155       0.970       0.967       0.969       0.929    0.042         tfidf
+    card declined                    149       0.975       0.990       0.991       0.950    0.042 bge-large-en-
+    interest rate                    150       0.981       0.996       0.997       0.956    0.041 bge-large-en-
+    food last                        151       0.962       0.990       0.991       0.951    0.041 bge-large-en-
+    update playlist                  166       0.943       0.910       0.942       0.950    0.040           nli
+    carry on                         150       0.993       0.996       0.997       0.962    0.035 bge-large-en-
+    plug type                        150       0.987       0.996       0.997       0.962    0.035 bge-large-en-
+    alarm                            154       0.975       0.956       0.974       0.944    0.031         tfidf
+    calories                         154       0.988       0.979       0.974       0.956    0.031         tfidf
+    vaccines                         150       0.993       0.996       0.997       0.967    0.030 bge-large-en-
+    rollover 401k                    150       0.993       0.996       0.997       0.968    0.029 bge-large-en-
+    tire change                      152       0.970       0.979       0.986       0.956    0.029 bge-large-en-
+    pin change                       150       0.988       0.984       0.991       0.962    0.029 bge-large-en-
+    how old are you                  150       0.962       0.990       0.980       0.961    0.029 bge-small-en-
+    cancel reservation               149       0.968       0.996       0.985       0.973    0.027 bge-small-en-
+    ingredient substitution          157       0.947       0.957       0.974       0.949    0.027 bge-large-en-
+    exchange rate                    151       0.970       0.990       0.991       0.968    0.024 bge-large-en-
+    apr                              153       0.976       0.984       0.986       0.962    0.024 bge-large-en-
+    min payment                      149       0.975       0.990       0.991       0.968    0.024 bge-large-en-
+    w2                               150       0.981       0.996       0.991       0.972    0.023 bge-small-en-
+    lost luggage                     151       0.993       0.996       0.997       0.974    0.023 bge-large-en-
+    do you have pets                 150       0.975       0.996       0.997       0.986    0.022 bge-large-en-
+    flip coin                        150       0.993       0.996       0.997       0.978    0.019 bge-large-en-
+    tell joke                        150       0.987       0.996       0.997       0.979    0.018 bge-large-en-
+    roll dice                        150       0.993       0.996       0.997       0.980    0.017 bge-large-en-
+    car rental                       151       0.981       0.990       0.991       0.974    0.017 bge-large-en-
+    tire pressure                    152       0.988       0.990       0.991       0.974    0.017 bge-large-en-
+    classes owned (highest shrunk competence): bge-large-en-v1.5 119, bge-small-en-v1.5 18, tfidf 12, nli 1
+    spread across classes: median 0.085, max 0.318, min 0.017
+
+  no expert predictions -- cascade stages skipped
+  >> ship: bge-large-en-v1.5+logreg
+
+wrote /Users/vasyl/zadumai/ocl_compare/results/clinc150.json (370s)

@@ -1,0 +1,529 @@
+{
+ "summary": {
+  "method": "Self-hosted RediSearch FLAT (exact) vector search, sentence-transformers/all-MiniLM-L6-v2 embeddings, FULL untruncated context",
+  "n_train_stored": 200,
+  "n_test_queried": 50,
+  "mean_similarity_of_matches": 0.8331468868255463,
+  "median_similarity_of_matches": 0.811370372772,
+  "compose@1": 0.0,
+  "skeleton_only": 0.1,
+  "compare_against": {
+   "learned_cache_TFIDF_logreg": {
+    "conditional": 0.2765370138017566
+   },
+   "1NN_TFIDF_no_rerank_D26": {
+    "conditional": 0.05244667503136763,
+    "median_similarity": 0.47
+   },
+   "LangCache_3800_800_D31": {
+    "compose@1_of_queried": 0.0275,
+    "median_similarity": 0.94568324,
+    "stale_value_replaced_2026-09-21": 0.0825,
+    "note": "was 0.0825, which is not on disk: outputs/probes/response/langcache_baseline_mid.json records 0.0275 for this exact configuration. LangCache's compose@1 is NOT reproducible -- it swings between 0.0275 and 0.0825 across identical re-runs purely from tie-breaks among similarity==1.0 duplicate contexts (the non-duplicate bucket is stable at 19/302 = 6.3%). Quote it as a range, never as a point estimate."
+   }
+  },
+  "elapsed_s": 24.3
+ },
+ "rows": [
+  {
+   "turn_id": "test_seen:4512:0",
+   "matched": true,
+   "similarity": 0.9999999403953552,
+   "skeleton_hit": false,
+   "full_hit": false,
+   "context": "state|disclosed: none || actions: none",
+   "gold_text": "hello, how can i help you?",
+   "predicted_text": "hi."
+  },
+  {
+   "turn_id": "test_seen:4512:5",
+   "matched": true,
+   "similarity": 0.810955166817,
+   "skeleton_hit": false,
+   "full_hit": false,
+   "context": "agent|hi! how may i help you?\ncustomer|hello. i recently signed up for a subscription but it looks like you guys charged me twice for it.\nagent|i see, let's fix that. may i have your full name, account and order ids?\ncustomer|sure, it's albert sanders and my account id is <account_id>\naction|account has been pulled up for albert sanders.\nstate|disclosed: personal.account_id=u85alflg2z; personal.customer_name=albert sanders || actions: pull-up-account(albert sanders)",
+   "gold_text": "what is your order id?",
+   "predicted_text": "thank you albert and may i have your account and order id please?"
+  },
+  {
+   "turn_id": "test_seen:5063:0",
+   "matched": true,
+   "similarity": 0.9999999403953552,
+   "skeleton_hit": false,
+   "full_hit": false,
+   "context": "state|disclosed: none || actions: none",
+   "gold_text": "hello, how can i help you today?",
+   "predicted_text": "hi."
+  },
+  {
+   "turn_id": "test_seen:5063:4",
+   "matched": true,
+   "similarity": 0.730603456497,
+   "skeleton_hit": false,
+   "full_hit": false,
+   "context": "agent|hello! how can i help you today?\ncustomer|i'm thinking about buying an item but first i would like to get some more info on the product\nagent|sure. i can help you with that. what item are you looking for more information on?\ncustomer|the tommy hilifiger shirt\nstate|disclosed: none || actions: none",
+   "gold_text": "what would you like to know about it?",
+   "predicted_text": "can i have your name please?"
+  },
+  {
+   "turn_id": "test_seen:5063:14",
+   "matched": true,
+   "similarity": 0.608082652092,
+   "skeleton_hit": false,
+   "full_hit": false,
+   "context": "agent|hello! how can i help you today?\ncustomer|i'm thinking about buying an item but first i would like to get some more info on the product\nagent|sure. i can help you with that. what item are you looking for more information on?\ncustomer|the tommy hilifiger shirt\nagent|and what would you like to know about it?\ncustomer|i would like to know how long is the arm length\nagent|sure give me one second and i can find that out for you\ncustomer|ok\naction|searching the faq pages ...\naction|system action: search shirt\nagent|do you know what sizes you were considering?\ncustomer|large\nagent|the sleeve length of a small is 32 inches, medium is 34 inches, and the large is 36 inches\ncustomer|thank you\nstate|disclosed: none || actions: search-faq(); search-shirt()",
+   "gold_text": "you're welcome.",
+   "predicted_text": "it depends on your membership level. if you are a bronze, silver or gold member, then tailoring is free. tailoring for guests is also free if you have bought 3 or more pairs of jeans and have the associated reciepts."
+  },
+  {
+   "turn_id": "test_seen:5063:15",
+   "matched": true,
+   "similarity": 0.6130729317670001,
+   "skeleton_hit": false,
+   "full_hit": false,
+   "context": "agent|hello! how can i help you today?\ncustomer|i'm thinking about buying an item but first i would like to get some more info on the product\nagent|sure. i can help you with that. what item are you looking for more information on?\ncustomer|the tommy hilifiger shirt\nagent|and what would you like to know about it?\ncustomer|i would like to know how long is the arm length\nagent|sure give me one second and i can find that out for you\ncustomer|ok\naction|searching the faq pages ...\naction|system action: search shirt\nagent|do you know what sizes you were considering?\ncustomer|large\nagent|the sleeve length of a small is 32 inches, medium is 34 inches, and the large is 36 inches\ncustomer|thank you\nagent|you're welcome!\nstate|disclosed: none || actions: search-faq(); search-shirt()",
+   "gold_text": "is there anything else i can help you with today?",
+   "predicted_text": "otherwise, tailoring is $15 per pair with a free consultation."
+  },
+  {
+   "turn_id": "test_seen:1694:0",
+   "matched": true,
+   "similarity": 0.9999999403953552,
+   "skeleton_hit": false,
+   "full_hit": false,
+   "context": "state|disclosed: none || actions: none",
+   "gold_text": "hello! thank you for contacting us today. how can i help you?",
+   "predicted_text": "hi."
+  },
+  {
+   "turn_id": "test_seen:1694:14",
+   "matched": true,
+   "similarity": 0.678699314594,
+   "skeleton_hit": false,
+   "full_hit": false,
+   "context": "agent|hello, thank you for contacting us today. how can i help you?\ncustomer|how do you cancel a subscription?\nagent|i'm sorry to hear that you might want to cancel your subscription. did something happen that made you want to do this?\ncustomer|no, not at all.  i was just thinking of ordering some things and i don't want to if the cancelation process is too hard.\nagent|alright let me see what i can find for you.\naction|searching the faq pages ...\naction|system action: search policy\naction|faq answer related to policy (question3) was selected.\nagent|so, you will be able to cancel the subscription at any time and not be charged. the current monnth, however you are responsible for the full period but will also recieve the full benefits of the subscription for that period.\ncustomer|ok, and how do i cancel?  is there a link or something?\nagent|that should be available on your account page, let me provide you with a link for it.\naction|a link will be sent.\nagent|alright, did you have any other concerns i could address for you?\ncustomer|no that is everything.  thanks for the info.\nstate|disclosed: none || actions: search-faq(); search-policy(); select-faq(policy_3); send-link()",
+   "gold_text": "no problem. thank you for shopping with us, have a great day!",
+   "predicted_text": "could i have your full name or account id?"
+  },
+  {
+   "turn_id": "test_seen:8068:0",
+   "matched": true,
+   "similarity": 0.9999999403953552,
+   "skeleton_hit": true,
+   "full_hit": false,
+   "context": "state|disclosed: none || actions: none",
+   "gold_text": "hello, thank you for contacting acmecorp, how may i help you today?",
+   "predicted_text": "hi."
+  },
+  {
+   "turn_id": "test_seen:8068:2",
+   "matched": true,
+   "similarity": 0.808164954185,
+   "skeleton_hit": false,
+   "full_hit": false,
+   "context": "agent|hello, thank you for contacting acmecorp, how may i help you today?\ncustomer|hi. i am trying to make a purchase but my credit card keeps declining.\nstate|disclosed: none || actions: none",
+   "gold_text": "i would happy to help.",
+   "predicted_text": "i am sorry about that. let me look into this for you."
+  },
+  {
+   "turn_id": "test_seen:8068:13",
+   "matched": true,
+   "similarity": 0.863248050213,
+   "skeleton_hit": false,
+   "full_hit": false,
+   "context": "agent|hello, thank you for contacting acmecorp, how may i help you today?\ncustomer|hi. i am trying to make a purchase but my credit card keeps declining.\nagent|i would happy to help you with this.\nagent|lets try a few things, first can you look at the expiration date on the card to make sure it is still valid?\ncustomer|ok\naction|details of troubleshoot have been entered.\ncustomer|yes - it is still valid\nagent|lets try to log out and log back in.\naction|agent is looking for solutions ...\ncustomer|okay one minute while i try that\nagent|no problem, take your time.\ncustomer|that worked! thank you!\nagent|great, anything else i may help with today?\nstate|disclosed: none || actions: enter-details(troubleshoot); log-out-in()",
+   "gold_text": "your welcome. thank you for contacting acmecorp, please be safe and stay well.",
+   "predicted_text": "then have a nice day!"
+  },
+  {
+   "turn_id": "test_seen:7462:0",
+   "matched": true,
+   "similarity": 0.9999999403953552,
+   "skeleton_hit": true,
+   "full_hit": false,
+   "context": "state|disclosed: none || actions: none",
+   "gold_text": "thank you for shopping with acmebrands! how may i help you?",
+   "predicted_text": "hi."
+  },
+  {
+   "turn_id": "test_seen:7462:9",
+   "matched": true,
+   "similarity": 0.715273797512,
+   "skeleton_hit": false,
+   "full_hit": false,
+   "context": "agent|thank you for shopping with acmebrands! how may i assist you?\ncustomer|hi, i was wondering what the return policy is as i am torn between two sizes.\naction|searching the faq pages ...\naction|system action: search policy\naction|faq answer related to policy (question1) was selected.\nagent|our return policy depends on what membership level you are. gold members can return unlimited items; silver members can make returns for anything purchased within the last 6 months; bronze members can make returns for anything purchased in the last 9\ncustomer|oh great! i am silver and six months is more than enough time to decide!\nagent|oops, looks like it cut off. bronze members can return anything purchased within the last 90 days, and all other members have 30 days to return an item.\nagent|oh, fantastic!\nstate|disclosed: personal.member_level=silver || actions: search-faq(); search-policy(); select-faq(policy_1)",
+   "gold_text": "is there anything else you need?",
+   "predicted_text": "does that help?"
+  },
+  {
+   "turn_id": "test_seen:7462:11",
+   "matched": true,
+   "similarity": 0.73148214817,
+   "skeleton_hit": false,
+   "full_hit": false,
+   "context": "agent|thank you for shopping with acmebrands! how may i assist you?\ncustomer|hi, i was wondering what the return policy is as i am torn between two sizes.\naction|searching the faq pages ...\naction|system action: search policy\naction|faq answer related to policy (question1) was selected.\nagent|our return policy depends on what membership level you are. gold members can return unlimited items; silver members can make returns for anything purchased within the last 6 months; bronze members can make returns for anything purchased in the last 9\ncustomer|oh great! i am silver and six months is more than enough time to decide!\nagent|oops, looks like it cut off. bronze members can return anything purchased within the last 90 days, and all other members have 30 days to return an item.\nagent|oh, fantastic!\nagent|is there anything else you need?\ncustomer|no you have been wonderful!\nstate|disclosed: personal.member_level=silver || actions: search-faq(); search-policy(); select-faq(policy_1)",
+   "gold_text": "thank you and have a great day!",
+   "predicted_text": "i can escalate to my manager if you'd like"
+  },
+  {
+   "turn_id": "test_seen:3585:0",
+   "matched": true,
+   "similarity": 0.9999999403953552,
+   "skeleton_hit": false,
+   "full_hit": false,
+   "context": "state|disclosed: none || actions: none",
+   "gold_text": "hello, how can i help you today?",
+   "predicted_text": "hi."
+  },
+  {
+   "turn_id": "test_seen:3585:13",
+   "matched": true,
+   "similarity": 0.716839075089,
+   "skeleton_hit": false,
+   "full_hit": false,
+   "context": "agent|hello, how can i help you today?\ncustomer|hi.  my name is alessandro phoenix.  my order id is <order_id>.  the promo code i tried to use on these michael kors jeans keeps saying it's invalid.\ncustomer|i just received this code 2 days ago.\nagent|i am very sorry to hear that.  let me check on this information.\naction|account has been pulled up for alessandro phoenix.\nagent|i am going to check with the system about this, give me one more moment.\naction|querying the system for an answer ...\ncustomer|ok\nagent|this seems to be an error on our part.  i am going to generate you a new promo code, just give me one more moment.\ncustomer|ok\naction|a promo code has been created.\nagent|ok, here is a new promo code that will be 20% off, apologies for the inconvenience: ldrbz\ncustomer|great.  thank you.\nstate|disclosed: personal.customer_name=alessandro phoenix; order.order_id=9602071593 || actions: pull-up-account(alessandro phoenix); ask-the-oracle(); promo-code()",
+   "gold_text": "is there anything else i can help you with today?",
+   "predicted_text": "everything in order, i will notify you how is the status of your refund"
+  },
+  {
+   "turn_id": "test_seen:1136:0",
+   "matched": true,
+   "similarity": 0.9999999403953552,
+   "skeleton_hit": false,
+   "full_hit": false,
+   "context": "state|disclosed: none || actions: none",
+   "gold_text": "hello, how can i help you today?",
+   "predicted_text": "hi."
+  },
+  {
+   "turn_id": "test_seen:1136:17",
+   "matched": true,
+   "similarity": 0.815780878067,
+   "skeleton_hit": false,
+   "full_hit": false,
+   "context": "agent|how can i help you today?\ncustomer|hi! i was wanting to check my account today.. but i don't  have my phone that i used to set up my authentication.\nagent|you are trying to log in to your account, correct?\ncustomer|that's correct.\nagent|do you need to reset your authentication?\ncustomer|yes, that would be helpful!\nagent|great, i can help you with that. may i get your full name or account id so i can pull up your account.\ncustomer|chloe zhang\naction|account has been pulled up for chloe zhang.\nagent|great, found it. now can i get your email address for me to send you the reset code.\ncustomer|<email>\naction|details of <email> have been entered.\nagent|i just sent. i will also be sending a link about the best security practices so you remain safe in the future!\naction|a link will be sent.\ncustomer|perfect, thank you so much for your help!\nagent|it is no problem, do you need anything else?\ncustomer|that will do it, have a great day! :)\nstate|disclosed: personal.customer_name=chloe zhang; personal.email=czhang14@email.com || actions: pull-up-account(chloe zhang); enter-details(czhang14@email.com); send-link()",
+   "gold_text": "great, have a nice day!",
+   "predicted_text": "awesome. have a good night!"
+  },
+  {
+   "turn_id": "test_seen:1601:0",
+   "matched": true,
+   "similarity": 0.9999999403953552,
+   "skeleton_hit": false,
+   "full_hit": false,
+   "context": "state|disclosed: none || actions: none",
+   "gold_text": "thank you for contacting acme. hello, how can i help you today?",
+   "predicted_text": "hi."
+  },
+  {
+   "turn_id": "test_seen:1601:2",
+   "matched": true,
+   "similarity": 0.6918746232990001,
+   "skeleton_hit": false,
+   "full_hit": false,
+   "context": "agent|thanks for contacting acme.  how may i help you today?\ncustomer|i'm looking at a pair of boots on your website and the size i want says unavailable.\nstate|disclosed: none || actions: none",
+   "gold_text": "i'm sorry to hear that. let me see what i can do.",
+   "predicted_text": "ok, i should be able to help with that one moment please."
+  },
+  {
+   "turn_id": "test_seen:1601:22",
+   "matched": true,
+   "similarity": 0.671878457069,
+   "skeleton_hit": false,
+   "full_hit": false,
+   "context": "agent|thanks for contacting acme.  how may i help you today?\ncustomer|i'm looking at a pair of boots on your website and the size i want says unavailable.\nagent|oh, i'm sorry to hear that.  let me see what i can do\nagent|i may be able to help with this, may i ask your full name and account id before we begin?\ncustomer|norman bouchard\nagent|i might not be able to find the item for you, but i should still be able to let our purchasing department know what it is that you were looking for\ncustomer|i don't have my account id\naction|account has been pulled up for norman bouchard.\nagent|ah, that shouldn't be a problem, i can see your account now, mr. bouchard\ncustomer|i'm looking for the michael kors boots in a size 9\naction|the michael kors boots size 9 has been notified.\nagent|okay, i have notified our purchasing department about the missing items, and hopefully they can do a better job next time.\ncustomer|ok thank you.  will they notify me if they are in stock?\nagent|i'm sorry we couldn't have that item available for you.  they should notify you when it is in stock, or, if you'd prefer i can put in a back-order for you?\ncustomer|yes, please put it on backorder\nagent|if i place the order for you now, it would ship automatically as soon as we get it in, if that's okay\ncustomer|that is fine.\nagent|excellent, if you would like to use the same credit card that we already have on file, i can do that for you right now\ncustomer|yes please\naction|a purchase of michael kors boots, size 9 was made.\nagent|okay, your order is placed, and it should be on its way to you as soon as possible.  is there anything else i can help you with today?\ncustomer|that's everything.  thanks for your help.\nstate|disclosed: personal.customer_name=norman bouchard || actions: pull-up-account(norman bouchard); notify-team(michael kors boots size 9); make-purchase(michael kors boots, size 9)",
+   "gold_text": "you're welcome. have a great day!",
+   "predicted_text": "thank you."
+  },
+  {
+   "turn_id": "test_seen:5735:0",
+   "matched": true,
+   "similarity": 0.9999999403953552,
+   "skeleton_hit": false,
+   "full_hit": false,
+   "context": "state|disclosed: none || actions: none",
+   "gold_text": "hello! thank you for choosing acmebrands. how may i assist you?",
+   "predicted_text": "hi."
+  },
+  {
+   "turn_id": "test_seen:5735:3",
+   "matched": true,
+   "similarity": 0.7406533956529999,
+   "skeleton_hit": false,
+   "full_hit": false,
+   "context": "agent|hello! thank you for choosing acmebrands. how may i assist you?\ncustomer|i need to make sure i am getting my package tomorrow\ncustomer|i got an email stating it would be delivered some other time\nstate|disclosed: none || actions: none",
+   "gold_text": "i'll be glad to help you with that. would you provide your full name, please?",
+   "predicted_text": "hello, how can i help you today?"
+  },
+  {
+   "turn_id": "test_seen:5735:15",
+   "matched": true,
+   "similarity": 0.811370372772,
+   "skeleton_hit": false,
+   "full_hit": false,
+   "context": "agent|hello! thank you for choosing acmebrands. how may i assist you?\ncustomer|i need to make sure i am getting my package tomorrow\ncustomer|i got an email stating it would be delivered some other time\nagent|i'll be glad to help you with that. would you provide your full name, please?\ncustomer|joseph banter\naction|account has been pulled up for joseph banter.\nagent|thank you, joseph! to continue assisting you, may i please get your account id and order id?\ncustomer|account id: <account_id>\ncustomer|<order_id>\naction|identity verification in progress ...\nagent|thank you! to confirm your purchase, may i please get your username, email address, and order id?\ncustomer|<email>\ncustomer|order id: <order_id>\ncustomer|<username>\naction|purchase validation in progress ...\nstate|disclosed: personal.customer_name=joseph banter; personal.account_id=zpssknguqr; order.order_id=9503594314; personal.email=josephb3@email.com; personal.username=josephb3 || actions: pull-up-account(joseph banter); verify-identity(joseph banter, zpssknguqr, 9503594314); validate-purchase(josephb3, josephb3@email.com, 9503594314)",
+   "gold_text": "perfect, thank you.",
+   "predicted_text": "what is the shipping status?"
+  },
+  {
+   "turn_id": "test_seen:5735:24",
+   "matched": true,
+   "similarity": 0.808979034424,
+   "skeleton_hit": false,
+   "full_hit": false,
+   "context": "agent|hello! thank you for choosing acmebrands. how may i assist you?\ncustomer|i need to make sure i am getting my package tomorrow\ncustomer|i got an email stating it would be delivered some other time\nagent|i'll be glad to help you with that. would you provide your full name, please?\ncustomer|joseph banter\naction|account has been pulled up for joseph banter.\nagent|thank you, joseph! to continue assisting you, may i please get your account id and order id?\ncustomer|account id: <account_id>\ncustomer|<order_id>\naction|identity verification in progress ...\nagent|thank you! to confirm your purchase, may i please get your username, email address, and order id?\ncustomer|<email>\ncustomer|order id: <order_id>\ncustomer|<username>\naction|purchase validation in progress ...\nagent|perfect, thank you.\naction|querying the system for an answer ...\nagent|i have checked in our system, and unfortunately the email you received was accurate: the delivery date on your order has changed.\ncustomer|ohh i am sorry to hear that\ncustomer|ok then\nagent|would you like me to request a change of date for you? i can see if it's possible to move up the delivery time.\ncustomer|yes please\naction|order has been updated with change date.\nagent|all set! i have requested a change of the delivery date for you.\nstate|disclosed: personal.customer_name=joseph banter; personal.account_id=zpssknguqr; order.order_id=9503594314; personal.email=josephb3@email.com; personal.username=josephb3 || actions: pull-up-account(joseph banter); verify-identity(joseph banter, zpssknguqr, 9503594314); validate-purchase(josephb3, josephb3@email.com, 9503594314); ask-the-oracle(); update-order(change date)",
+   "gold_text": "is there anything else i can help you with today?",
+   "predicted_text": "thank you and have a great day!"
+  },
+  {
+   "turn_id": "test_seen:5735:26",
+   "matched": true,
+   "similarity": 0.808979034424,
+   "skeleton_hit": false,
+   "full_hit": false,
+   "context": "agent|hello! thank you for choosing acmebrands. how may i assist you?\ncustomer|i need to make sure i am getting my package tomorrow\ncustomer|i got an email stating it would be delivered some other time\nagent|i'll be glad to help you with that. would you provide your full name, please?\ncustomer|joseph banter\naction|account has been pulled up for joseph banter.\nagent|thank you, joseph! to continue assisting you, may i please get your account id and order id?\ncustomer|account id: <account_id>\ncustomer|<order_id>\naction|identity verification in progress ...\nagent|thank you! to confirm your purchase, may i please get your username, email address, and order id?\ncustomer|<email>\ncustomer|order id: <order_id>\ncustomer|<username>\naction|purchase validation in progress ...\nagent|perfect, thank you.\naction|querying the system for an answer ...\nagent|i have checked in our system, and unfortunately the email you received was accurate: the delivery date on your order has changed.\ncustomer|ohh i am sorry to hear that\ncustomer|ok then\nagent|would you like me to request a change of date for you? i can see if it's possible to move up the delivery time.\ncustomer|yes please\naction|order has been updated with change date.\nagent|all set! i have requested a change of the delivery date for you.\nagent|is there anything more i may help you with today?\ncustomer|thank you so much!\nstate|disclosed: personal.customer_name=joseph banter; personal.account_id=zpssknguqr; order.order_id=9503594314; personal.email=josephb3@email.com; personal.username=josephb3 || actions: pull-up-account(joseph banter); verify-identity(joseph banter, zpssknguqr, 9503594314); validate-purchase(josephb3, josephb3@email.com, 9503594314); ask-the-oracle(); update-order(change date)",
+   "gold_text": "thank you so much for contacting acmebrands customer service. goodbye!",
+   "predicted_text": "thank you and have a great day!"
+  },
+  {
+   "turn_id": "test_seen:960:0",
+   "matched": true,
+   "similarity": 0.9999999403953552,
+   "skeleton_hit": false,
+   "full_hit": false,
+   "context": "state|disclosed: none || actions: none",
+   "gold_text": "hello, how can i help you?",
+   "predicted_text": "hi."
+  },
+  {
+   "turn_id": "test_seen:960:2",
+   "matched": true,
+   "similarity": 0.9290181398392,
+   "skeleton_hit": false,
+   "full_hit": false,
+   "context": "agent|hi, how can i help you?\ncustomer|i'm needing to check on the status of my subscription.\nstate|disclosed: none || actions: none",
+   "gold_text": "let me check on that for you. one moment please.",
+   "predicted_text": "sure, one moment please"
+  },
+  {
+   "turn_id": "test_seen:960:3",
+   "matched": true,
+   "similarity": 0.9100885391235,
+   "skeleton_hit": false,
+   "full_hit": false,
+   "context": "agent|hi, how can i help you?\ncustomer|i'm needing to check on the status of my subscription.\nagent|let me check on that for you. one moment please.\nstate|disclosed: none || actions: none",
+   "gold_text": "could i have your full name or account id?",
+   "predicted_text": "would you give me your full name or account id"
+  },
+  {
+   "turn_id": "test_seen:960:9",
+   "matched": true,
+   "similarity": 0.852663218975,
+   "skeleton_hit": false,
+   "full_hit": false,
+   "context": "agent|hi, how can i help you?\ncustomer|i'm needing to check on the status of my subscription.\nagent|let me check on that for you. one moment please.\nagent|can i have your full name or account id?\ncustomer|crystal minh\naction|account has been pulled up for crystal minh.\ncustomer|my account id is <account_id>\nagent|and what is your question about your subscription?\ncustomer|i would like to check on the status to make sure i still have it.\nstate|disclosed: personal.customer_name=crystal minh; personal.account_id=id7tbhijqi || actions: pull-up-account(crystal minh)",
+   "gold_text": "what is your order id?",
+   "predicted_text": "ok, your account is currently active."
+  },
+  {
+   "turn_id": "test_seen:960:17",
+   "matched": true,
+   "similarity": 0.836112201214,
+   "skeleton_hit": false,
+   "full_hit": false,
+   "context": "agent|hi, how can i help you?\ncustomer|i'm needing to check on the status of my subscription.\nagent|let me check on that for you. one moment please.\nagent|can i have your full name or account id?\ncustomer|crystal minh\naction|account has been pulled up for crystal minh.\ncustomer|my account id is <account_id>\nagent|and what is your question about your subscription?\ncustomer|i would like to check on the status to make sure i still have it.\nagent|do you have an order id?\ncustomer|<order_id>\naction|querying the system for subscription status ...\nagent|you do have an active subscription. however there is an amount due of $14 and it is due today.\ncustomer|is there a way for me to go ahead and pay that?\nagent|i will provide you a link where you can do that now and in the future, as i will not be able to do that for you.\naction|a link will be sent.\ncustomer|okay, thank you.\nstate|disclosed: personal.customer_name=crystal minh; personal.account_id=id7tbhijqi; order.order_id=2243746561 || actions: pull-up-account(crystal minh); subscription-status(); send-link()",
+   "gold_text": "you're welcome. is there anything else i can help you with?",
+   "predicted_text": "a pleasure to help you"
+  },
+  {
+   "turn_id": "test_seen:2341:5",
+   "matched": true,
+   "similarity": 0.649663686752,
+   "skeleton_hit": false,
+   "full_hit": false,
+   "context": "customer|hello\ncustomer|i need some help\nagent|sure what cna i help you with\ncustomer|i keep trying to search for a jacket for my sister's birthday but every time there are 0 results\ncustomer|what's happening??\nstate|disclosed: none || actions: none",
+   "gold_text": "sure.",
+   "predicted_text": "could i have your full name or account id?"
+  },
+  {
+   "turn_id": "test_seen:2341:10",
+   "matched": true,
+   "similarity": 0.7233141064640001,
+   "skeleton_hit": false,
+   "full_hit": false,
+   "context": "customer|hello\ncustomer|i need some help\nagent|sure what cna i help you with\ncustomer|i keep trying to search for a jacket for my sister's birthday but every time there are 0 results\ncustomer|what's happening??\nagent|sure!\nagent|can you please try logging out and logging backin?\ncustomer|ok\nagent|did that work\naction|agent is looking for solutions ...\nstate|disclosed: none || actions: log-out-in()",
+   "gold_text": "are you there?",
+   "predicted_text": "can you try clearing your cookies? i can explain how if you need me to."
+  },
+  {
+   "turn_id": "test_seen:10365:0",
+   "matched": true,
+   "similarity": 0.9999999403953552,
+   "skeleton_hit": false,
+   "full_hit": false,
+   "context": "state|disclosed: none || actions: none",
+   "gold_text": "hello, thanks for contacting acmebrands. hello, how can i help you today?",
+   "predicted_text": "hi."
+  },
+  {
+   "turn_id": "test_seen:10365:20",
+   "matched": true,
+   "similarity": 0.756108701229,
+   "skeleton_hit": false,
+   "full_hit": false,
+   "context": "agent|hello, thanks for contacting acmebrands. how can i help today?\ncustomer|hi, this is albert sanders, gold member\ncustomer|i have a premium subscription with acme brands, but i'm having a bit of trouble finding my account details\nagent|i see, are you needing help accessing your account?\ncustomer|yes, well, really i just want to know when my annual fee is due.  i can pay it today if there's anything outstanding\naction|account has been pulled up for albert sanders.\nagent|do you have your account id and order id albert?\ncustomer|yes, i do:\ncustomer|<account_id>\ncustomer|<order_id>\naction|identity verification in progress ...\naction|querying the system for subscription status ...\nagent|i can see here that your subscription is active, but you have a balance of $49 that was due yesterday.\nagent|you mentioned you want to pay any due balance - should i charge your card on file?\ncustomer|yes, that would be perfect.  thanks\naction|details of 49 have been entered.\nagent|i have charged your card the $49 balance to continue your subscription.\nagent|i will also send you a link that you can use to log in and check the status of your account yourself moving forward.\naction|a link will be sent.\ncustomer|ah, that sounds perfect\nstate|disclosed: personal.customer_name=albert sanders; personal.member_level=gold; personal.account_id=h8ittb2wvx; order.order_id=4945110432 || actions: pull-up-account(albert sanders); verify-identity(albert sanders, h8ittb2wvx, 4945110432); subscription-status(); enter-details(49); send-link()",
+   "gold_text": "is there anything else i can help you with today?",
+   "predicted_text": "thank you albert and may i have your account and order id please?"
+  },
+  {
+   "turn_id": "test_seen:10365:23",
+   "matched": true,
+   "similarity": 0.756108701229,
+   "skeleton_hit": false,
+   "full_hit": false,
+   "context": "agent|hello, thanks for contacting acmebrands. how can i help today?\ncustomer|hi, this is albert sanders, gold member\ncustomer|i have a premium subscription with acme brands, but i'm having a bit of trouble finding my account details\nagent|i see, are you needing help accessing your account?\ncustomer|yes, well, really i just want to know when my annual fee is due.  i can pay it today if there's anything outstanding\naction|account has been pulled up for albert sanders.\nagent|do you have your account id and order id albert?\ncustomer|yes, i do:\ncustomer|<account_id>\ncustomer|<order_id>\naction|identity verification in progress ...\naction|querying the system for subscription status ...\nagent|i can see here that your subscription is active, but you have a balance of $49 that was due yesterday.\nagent|you mentioned you want to pay any due balance - should i charge your card on file?\ncustomer|yes, that would be perfect.  thanks\naction|details of 49 have been entered.\nagent|i have charged your card the $49 balance to continue your subscription.\nagent|i will also send you a link that you can use to log in and check the status of your account yourself moving forward.\naction|a link will be sent.\ncustomer|ah, that sounds perfect\nagent|is there anything else i can help with today?\ncustomer|no, that's great.  i'll take a look at that link, and hopefully i can handle this myself in the future\ncustomer|thanks for all your help\nstate|disclosed: personal.customer_name=albert sanders; personal.member_level=gold; personal.account_id=h8ittb2wvx; order.order_id=4945110432 || actions: pull-up-account(albert sanders); verify-identity(albert sanders, h8ittb2wvx, 4945110432); subscription-status(); enter-details(49); send-link()",
+   "gold_text": "great, thank you and have a great day!",
+   "predicted_text": "thank you albert and may i have your account and order id please?"
+  },
+  {
+   "turn_id": "test_seen:5231:17",
+   "matched": true,
+   "similarity": 0.863004207611,
+   "skeleton_hit": false,
+   "full_hit": false,
+   "context": "agent|hello and thank you for contacting acmebrand. how may i help you?\ncustomer|hello!\ncustomer|i'd like to check my order status, but i forgot my password.\nagent|oh alright, that shou;dn't be too much of an issue. let's try to get your password reset.\ncustomer|thank you\nagent|could you give me you full name so i can pull up your account please?\ncustomer|yes, it is alessandro phoenix\naction|account has been pulled up for alessandro phoenix.\nagent|alright the next bit of information i'll need is your username. do you have that available?\ncustomer|i don't, sorry. would my phone number or address be sufficient?\nagent|not a problem, let's recover your username first then.\nagent|i will need your phone number for this part so go ahead and put that in now.\nagent|in addition to your phone number i'll also need either your zip code of email address in order to verify your identity.\nagent|or*\ncustomer|phone number is <phone>\ncustomer|zip code is <zip_code>\naction|identity verification in progress ...\nstate|disclosed: personal.customer_name=alessandro phoenix; personal.phone=(499) 412-7409; order.zip_code=57820 || actions: pull-up-account(alessandro phoenix); verify-identity(alessandro phoenix, 57820, (499) 412-7409)",
+   "gold_text": "great, everything looks good.",
+   "predicted_text": "great have a good day"
+  },
+  {
+   "turn_id": "test_seen:5231:32",
+   "matched": true,
+   "similarity": 0.858391880989,
+   "skeleton_hit": false,
+   "full_hit": false,
+   "context": "agent|hello and thank you for contacting acmebrand. how may i help you?\ncustomer|hello!\ncustomer|i'd like to check my order status, but i forgot my password.\nagent|oh alright, that shou;dn't be too much of an issue. let's try to get your password reset.\ncustomer|thank you\nagent|could you give me you full name so i can pull up your account please?\ncustomer|yes, it is alessandro phoenix\naction|account has been pulled up for alessandro phoenix.\nagent|alright the next bit of information i'll need is your username. do you have that available?\ncustomer|i don't, sorry. would my phone number or address be sufficient?\nagent|not a problem, let's recover your username first then.\nagent|i will need your phone number for this part so go ahead and put that in now.\nagent|in addition to your phone number i'll also need either your zip code of email address in order to verify your identity.\nagent|or*\ncustomer|phone number is <phone>\ncustomer|zip code is <zip_code>\naction|identity verification in progress ...\nagent|great, everything looks good.\nagent|your username is aphoenix1\naction|details of aphoenix1 have been entered.\nagent|now back to the password.\nagent|do you have a pin  number available?\ncustomer|i don't, sorry.\ncustomer|my member level is guest, is that why?\nagent|not a problem. i'm goign to ask you your secret questions for security purposes.\nagent|what was the name of your first pet?\ncustomer|martinez\nagent|alright great that's the correct answer\nagent|i'm goign to go ahead and generate a temporary password for you to use to log in. be sure to change it in your profile.\naction|a password has been generated.\nagent|the password is: j9d1h43ozue\ncustomer|ok, thank you!\nstate|disclosed: personal.customer_name=alessandro phoenix; personal.phone=(499) 412-7409; order.zip_code=57820; personal.member_level=guest; personal.security_answer=martinez || actions: pull-up-account(alessandro phoenix); verify-identity(alessandro phoenix, 57820, (499) 412-7409); enter-details(aphoenix1); make-password()",
+   "gold_text": "is there anything else i can help you with today?",
+   "predicted_text": "great have a good day"
+  },
+  {
+   "turn_id": "test_seen:5231:34",
+   "matched": true,
+   "similarity": 0.858391880989,
+   "skeleton_hit": true,
+   "full_hit": false,
+   "context": "agent|hello and thank you for contacting acmebrand. how may i help you?\ncustomer|hello!\ncustomer|i'd like to check my order status, but i forgot my password.\nagent|oh alright, that shou;dn't be too much of an issue. let's try to get your password reset.\ncustomer|thank you\nagent|could you give me you full name so i can pull up your account please?\ncustomer|yes, it is alessandro phoenix\naction|account has been pulled up for alessandro phoenix.\nagent|alright the next bit of information i'll need is your username. do you have that available?\ncustomer|i don't, sorry. would my phone number or address be sufficient?\nagent|not a problem, let's recover your username first then.\nagent|i will need your phone number for this part so go ahead and put that in now.\nagent|in addition to your phone number i'll also need either your zip code of email address in order to verify your identity.\nagent|or*\ncustomer|phone number is <phone>\ncustomer|zip code is <zip_code>\naction|identity verification in progress ...\nagent|great, everything looks good.\nagent|your username is aphoenix1\naction|details of aphoenix1 have been entered.\nagent|now back to the password.\nagent|do you have a pin  number available?\ncustomer|i don't, sorry.\ncustomer|my member level is guest, is that why?\nagent|not a problem. i'm goign to ask you your secret questions for security purposes.\nagent|what was the name of your first pet?\ncustomer|martinez\nagent|alright great that's the correct answer\nagent|i'm goign to go ahead and generate a temporary password for you to use to log in. be sure to change it in your profile.\naction|a password has been generated.\nagent|the password is: j9d1h43ozue\ncustomer|ok, thank you!\nagent|no problem! was there anything else i could help you with today?\ncustomer|nope, that'll be all :)\nstate|disclosed: personal.customer_name=alessandro phoenix; personal.phone=(499) 412-7409; order.zip_code=57820; personal.member_level=guest; personal.security_answer=martinez || actions: pull-up-account(alessandro phoenix); verify-identity(alessandro phoenix, 57820, (499) 412-7409); enter-details(aphoenix1); make-password()",
+   "gold_text": "thank you for shopping with us, have a great day!",
+   "predicted_text": "great have a good day"
+  },
+  {
+   "turn_id": "test_seen:5485:0",
+   "matched": true,
+   "similarity": 0.9999999403953552,
+   "skeleton_hit": false,
+   "full_hit": false,
+   "context": "state|disclosed: none || actions: none",
+   "gold_text": "hello, how can i help you?",
+   "predicted_text": "hi."
+  },
+  {
+   "turn_id": "test_seen:5485:6",
+   "matched": true,
+   "similarity": 0.708926200867,
+   "skeleton_hit": false,
+   "full_hit": false,
+   "context": "agent|hi how can i help you?\ncustomer|whenever i try to add anything to my cart it won't add\nagent|oh i hate when that happens\nagent|will you please refresh the page & try again?\naction|agent is looking for solutions ...\ncustomer|okay i tried that but it's still not adding it\nstate|disclosed: none || actions: try-again()",
+   "gold_text": "please log out & log in to your account",
+   "predicted_text": "great, is there anything else that i can help you with?"
+  },
+  {
+   "turn_id": "test_seen:5485:13",
+   "matched": true,
+   "similarity": 0.799868941307,
+   "skeleton_hit": false,
+   "full_hit": false,
+   "context": "agent|hi how can i help you?\ncustomer|whenever i try to add anything to my cart it won't add\nagent|oh i hate when that happens\nagent|will you please refresh the page & try again?\naction|agent is looking for solutions ...\ncustomer|okay i tried that but it's still not adding it\nagent|please log out of your account & log in again\naction|agent is looking for solutions ...\ncustomer|i tried that but it still doesn't seem to be working.\nagent|perhaps it is out of stock\nagent|should say on the bottom left side of the product page\naction|details of troubleshoot have been entered.\ncustomer|oh my gosh i'm sorry that was it i don't know how i didn't see that.\nstate|disclosed: none || actions: try-again(); log-out-in(); enter-details(troubleshoot)",
+   "gold_text": "np sorry",
+   "predicted_text": "okay, have a great day!"
+  },
+  {
+   "turn_id": "test_seen:5485:15",
+   "matched": true,
+   "similarity": 0.814621090889,
+   "skeleton_hit": false,
+   "full_hit": false,
+   "context": "agent|hi how can i help you?\ncustomer|whenever i try to add anything to my cart it won't add\nagent|oh i hate when that happens\nagent|will you please refresh the page & try again?\naction|agent is looking for solutions ...\ncustomer|okay i tried that but it's still not adding it\nagent|please log out of your account & log in again\naction|agent is looking for solutions ...\ncustomer|i tried that but it still doesn't seem to be working.\nagent|perhaps it is out of stock\nagent|should say on the bottom left side of the product page\naction|details of troubleshoot have been entered.\ncustomer|oh my gosh i'm sorry that was it i don't know how i didn't see that.\nagent|np. sorry\ncustomer|thanks so much for your help!\nstate|disclosed: none || actions: try-again(); log-out-in(); enter-details(troubleshoot)",
+   "gold_text": "is there anything else i can do?",
+   "predicted_text": "okay, have a great day!"
+  },
+  {
+   "turn_id": "test_seen:5485:18",
+   "matched": true,
+   "similarity": 0.83006310463,
+   "skeleton_hit": true,
+   "full_hit": false,
+   "context": "agent|hi how can i help you?\ncustomer|whenever i try to add anything to my cart it won't add\nagent|oh i hate when that happens\nagent|will you please refresh the page & try again?\naction|agent is looking for solutions ...\ncustomer|okay i tried that but it's still not adding it\nagent|please log out of your account & log in again\naction|agent is looking for solutions ...\ncustomer|i tried that but it still doesn't seem to be working.\nagent|perhaps it is out of stock\nagent|should say on the bottom left side of the product page\naction|details of troubleshoot have been entered.\ncustomer|oh my gosh i'm sorry that was it i don't know how i didn't see that.\nagent|np. sorry\ncustomer|thanks so much for your help!\nagent|is there anything else i can do?\ncustomer|no, that's all i need.\nagent|ok. please try again next week!\nstate|disclosed: none || actions: try-again(); log-out-in(); enter-details(troubleshoot)",
+   "gold_text": "have a good day.",
+   "predicted_text": "okay, have a great day!"
+  },
+  {
+   "turn_id": "test_seen:1941:0",
+   "matched": true,
+   "similarity": 0.9999999403953552,
+   "skeleton_hit": false,
+   "full_hit": false,
+   "context": "state|disclosed: none || actions: none",
+   "gold_text": "hello, how can i help you?",
+   "predicted_text": "hi."
+  },
+  {
+   "turn_id": "test_seen:1941:2",
+   "matched": true,
+   "similarity": 0.790500760078,
+   "skeleton_hit": false,
+   "full_hit": false,
+   "context": "agent|hello, how may i help you?\ncustomer|i noticed my phone number was wrong and i need to fix it.\nstate|disclosed: none || actions: none",
+   "gold_text": "let me help you with that.",
+   "predicted_text": "could i have your full name or account id?"
+  },
+  {
+   "turn_id": "test_seen:1941:5",
+   "matched": true,
+   "similarity": 0.683851003647,
+   "skeleton_hit": true,
+   "full_hit": false,
+   "context": "agent|hello, how may i help you?\ncustomer|i noticed my phone number was wrong and i need to fix it.\nagent|let me help you with that.\nagent|so you just want to change the phone number on your account is that correct?\ncustomer|that's correct.\nstate|disclosed: none || actions: none",
+   "gold_text": "could i have your full name or account id?",
+   "predicted_text": "can i have your name please?"
+  },
+  {
+   "turn_id": "test_seen:1941:17",
+   "matched": true,
+   "similarity": 0.80851817131,
+   "skeleton_hit": false,
+   "full_hit": false,
+   "context": "agent|hello, how may i help you?\ncustomer|i noticed my phone number was wrong and i need to fix it.\nagent|let me help you with that.\nagent|so you just want to change the phone number on your account is that correct?\ncustomer|that's correct.\nagent|could i have your full name or account id?\ncustomer|albert sanders\naction|account has been pulled up for albert sanders.\nagent|could i have the current phone number on your account?\ncustomer|<phone>\naction|a reason of <phone> has been recorded.\ncustomer|that should be changed to (609) 646-7433\nagent|i need to verify your identity, could i have 3 of the following, zip code, username, password, email address,  or previous order id?\ncustomer|<zip_code>\ncustomer|<username>\ncustomer|<email>\naction|identity verification in progess ...\nstate|disclosed: personal.customer_name=albert sanders; personal.phone=(609) 646-7423; order.zip_code=23626; personal.username=as269117; personal.email=as269117@email.com || actions: pull-up-account(albert sanders); record-reason((609) 646-7423); verify-identity(23626, as269117, as269117@email.com)",
+   "gold_text": "thank you.",
+   "predicted_text": "your username is {username}"
+  },
+  {
+   "turn_id": "test_seen:1941:22",
+   "matched": true,
+   "similarity": 0.792010307312,
+   "skeleton_hit": false,
+   "full_hit": false,
+   "context": "agent|hello, how may i help you?\ncustomer|i noticed my phone number was wrong and i need to fix it.\nagent|let me help you with that.\nagent|so you just want to change the phone number on your account is that correct?\ncustomer|that's correct.\nagent|could i have your full name or account id?\ncustomer|albert sanders\naction|account has been pulled up for albert sanders.\nagent|could i have the current phone number on your account?\ncustomer|<phone>\naction|a reason of <phone> has been recorded.\ncustomer|that should be changed to (609) 646-7433\nagent|i need to verify your identity, could i have 3 of the following, zip code, username, password, email address,  or previous order id?\ncustomer|<zip_code>\ncustomer|<username>\ncustomer|<email>\naction|identity verification in progess ...\nagent|thank you\ncustomer|sure.\naction|account has been updated with <phone>.\nagent|your account has been updated with the new phone number.\ncustomer|great, thank you.\nstate|disclosed: personal.customer_name=albert sanders; personal.phone=(609) 646-7423; order.zip_code=23626; personal.username=as269117; personal.email=as269117@email.com || actions: pull-up-account(albert sanders); record-reason((609) 646-7423); verify-identity(23626, as269117, as269117@email.com); update-account((609) 646-7433)",
+   "gold_text": "is there anything else i can help you with today?",
+   "predicted_text": "your username is {username}"
+  },
+  {
+   "turn_id": "test_seen:1941:24",
+   "matched": true,
+   "similarity": 0.810182929039,
+   "skeleton_hit": false,
+   "full_hit": false,
+   "context": "agent|hello, how may i help you?\ncustomer|i noticed my phone number was wrong and i need to fix it.\nagent|let me help you with that.\nagent|so you just want to change the phone number on your account is that correct?\ncustomer|that's correct.\nagent|could i have your full name or account id?\ncustomer|albert sanders\naction|account has been pulled up for albert sanders.\nagent|could i have the current phone number on your account?\ncustomer|<phone>\naction|a reason of <phone> has been recorded.\ncustomer|that should be changed to (609) 646-7433\nagent|i need to verify your identity, could i have 3 of the following, zip code, username, password, email address,  or previous order id?\ncustomer|<zip_code>\ncustomer|<username>\ncustomer|<email>\naction|identity verification in progess ...\nagent|thank you\ncustomer|sure.\naction|account has been updated with <phone>.\nagent|your account has been updated with the new phone number.\ncustomer|great, thank you.\nagent|can i help you with anything else?\ncustomer|no that's it. thanks you very much.\nstate|disclosed: personal.customer_name=albert sanders; personal.phone=(609) 646-7423; order.zip_code=23626; personal.username=as269117; personal.email=as269117@email.com || actions: pull-up-account(albert sanders); record-reason((609) 646-7423); verify-identity(23626, as269117, as269117@email.com); update-account((609) 646-7433)",
+   "gold_text": "have a good day.",
+   "predicted_text": "your username is {username}"
+  }
+ ]
+}
