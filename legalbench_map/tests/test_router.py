@@ -188,3 +188,10 @@ def test_routing_tests_use_the_harness_menu():
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     assert module.CRITERIA is menu.CRITERIA and module.INSTRUCTIONS is menu.INSTRUCTIONS
+
+
+def test_classifiers_on_standby_send_their_tasks_to_the_fallback():
+    llm = FakeLLM(route=_route("cuad_audit_rights"), noul={"Can we": 0.3})
+    a = Harness(llm, llm, StubBank({"cuad_audit_rights": _audit_model()}), classifiers=False).answer("Can we inspect their books?", CONTRACT)
+    assert (a.path, a.answer, a.asked) == ("llm_fallback", "no", "Can we inspect their books?")
+    assert "on standby" in a.reason and a.llm_calls == 1 and a.route is None  # no routing call

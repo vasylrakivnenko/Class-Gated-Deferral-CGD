@@ -51,6 +51,8 @@
   .tools { flex: 1; display: flex; align-items: center; gap: 10px; padding: 0 16px; color: var(--muted); font-size: 14px; }
   .chip { font: inherit; font-size: 14px; color: var(--text); background: var(--chip); border: 0; border-radius: 4px; padding: 6px 8px; cursor: pointer; }
   .hint { color: var(--faint); font-size: 13px; }
+  .toggle { display: flex; align-items: center; gap: 6px; color: var(--text); cursor: pointer; user-select: none; }
+  .toggle input { margin: 0; accent-color: #111; }
   .run { width: 140px; border: 0; background: #111; color: #fff; font: inherit; font-size: 17px; cursor: pointer; }
   .run:hover { background: #333; }
   .run:disabled { background: #8d8d8d; cursor: default; }
@@ -120,7 +122,11 @@
     <div class="editor"><textarea id="question" spellcheck="false" placeholder="Ask a yes/no question, e.g. Can we audit their books?"></textarea></div>
   </div>
   <div class="bottom">
-    <div class="tools"><span id="left"></span></div>
+    <div class="tools">
+      <label class="toggle" title="Regex preparation (~1 ms): finds the parties and rewords we/you questions for Tier 0"><input type="checkbox" id="pretier0" checked> Pre-Tier 0</label>
+      <label class="toggle" title="Try a local NLI model first; it answers only when one sentence settles a yes/no question, with no LLM call"><input type="checkbox" id="tier0" checked> Tier 0</label>
+      <span id="left"></span>
+    </div>
     <button class="run" id="run">Run</button>
   </div>
 </section>
@@ -146,6 +152,12 @@ const CONTRACT = [
   "4. ASSIGNMENT. Neither party may assign this Agreement without the prior written consent of the other party, which shall not be unreasonably withheld.",
   "5. GOVERNING LAW. This Agreement is governed by the laws of the State of Delaware.",
 ].join("\n\n");
+const LEASE = [
+  "1. RENT. Tenant shall pay rent of $2,400 on the first day of each calendar month.",
+  "2. SUBLETTING. Tenant shall not sublet the premises or any part of them.",
+  "3. ASSIGNMENT. Tenant shall not assign this Lease without Landlord's prior written consent.",
+  "4. REPAIRS. Landlord shall maintain the roof and structural elements of the building in good repair.",
+].join("\n\n");
 const EXAMPLES = [
   { doc: "Licensee shall have the right, upon thirty (30) days' prior written notice, to audit the books and records of Licensor relating to this Agreement, no more than once per calendar year.",
     q: "Can we audit their books?" },
@@ -153,8 +165,12 @@ const EXAMPLES = [
   { doc: "We may share information about you with our advertising partners and analytics providers so that they can show you ads that are more relevant to your interests.",
     q: "Do they share my data with advertisers?" },
   { doc: CONTRACT, q: "Does this contract say Delaware law governs it?" },
+  { doc: LEASE, q: "Can the tenant sublet the premises?" },
+  { doc: LEASE, q: "Can the tenant assign the lease?" },
 ];
 const PATHS = {
+  pretier0: "the text alone settles it",
+  tier0: "one sentence of the document settles it",
   llm_task: "asked the task's own question, since our classifier is weak on this task",
   llm_fallback: "fallback, asked your question",
 };
@@ -190,25 +206,46 @@ function tick() {
 setInterval(tick, 5000);
 
 function render(a) {
-  $("model-head").textContent = a.path === "classifier" ? "free classifier" : a.answered_by;
+  $("model-head").textContent = { classifier: "free classifier", tier0: "Tier 0", pretier0: "Pre-Tier 0" }[a.path] || a.answered_by;
   const opts = Object.entries(a.probabilities).sort((x, y) => y[1] - x[1]).map(([label, p]) => {
     const dim = label === a.answer ? "" : " dim";
     return `<span class="opt${dim}">${esc(label)}</span><span class="pct${dim}">${pct(p)}</span>${ring(p)}`;
   }).join("");
   const r = a.route;
-  const router = `picked <span class="key" style="font-size:13px">${esc(r.choice)}</span> · p(none) ${r.p_none} · margin ${r.margin}` +
+  const router = !r ? (a.path === "llm_fallback" ? "skipped: the free classifiers are on standby" :
+    `not needed: ${a.path === "pretier0" ? "Pre-Tier 0" : "Tier 0"} answered`) :
+    `picked <span class="key" style="font-size:13px">${esc(r.choice)}</span> · p(none) ${r.p_none} · margin ${r.margin}` +
     (r.accepted ? "" : " · not trusted, so the LLM answered");
+  const clauses = (ev) => ev.map((e) => `<div class="clause"><b>${pct(e.p)} ${esc(e.label)}</b>${esc(e.text)}</div>`).join("");
   let evidence = "";
+  const t = a.tier0;
+  const p0 = a.pretier0;
+  const pretier0 = a.path === "pretier0" ? "" : !p0 ? `<dt>Pre-Tier 0</dt><dd class="dim">off</dd>` :
+    `<dt>Pre-Tier 0</dt><dd>passed: ${esc(p0.reason)}${p0.parties.length ? ` (${p0.parties.map(esc).join(", ")})` : ""} <span class="dim">${p0.ms} ms</span></dd>` +
+    (p0.frames ? `<dt>Pre-Tier 0 frames</dt><dd>defer: ${esc(p0.frames.reason)} <span class="dim">${p0.frames.ms} ms</span>` +
+      clauses(p0.frames.evidence || []) + "</dd>" : "");
+  let tier0 = a.path === "pretier0" ? "" : `<dt>Tier 0</dt><dd class="dim">off</dd>`;
+  if (a.path === "pretier0") {
+    evidence = `<dt>Matching sentence</dt><dd>${clauses(a.evidence)}<span class="dim">${p0.ms} ms</span></dd>`;
+  } else if (a.path === "tier0") {
+    tier0 = "";
+    evidence = `<dt>Deciding sentence</dt><dd><div class="dim" style="margin-bottom:6px">Scored ${t.n_scored} of ${t.n_units} sentences with the NLI model:</div>${clauses(a.evidence)}</dd>`;
+  } else if (t) {
+    tier0 = `<dt>Tier 0</dt><dd>deferred: ${esc(t.reason)}` +
+      (t.hypothesis ? `<div class="dim" style="margin:6px 0">Tested: ${esc(t.hypothesis)}</div>` : "") +
+      clauses(t.evidence || []) + "</dd>";
+  }
   if (a.path === "classifier" && a.n_units > 1) {
     evidence = `<dt>Closest parts</dt><dd><div class="dim" style="margin-bottom:6px">The document was checked in ${a.n_units} parts; top ${a.evidence.length}:</div>` +
       a.evidence.map((e) => `<div class="clause"><b>${pct(e.p)} ${esc(e.label)}</b>${esc(e.text)}</div>`).join("") + "</dd>";
   }
   const by = a.path === "classifier" ? a.answered_by : `${a.answered_by} (${PATHS[a.path]})`;
+  const key = a.path === "tier0" || a.path === "pretier0" ? a.path : a.task || "fallback";
   $("out").innerHTML = `
     <div class="row" id="row">
       <div class="grid">
         <button class="chev" id="chev" title="Show or hide details"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
-        <div><div class="key">${esc(a.task || "fallback")}</div><div class="instr">${esc(a.question)}</div></div>
+        <div><div class="key">${esc(key)}</div><div class="instr">${esc(a.question)}</div></div>
         <div class="opts">${opts}<div class="conf">Confidence: ${pct(a.confidence)}</div></div>
       </div>
       <dl class="details">
@@ -216,6 +253,8 @@ function render(a) {
         <dt>Why</dt><dd>${esc(a.reason)}</dd>
         <dt>Question answered</dt><dd>${esc(a.asked)}</dd>
         ${evidence}
+        ${pretier0}
+        ${tier0}
         <dt>Router</dt><dd>${router}</dd>
         <dt>Cost</dt><dd>${a.llm_calls} LLM call${a.llm_calls === 1 ? "" : "s"} · ${latency(a.ms)}</dd>
       </dl>
@@ -232,7 +271,7 @@ async function run() {
   try {
     const resp = await fetch("/api/ask", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ question, document: text, reader: "jev" }),
+      body: JSON.stringify({ question, document: text, reader: "jev", tier0: $("tier0").checked, pretier0: $("pretier0").checked }),
     });
     if (resp.status === 401) { location.reload(); return; }  // sign-in expired: the proxy sends the page to Google
     const data = await resp.json();
@@ -250,6 +289,10 @@ async function run() {
   }
 }
 
+for (const id of ["pretier0", "tier0"]) {
+  try { if (localStorage.getItem(id) === "off") $(id).checked = false; } catch (e) {}
+  $(id).onchange = () => { try { localStorage.setItem(id, $(id).checked ? "on" : "off"); } catch (e) {} };
+}
 $("run").onclick = run;
 $("clear").onclick = () => { $("document").value = ""; $("question").value = ""; $("out").innerHTML = EMPTY; lastRun = null; tick(); };
 $("example").onclick = () => { const e = EXAMPLES[nextExample++ % EXAMPLES.length]; $("document").value = e.doc; $("question").value = e.q; };

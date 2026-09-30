@@ -27,6 +27,7 @@ from pathlib import Path
 from router.bank import Bank
 from router.harness import Harness
 from router.systemone import SystemOne, SystemOneError
+from router.tier0 import Tier0
 from router.usage import Usage
 
 PAGE = Path(__file__).resolve().parent / "router" / "ui.html"
@@ -35,19 +36,22 @@ USER_HEADER = "X-Forwarded-Email"
 
 
 class App:
-    def __init__(self, usage: Usage | None = None, admins: frozenset = frozenset()):
+    def __init__(self, usage: Usage | None = None, admins: frozenset = frozenset(), classifiers: bool = False):
         self.bank = Bank()
         self.jev = SystemOne.jev()
         self.kev = SystemOne.kev()
         self.usage = usage  # None: no sign-in, no limits (local use)
         self.admins = admins
+        self.classifiers = classifiers  # off: the free classifiers are on standby
+        self.tier0 = Tier0()  # loads spaCy and the NLI model once, at startup
         self._lock = threading.Lock()  # one question at a time: the clients' call counters are shared
 
-    def ask(self, question: str, document: str, reader: str) -> dict:
+    def ask(self, question: str, document: str, reader: str, tier0: bool = True, pretier0: bool = True) -> dict:
         llm = self.kev if reader == "kev" else self.jev
         with self._lock:
             start = time.perf_counter()
-            answer = Harness(self.jev, llm, self.bank).answer(question, document)
+            harness = Harness(self.jev, llm, self.bank, self.tier0 if tier0 else None, pretier0, self.classifiers)
+            answer = harness.answer(question, document)
             elapsed = time.perf_counter() - start
         return {**answer.to_dict(), "seconds": round(elapsed, 1), "ms": round(elapsed * 1000)}
 
@@ -114,6 +118,8 @@ def make_handler(app: App):
             req = self._body()
             question, document = (req.get("question") or "").strip(), (req.get("document") or "").strip()
             reader = "kev" if req.get("reader") == "kev" else "jev"
+            tier0 = req.get("tier0", True) is not False
+            pretier0 = req.get("pretier0", True) is not False
             if not question or not document:
                 self._json(400, {"error": "Enter both a document and a question."})
                 return
@@ -123,7 +129,7 @@ def make_handler(app: App):
                                  **app.usage.status(email)})
                 return
             try:
-                result = app.ask(question, document, reader)
+                result = app.ask(question, document, reader, tier0, pretier0)
             except SystemOneError as e:
                 if app.usage:
                     app.usage.log(email, "error", reader)
@@ -159,10 +165,12 @@ def main() -> None:
     p.add_argument("--daily-limit", type=int, default=50, help="questions per user per UTC day (default: 50)")
     p.add_argument("--usage-db", type=Path, default=Path.home() / ".local" / "state" / "zadum-router" / "usage.db")
     p.add_argument("--admin", action="append", default=[], help="email allowed to open /admin (repeatable; needs --require-user)")
+    p.add_argument("--classifiers", action="store_true",
+                   help="answer with the free classifiers; without it they are on standby (their tasks go to the LLM)")
     args = p.parse_args()
     usage = Usage(args.usage_db, args.daily_limit) if args.require_user else None
     admins = frozenset(a.strip().lower() for a in args.admin)
-    server = ThreadingHTTPServer(("127.0.0.1", args.port), make_handler(App(usage, admins)))
+    server = ThreadingHTTPServer(("127.0.0.1", args.port), make_handler(App(usage, admins, args.classifiers)))
     print(f"Router playground: http://127.0.0.1:{args.port}  (Ctrl+C to stop)", flush=True)
     server.serve_forever()
 

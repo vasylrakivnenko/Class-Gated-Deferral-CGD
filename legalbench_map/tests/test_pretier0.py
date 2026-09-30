@@ -1,0 +1,96 @@
+"""Pre-Tier 0's regex checks: topic questions it answers, parties, and
+rewording questions into a we/you document's voice."""
+from __future__ import annotations
+
+import pytest
+
+from router.harness import Harness
+from router.pretier0 import check, find_parties, to_document_voice
+from router.tier0 import Tier0Result
+from tests.test_router import FakeLLM, StubBank
+
+AUDIT = ("Licensee shall have the right, upon thirty (30) days' prior written notice, to audit the books and "
+         "records of Licensor relating to this Agreement, no more than once per calendar year.")
+NDA = 'This Agreement is between Acme Corp. ("Acme") and Beta Labs LLC ("Beta"). Each party shall keep the other\'s information confidential.'
+POLICY = "We may share information about you with our advertising partners."
+
+
+class RecordingTier0:
+    def answer(self, question, document):
+        self.question = question
+        return Tier0Result(True, "yes", 0.99, "stub")
+
+
+def test_find_parties_roles_and_defined_company_names():
+    assert find_parties(AUDIT) == ["Licensee", "Licensor"]
+    assert find_parties(NDA) == ["Acme", "Beta"]
+    assert find_parties('the consulting firm (the "Consultant") and the "Effective Date" (the "Effective Date")') == ["Consultant"]
+    assert find_parties("the tenant pays rent") == []  # lower-case role words aren't defined parties
+
+
+def test_questions_are_turned_to_the_documents_voice():
+    assert to_document_voice("Do they share my data with advertisers?") == "Do we share your data with advertisers?"
+    assert to_document_voice("Do you sell my data?") == "Do we sell your data?"
+    assert to_document_voice("Am I allowed to opt out?") == "Are you allowed to opt out?"
+    assert to_document_voice("Can you delete your account?") is None  # "you" alone may mean "one"
+    r = check("Can I delete my account?", POLICY)
+    assert not r.fired and r.rewritten == "Can you delete your account?"
+
+
+def test_we_is_read_as_the_one_party_that_does_the_action():
+    r = check("Can we audit their books?", AUDIT)
+    assert r.rewritten == "Can the Licensee audit the Licensor's books?" and r.parties == ["Licensee", "Licensor"]
+    assert (r.fired, r.answer) == (True, "yes")  # and the frame settles it
+    lease = "Tenant shall pay rent monthly. Landlord shall maintain the roof."
+    assert check("Do we have to repair the roof?", lease).rewritten == "Does the Landlord have to repair the roof?"
+
+
+def test_we_is_left_alone_when_no_single_party_does_the_action():
+    both = AUDIT + " Licensor may audit Licensee's royalty reports once a year."
+    assert check("Can we audit their books?", both).rewritten is None
+    assert check("Can we terminate?", "Tenant shall pay rent monthly. Landlord shall maintain the roof.").rewritten is None
+
+
+def test_harness_hands_every_question_to_tier0_in_the_documents_voice():
+    llm = FakeLLM()
+    t0 = RecordingTier0()
+    a = Harness(llm, llm, StubBank(), t0, pretier0=True).answer("Can I delete my account?", POLICY)
+    assert t0.question == "Can you delete your account?" and a.question == "Can I delete my account?"
+    assert a.path == "tier0" and a.pretier0 is not None and not a.pretier0["fired"]
+    a = Harness(llm, llm, StubBank(), t0, pretier0=True).answer("Can we audit their books?", AUDIT)
+    assert (a.path, a.answer, a.asked) == ("pretier0", "yes", "Can the Licensee audit the Licensor's books?")
+
+
+NO_AUDIT = ("Licensee shall have no right to audit the books and records of Licensor relating to this Agreement, "
+            "no more than once per calendar year.")
+
+
+@pytest.mark.parametrize("question", ["Is the right to audit books discussed here?", "Does the clause mention auditing of records?",
+                                      "Is there an audit clause?"])
+def test_topic_is_discussed_when_one_sentence_has_every_word(question):
+    r = check(question, "Rent is due monthly.\n\n" + NO_AUDIT)
+    assert (r.fired, r.answer) == (True, "yes") and r.evidence[0]["text"] == NO_AUDIT
+
+
+@pytest.mark.parametrize("question", ["Is termination discussed?",  # absent: may be a synonym, so defer
+                                      "Is the right to audit books not discussed here?",  # negated
+                                      "Can the licensee audit books?"])  # not a topic question
+def test_topic_check_defers(question):
+    assert "topic word" not in check(question, NO_AUDIT).reason  # (the frames may still answer)
+
+
+def test_topic_words_must_share_one_sentence():
+    assert not check("Is the right to audit rent discussed?", "Rent is due monthly. " + NO_AUDIT).fired
+
+
+def test_harness_answers_topic_questions_without_models():
+    llm = FakeLLM()
+    t0 = RecordingTier0()
+    a = Harness(llm, llm, StubBank(), t0, pretier0=True).answer("Is the right to audit books discussed here?", NO_AUDIT)
+    assert (a.path, a.answer, a.llm_calls) == ("pretier0", "yes", 0) and not hasattr(t0, "question")
+
+
+def test_covered_needs_a_word_for_the_text():
+    doc = "Landlord shall provide Tenant with two parking spaces."
+    assert not check("Are the parking spaces covered?", doc).fired
+    assert check("Are parking spaces covered in this lease?", doc).fired

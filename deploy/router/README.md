@@ -19,6 +19,8 @@ Secrets are not in this repo:
 - `/etc/oauth2-proxy/env` (mode 600): `OAUTH2_PROXY_CLIENT_ID`, `OAUTH2_PROXY_CLIENT_SECRET` (Google OAuth web client, redirect URI `https://router.zadum.ai/oauth2/callback`) and `OAUTH2_PROXY_COOKIE_SECRET` (`openssl rand -base64 32 | tr -- '+/' '-_'`).
 - `.env` at the repo root (mode 600): `JEV_API=...`.
 
+Tier 0 needs the `encoders` and `tier0` extras in the repo's `.venv`; on first start it downloads `cross-encoder/nli-deberta-v3-xsmall` (~280 MB) to the Hugging Face cache.
+
 The classifier bank (`legalbench_map/router/bank/`) is gitignored; rebuild it with `legalbench_map/build_router_bank.py` or copy it from a machine that has it. Load it with the scikit-learn version that fit it.
 
 Users, limits and the request log are in `/var/lib/zadum-router/usage.db`. Admins (`--admin` in `zadum-router.service`) see them at `/admin`.

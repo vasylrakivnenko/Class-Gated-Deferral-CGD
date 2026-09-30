@@ -3,6 +3,12 @@ Answer a question about a user's document with one of our free classifiers
 when the question is one we cover, and with an LLM (Jev, or Kev locally)
 otherwise.
 
+    0a. Pre-Tier 0 (optional, router/pretier0.py): regex preparation, ~1 ms;
+       answers only when certain: "Is X discussed?" when one sentence holds
+       every word of X, and questions one clause's frame settles. It rewords the question for Tier 0 in "we/you" documents.
+    0b. Tier 0 (optional, router/tier0.py): a local NLI model answers
+       yes/no when one sentence of the document settles the question; no
+       LLM call. Otherwise it defers and the steps below run.
     1. Route: Jev reads the QUESTION only and picks a menu task or
        none_of_these (router/menu.py).
     2. Gate: trust the pick only if p(none_of_these) < P_NONE_MAX and the
@@ -25,6 +31,7 @@ from __future__ import annotations
 import re
 from dataclasses import asdict, dataclass, field
 
+from router import pretier0 as pre
 from router.bank import Bank
 from router.menu import CRITERIA, DIVERSITY_FAMILY, INSTRUCTIONS, SPLIT_UNIT, TEXT_TYPES, family
 from router.systemone import SystemOne
@@ -68,7 +75,7 @@ class Answer:
     question: str
     answer: str  # "yes" / "no", or a category label
     confidence: float  # probability of `answer` from whoever answered
-    path: str  # "classifier" | "llm_task" | "llm_fallback"
+    path: str  # "pretier0" | "tier0" | "classifier" | "llm_task" | "llm_fallback"
     reason: str
     asked: str = ""  # the question actually answered: the task's criteria, or the user's own question
     task: str | None = None
@@ -78,6 +85,8 @@ class Answer:
     evidence: list = field(default_factory=list)  # [{"text", "label", "p"}], most confident first
     probabilities: dict = field(default_factory=dict)  # every option's probability, `answer` among them
     llm_calls: int = 0
+    tier0: dict | None = None  # Tier 0's attempt (router/tier0.py), None if it wasn't run
+    pretier0: dict | None = None  # Pre-Tier 0's check (router/pretier0.py), None if it wasn't run
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -159,10 +168,14 @@ def aggregate(units: list, proba, classes: list) -> tuple[str, float, list, dict
 
 
 class Harness:
-    def __init__(self, router: SystemOne, llm: SystemOne, bank: Bank):
+    def __init__(self, router: SystemOne, llm: SystemOne, bank: Bank, tier0=None, pretier0: bool = False,
+                 classifiers: bool = True):
         self.router = router
         self.llm = llm
         self.bank = bank
+        self.tier0 = tier0  # a router.tier0.Tier0, tried before routing; None to skip
+        self.pretier0 = pretier0  # run router/pretier0.py's checks first
+        self.classifiers = classifiers  # False: free classifiers on standby, their tasks go to the fallback
 
     def route(self, question: str) -> Route:
         out = self.router.choice(question, INSTRUCTIONS, CRITERIA)
@@ -172,11 +185,32 @@ class Harness:
 
     def answer(self, question: str, document: str) -> Answer:
         calls_before = self.router.calls + (self.llm.calls if self.llm is not self.router else 0)
+        p0 = pre.check(question, document) if self.pretier0 else None
+        if p0 is not None and p0.fired:
+            return Answer(question=question, answer=p0.answer, confidence=1.0, path="pretier0", reason=p0.reason,
+                          asked=p0.rewritten or question, answered_by="Pre-Tier 0 (regex)", evidence=p0.evidence,
+                          probabilities={p0.answer: 1.0}, pretier0=p0.to_dict())
+        t0_question = p0.rewritten if p0 is not None and p0.rewritten else question  # in the document's voice
+        t0 = self.tier0.answer(t0_question, document) if self.tier0 is not None else None
+        if t0 is not None and t0.fired:
+            return Answer(
+                question=question, answer=t0.answer, confidence=t0.confidence, path="tier0", reason=t0.reason,
+                asked=t0.hypothesis, answered_by="Tier 0 (local NLI, nli-deberta-v3-xsmall)",
+                n_units=t0.n_units, evidence=t0.evidence,
+                probabilities={t0.answer: t0.confidence}, tier0=t0.to_dict(),
+                pretier0=p0.to_dict() if p0 is not None else None,
+            )
         result = self._answer(question, document)
+        result.tier0 = t0.to_dict() if t0 is not None else None
+        result.pretier0 = p0.to_dict() if p0 is not None else None
         result.llm_calls = self.router.calls + (self.llm.calls if self.llm is not self.router else 0) - calls_before
         return result
 
     def _answer(self, question: str, document: str) -> Answer:
+        if not self.classifiers:
+            # Routing only picks a classifier or the task's own question; with the
+            # classifiers on standby it would cost an LLM call to reach another one.
+            return self._fallback(question, document, None, "the free classifiers are on standby, so no routing")
         route = self.route(question)
         if route.choice == "none_of_these":
             return self._fallback(question, document, route, "the question matches none of our tasks")
@@ -190,6 +224,8 @@ class Harness:
         fam = family(task)
         if info["policy"] == "llm":
             return self._llm_task(question, task, info, document, route)
+        if not self.classifiers:
+            return self._fallback(question, document, route, f"matched {task}; the free classifier is on standby")
         p_type = self.llm.noul(document[:SNIPPET_CHARS], f"Is this text {TEXT_TYPES[fam]}?")
         if p_type < TEXT_TYPE_MIN:
             return self._fallback(question, document, route,
@@ -218,7 +254,7 @@ class Harness:
                       reason=reason, asked=CRITERIA[task], task=task,
                       answered_by=self.llm.model_version or self.llm.model, route=route, probabilities=probs)
 
-    def _fallback(self, question: str, document: str, route: Route, reason: str) -> Answer:
+    def _fallback(self, question: str, document: str, route: Route | None, reason: str) -> Answer:
         answer, conf, probs = _yes_no(self.llm.noul(document, question))
         return Answer(question=question, answer=answer, confidence=round(conf, 3), path="llm_fallback",
                       reason=reason, asked=question, answered_by=self.llm.model_version or self.llm.model,
