@@ -32,6 +32,7 @@ import re
 from dataclasses import asdict, dataclass, field
 
 from router import pretier0 as pre
+from router import choice, qtree, spans
 from router.bank import Bank
 from router.menu import CRITERIA, DIVERSITY_FAMILY, INSTRUCTIONS, SPLIT_UNIT, TEXT_TYPES, family
 from router.systemone import SystemOne
@@ -49,6 +50,16 @@ MARGIN_MIN = 0.30
 # families <= 0.08; Kev bunches near 0.5 (0.57-0.92 vs 0.06-0.54), so with Kev
 # as the reader more documents fall back.
 TEXT_TYPE_MIN = 0.5
+# Why each kind of question the tiers don't (yet) answer is deferred (router/qtree.py, router/STATUS.md).
+NOT_ANSWERED = {
+    "span": "asks for a fact (who / when / how much...); fact answers are not built yet",
+    "choice": "asks which of the named alternatives holds; choice answers are not built yet",
+    "backward": "asks why; the text states rules, not their reasons, so lookup doesn't answer this",
+    "forward": "asks what happens if something occurs; consequences are not answered by lookup yet",
+    "process": "asks how to do something; procedures are not answered by lookup yet",
+    "unclassified": "couldn't tell what kind of question this is (two questions in one, or not a question); "
+                    "ask one question at a time",
+}
 SNIPPET_CHARS = 2000  # document prefix the text check reads
 MAX_UNIT_CHARS = 1500  # longer paragraphs are cut into sentence groups
 MIN_UNIT_CHARS = 40  # shorter pieces (headings, numbering) join the next unit
@@ -75,7 +86,7 @@ class Answer:
     question: str
     answer: str  # "yes" / "no", or a category label
     confidence: float  # probability of `answer` from whoever answered
-    path: str  # "pretier0" | "tier0" | "classifier" | "llm_task" | "llm_fallback"
+    path: str  # "pretier0" | "tier0" | "classifier" | "llm_task" | "llm_fallback" | "llm_judgment" | "span" | "llm_span" | "choice" | "llm_choice" | "deferred" | "declined"
     reason: str
     asked: str = ""  # the question actually answered: the task's criteria, or the user's own question
     task: str | None = None
@@ -87,6 +98,8 @@ class Answer:
     llm_calls: int = 0
     tier0: dict | None = None  # Tier 0's attempt (router/tier0.py), None if it wasn't run
     pretier0: dict | None = None  # Pre-Tier 0's check (router/pretier0.py), None if it wasn't run
+    qtree: dict | None = None  # the question's kind (router/qtree.py), decided before anything else
+    span: dict | None = None  # a fact question's search (router/spans.py), None for other kinds
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -184,7 +197,84 @@ class Harness:
         return Route(out["choice"], round(p_none, 3), round(margin, 3), accepted)
 
     def answer(self, question: str, document: str) -> Answer:
-        calls_before = self.router.calls + (self.llm.calls if self.llm is not self.router else 0)
+        frame = qtree.classify(question)
+        result = self._answer_kind(question, document, frame)
+        result.qtree = frame.to_dict()
+        return result
+
+    def _calls(self) -> int:
+        return self.router.calls + (self.llm.calls if self.llm is not self.router else 0)
+
+    def _answer_kind(self, question: str, document: str, frame) -> Answer:
+        if frame.leaf == "judgmental":
+            # Advice or a legal conclusion: a contract calling itself enforceable doesn't
+            # make it so, so the lookup tiers never answer; Jev gives its reading.
+            before = self._calls()
+            result = self._fallback(question, document, None,
+                                    f'asks for advice or a legal conclusion ("{frame.cue}"), which the text alone '
+                                    f"can't settle, so the lookup tiers don't answer it")
+            result.path = "llm_judgment"
+            result.llm_calls = self._calls() - before
+            return result
+        if frame.leaf == "request":
+            return self._not_answered(question, frame, "declined",
+                                      f'asks for a task ("{frame.cue}"), not a question about the text; '
+                                      f"the router answers questions")
+        if frame.leaf == "span":
+            return self._span(question, document, frame)
+        if frame.leaf == "choice":
+            return self._choice(question, document, frame)
+        if frame.leaf != "boolean":
+            return self._not_answered(question, frame, "deferred", NOT_ANSWERED[frame.leaf])
+        result = self._lookup(frame.lookup or question, document)
+        result.question = question  # as asked; `asked` holds what the tiers answered
+        return result
+
+    def _span(self, question: str, document: str, frame) -> Answer:
+        """A fact question: a span copied from the document (router/spans.py), by rule or
+        picked by the LLM among the document's candidates; otherwise deferred."""
+        before = self._calls()
+        r = spans.answer(frame, document, llm=self.llm)
+        calls = self._calls() - before
+        if not r.fired:
+            a = self._not_answered(question, frame, "deferred",
+                                   f"asks for a fact ({(frame.answer_type or '').lower()}); {r.reason}")
+            a.span, a.llm_calls, a.evidence = r.to_dict(), calls, r.evidence
+            return a
+        rule = r.how == "rule"
+        return Answer(question=question, answer=r.answer, confidence=r.confidence, path="span" if rule else "llm_span",
+                      reason=r.reason, asked=frame.lookup or question,
+                      answered_by="Pre-Tier 0 fact rules (router/spans.py)" if rule else
+                      (self.llm.model_version or self.llm.model),
+                      evidence=r.evidence, probabilities={r.answer: r.confidence} if rule else r.probabilities,
+                      llm_calls=calls, span=r.to_dict())
+
+    def _choice(self, question: str, document: str, frame) -> Answer:
+        """A choice question: the one alternative the text states (router/choice.py), by rule
+        or picked by the LLM; otherwise deferred."""
+        before = self._calls()
+        r = choice.answer(frame, document, llm=self.llm)
+        calls = self._calls() - before
+        if not r.fired:
+            a = self._not_answered(question, frame, "deferred",
+                                   f"asks which of {' / '.join(frame.options)} holds; {r.reason}")
+            a.span, a.llm_calls = r.to_dict(), calls
+            return a
+        rule = r.how == "rule"
+        return Answer(question=question, answer=r.answer, confidence=r.confidence,
+                      path="choice" if rule else "llm_choice", reason=r.reason, asked=frame.lookup or question,
+                      answered_by="Pre-Tier 0 choice rules (router/choice.py)" if rule else
+                      (self.llm.model_version or self.llm.model),
+                      evidence=r.evidence, probabilities={r.answer: r.confidence} if rule else r.probabilities,
+                      llm_calls=calls, span=r.to_dict())
+
+    def _not_answered(self, question: str, frame, path: str, reason: str) -> Answer:
+        """No answer and no LLM call: the question isn't one these tiers answer."""
+        return Answer(question=question, answer="not answered", confidence=0.0, path=path, reason=reason,
+                      asked=frame.lookup or question, answered_by="question tree (router/qtree.py)")
+
+    def _lookup(self, question: str, document: str) -> Answer:
+        calls_before = self._calls()
         p0 = pre.check(question, document) if self.pretier0 else None
         if p0 is not None and p0.fired:
             return Answer(question=question, answer=p0.answer, confidence=1.0, path="pretier0", reason=p0.reason,
@@ -203,7 +293,7 @@ class Harness:
         result = self._answer(question, document)
         result.tier0 = t0.to_dict() if t0 is not None else None
         result.pretier0 = p0.to_dict() if p0 is not None else None
-        result.llm_calls = self.router.calls + (self.llm.calls if self.llm is not self.router else 0) - calls_before
+        result.llm_calls = self._calls() - calls_before
         return result
 
     def _answer(self, question: str, document: str) -> Answer:

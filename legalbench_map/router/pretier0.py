@@ -45,7 +45,6 @@ _ROLE_RE = re.compile(r"\b(" + "|".join(re.escape(r) for r in ROLES) + r")\b")
 _DEFINED = re.compile(r"""\(\s*(?:the\s+|hereinafter(?:\s+referred\s+to\s+as)?\s+|collectively,?\s+)?["“]([A-Z][\w&.-]*(?:\s+[A-Z][\w&.-]*){0,2})["”]\s*\)""")
 _ENTITY_BEFORE = re.compile(r"\b(Inc|LLC|L\.L\.C|Ltd|Limited|Corp|Corporation|Co|L\.P|LP|LLP|plc|PLC|GmbH|AG|S\.A|N\.V|B\.V)\.?,?\s*$")
 _ROLE_SUFFIX = re.compile(r"(ee|or|er|ant|Party)$")
-_DOC_PRONOUNS = re.compile(r"\b(we|us|our|you|your)\b", re.I)
 
 _Q_WORD = re.compile(r"[A-Za-z]+")
 # "Is X discussed here?" asks whether the text covers X, not what it says about X.
@@ -217,7 +216,7 @@ def _topic(question: str, document: str) -> PreTier0Result | None:
         if not counts[stem]:
             return None
     rarest = min(counts, key=counts.get)
-    sentences = frames.Sentences(document)
+    sentences, _ = frames.indexed(document)
     for m in re.finditer(rf"\b{rarest}", document, re.I):
         _, sentence = sentences.at(m.start())
         if wanted <= {_stem(w) for w in _Q_WORD.findall(sentence)}:
@@ -230,7 +229,7 @@ def _check(question: str, document: str) -> PreTier0Result:
     if (topic := _topic(question, document)) is not None:
         return topic
     parties = find_parties(document[:PARTY_SCAN_CHARS])
-    if not _DOC_PRONOUNS.search(document):
+    if not frames.occurs_any(("we", "us", "our", "you", "your"), document):
         reading = _read_first_person(question, document, parties)
         if reading:
             party, rewritten = reading

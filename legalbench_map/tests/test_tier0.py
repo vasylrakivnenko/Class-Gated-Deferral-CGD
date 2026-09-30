@@ -174,3 +174,25 @@ def test_upon_notice_is_not_a_condition():
 def test_no_answers_are_off_by_default():
     r = Tier0(nli=FakeNLI({"shall not sublet": NO}), nlp=NLP).answer("Can the tenant sublet the premises?", LEASE)
     assert not r.fired and "answers are off" in r.reason and r.evidence[0]["label"] == "no"
+
+
+BOOKS = "Licensee may audit the books and records of Licensor once per calendar year."
+
+
+@pytest.mark.parametrize("obj", ["books", "records", "books and records", "accounts", "ledgers"])
+def test_yes_needs_the_sentence_to_name_the_object_or_a_synonym(obj):
+    r = tier0({"audit": YES}).answer(f"Can the licensee audit the licensor's {obj}?", BOOKS)
+    assert (r.fired, r.answer) == (True, "yes")
+
+
+@pytest.mark.parametrize("obj", ["tits", "emails", "source code"])
+def test_an_object_the_sentence_never_names_defers(obj):
+    # The NLI model scored "The Licensee can audit the Licensor's tits." entailed at 0.93.
+    r = tier0({"audit": YES}).answer(f"Can the licensee audit the licensor's {obj}?", BOOKS)
+    assert not r.fired and "never names" in r.reason
+    assert r.evidence[0]["text"] == BOOKS
+
+
+def test_a_generic_object_needs_no_naming():
+    r = tier0({"assign": YES}).answer("Can the licensee assign the agreement?", "Licensee may assign its rights to an affiliate.")
+    assert (r.fired, r.answer) == (True, "yes")

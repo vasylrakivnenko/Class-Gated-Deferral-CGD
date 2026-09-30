@@ -29,9 +29,11 @@ from __future__ import annotations
 
 import bisect
 import functools
+import json
 import re
 import time
 from dataclasses import asdict, dataclass, field
+from pathlib import Path
 
 import ahocorasick
 
@@ -51,7 +53,7 @@ LEXICON = {
     # modality; precedence NOT > MAY > MUST > DOES
     ("MODAL", "NOT"): ["not", "never", "no right", "cannot", "can't", "won't", "don't", "doesn't", "shan't",
                        "may in no event", "in no event", "exempt", "excused", "relieved", "released from", "waive",
-                       "fail", "under no circumstances", "nor"],
+                       "fail", "under no circumstances", "nor", "disclaim"],
     ("MODAL", "NEITHER"): ["neither"],  # "Neither X nor Y will grant": negates the actor that follows
     ("MODAL", "BAN"): ["prohibited", "forbidden", "restricted from", "barred", "precluded", "restrained from",
                        "not permitted", "not allowed", "not be permitted", "refrain from"],
@@ -161,6 +163,29 @@ LEXICON = {
                                  "subject to the provisions of this agreement", "subject to this agreement",
                                  "in accordance with the terms of this agreement", "under this agreement"],
 }
+EXTRA_LEXICON = Path(__file__).with_name("lexicon_extra.json")
+
+
+_EXTRA_PHRASES: set = set()
+
+
+def _merge_extra(lexicon: dict, path: Path) -> None:
+    """Add the LLM-proposed, LLM-verified phrases (lexicon_extra.json) after
+    the hand-curated ones. A phrase another concept already has is skipped."""
+    if not path.exists():
+        return
+    taken = {p for phrases in lexicon.values() for p in phrases}
+    for key, entry in json.loads(path.read_text())["concepts"].items():
+        kind, name = key.split(":", 1)
+        phrases = lexicon.setdefault((kind, name), [])
+        for p in entry["phrases"]:
+            if p not in taken:
+                phrases.append(p)
+                taken.add(p)
+                _EXTRA_PHRASES.add(p)
+
+
+_merge_extra(LEXICON, EXTRA_LEXICON)
 # A verb with an object stands for a composite action: "maintain ... insurance" is INSURE.
 COMPOSITE = {"INSURE": ({"REPAIR", "CARRY", "COLLECT", "PURCHASE", "STORE", "SHARE"}, "INSURANCE")}
 # A narrower thing answers for a broader one: sharing with advertisers is sharing with third parties.
@@ -201,20 +226,35 @@ def _forms(base: str) -> set:
 
 
 def _crude(word: str) -> str:
+    """expire/expires/expired/expiring -> expir; words outside the lexicon only."""
     for suffix in ("ing", "ed", "es", "s"):
         if word.endswith(suffix) and len(word) - len(suffix) >= 4:
-            return word[: -len(suffix)]
+            word = word[: -len(suffix)]
+            break
+    if word.endswith("e") and not word.endswith("ee") and len(word) > 4:  # licensee stays apart from license
+        word = word[:-1]
     return word
 
 
 _LEMMA = {}
 for _phrases in LEXICON.values():
     for _phrase in _phrases:
+        if _phrase in _EXTRA_PHRASES:
+            continue
         for _word in _phrase.split():
             for _form in _forms(_word):
                 # "disclosing" is a form of "disclose" and of itself ("disclosing party"): the shortest base wins
                 if _form not in _LEMMA or len(_word) < len(_LEMMA[_form]):
                     _LEMMA[_form] = _word
+# Added phrases extend the table but never remap a curated form ("account books"
+# must not pull "accounts" onto "account"); their inflected words ("never
+# expires") are left to the stemmer, which treats both sides alike.
+for _phrase in _EXTRA_PHRASES:
+    for _word in _phrase.split():
+        if _crude(_word) != _word or _word in _LEMMA:
+            continue
+        for _form in _forms(_word):
+            _LEMMA.setdefault(_form, _word)
 _LEMMA.update(IRREGULAR)
 
 
@@ -227,9 +267,9 @@ def tokens(text: str) -> list:
     return [normalize(t) for t in _TOKEN.findall(text)]
 
 
-def _build_trie(extra: dict) -> dict:
+def _trie_of(items) -> dict:
     trie = {}
-    for concept, phrases in list(LEXICON.items()) + list(extra.items()):
+    for concept, phrases in items:
         for phrase in phrases:
             node = trie
             for word in tokens(phrase):
@@ -238,7 +278,16 @@ def _build_trie(extra: dict) -> dict:
     return trie
 
 
-_BASE_TRIE = _build_trie({})
+_BASE_TRIE = _trie_of(LEXICON.items())
+
+
+def _build_trie(extra: dict):
+    """The lexicon's trie, plus a small one for this document's parties: the
+    big one is built once; tag() takes the longer match of the two (the
+    lexicon's on a tie), as one merged trie would."""
+    if not extra:
+        return _BASE_TRIE
+    return (_BASE_TRIE, _trie_of(extra.items()))
 
 
 @dataclass
@@ -246,23 +295,27 @@ class Tag:
     kind: str  # ACTOR | MODAL | ACTION | THING | PROP | BLOCK | WORD | BREAK
     name: str
     start: int  # token index
+    end: int = -1  # token index after the tag (start + 1 when not set)
 
 
 def tag(toks: list, trie: dict) -> list:
     """Longest-match concept tags; uncovered content words become WORD tags;
     NEUTRAL boilerplate is dropped."""
     out, i = [], 0
+    tries = trie if isinstance(trie, tuple) else (trie,)
     while i < len(toks):
-        node, j, best = trie, i, None
-        while j < len(toks) and toks[j] in node:
-            node = node[toks[j]]
-            j += 1
-            if "$" in node:
-                best = (node["$"], j)
+        best = None
+        for t in tries:
+            node, j = t, i
+            while j < len(toks) and toks[j] in node:
+                node = node[toks[j]]
+                j += 1
+                if "$" in node and (best is None or j > best[1]):
+                    best = (node["$"], j)
         if best:
             (kind, name), end = best
             if kind != "NEUTRAL":
-                out.append(Tag(kind, name, i))
+                out.append(Tag(kind, name, i, end))
             i = end
             continue
         t = toks[i]
@@ -282,6 +335,15 @@ class Frame:
     things: list  # (kind, name) of THING, WORD and ACTOR tags
     actions: list = field(default_factory=list)  # alternatives joined by "or"
     props: list = field(default_factory=list)  # property frame: alternatives joined by "or"
+    conds: list = field(default_factory=list)  # the question's condition ("if ... change of control"): stems the clause's must hold
+    only: bool = False  # the question says "only"/"solely": the clause must too
+    alts: list = field(default_factory=list)  # presence frame: alternatives, each a list of stem groups
+    negative: bool = False  # presence frame: the question asks for a negation ("that no license is granted")
+    require: bool = False  # presence frame: "does X require consent" ("not ... without consent" counts)
+    when: bool = False  # presence frame: "specify when ...": the sentence must hold a date or duration
+    strict: bool = False  # presence frame from a catch-all: any condition in the sentence defers
+    dated: bool = False  # presence frame asking for a date or period ("the date on which it becomes effective")
+    values: list = field(default_factory=list)  # numbers, amounts, months the question names: the sentence must have them all
 
 
 @dataclass
@@ -333,14 +395,38 @@ def _alternatives(tags: list, first: Tag, kind: str) -> list:
 
 
 def question_frame(question: str, trie: dict) -> Frame | str:
-    """The question's frame, or a reason it has none."""
+    """The question's frame, or a reason it has none: an action or property
+    frame, else a presence frame ("Does the agreement specify ...")."""
+    frame = _action_frame(question, trie)
+    if isinstance(frame, str):
+        presence = _presence_frame(question, trie)
+        if presence is not None:
+            frame = presence
+    if not isinstance(frame, str):
+        frame.values = sorted(values(question))
+    return frame
+
+
+def _action_frame(question: str, trie: dict) -> Frame | str:
     raw = question.lower()
     toks = tokens(question)
     if not toks or toks[0] not in QUESTION_AUX:
         return "doesn't start with an auxiliary"
     tags = tag(toks[1:], trie)
-    if any(t.kind == "BLOCK" or t.name in ("NOT", "NONE") for t in tags):
-        return "negated or conditional question"
+    if any(t.name in ("NOT", "NONE") for t in tags):
+        return "negated question"
+    # A condition in the question ("... if the other party undergoes a change
+    # of control", "... only for the purposes of the agreement") is what the
+    # clause's own condition must match; the frame is the part before it.
+    conds, only = [], False
+    blocks = [t for t in tags if t.kind == "BLOCK"]
+    if blocks:
+        b = blocks[0]
+        only = toks[1:][b.start] in ONLY_WORDS
+        conds = _content_items([t for t in tags if t.start > b.start and t.kind != "BLOCK"], trie)
+        if not conds and not only:
+            return "a condition with nothing to match"
+        tags = [t for t in tags if t.start < b.start]
     actors = [t for t in tags if t.kind == "ACTOR"]
     actions = [t for t in tags if t.kind == "ACTION"]
     props = [t for t in tags if t.kind == "PROP"]
@@ -365,7 +451,177 @@ def question_frame(question: str, trie: dict) -> Frame | str:
               if t.start > last_action.start and t.kind in ("THING", "WORD", "ACTOR")]
     if any(k == "PROP" for k, _ in ((t.kind, t.name) for t in tags if t.start > actor.start)):
         return "a property inside an action question"
-    return Frame(asks, actor.name, action.name, things, actions=[a.name for a in actions])
+    return Frame(asks, actor.name, action.name, things, actions=[a.name for a in actions], conds=conds, only=only)
+
+
+_NUMBER_WORDS = {w: str(i) for i, w in enumerate(
+    "zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen "
+    "eighteen nineteen twenty".split())}
+_NUMBER_WORDS.update({"thirty": "30", "forty": "40", "fifty": "50", "sixty": "60", "seventy": "70", "eighty": "80",
+                      "ninety": "90", "hundred": "100", "forty five": "45", "forty-five": "45"})
+_VALUE = re.compile(r"\d[\d,]*(?:\.\d+)?|\b(?:" + "|".join(sorted(_NUMBER_WORDS, key=len, reverse=True)) + r")\b"
+                    r"|\b(?:january|february|march|april|may|june|july|august|september|october|november|december)\b",
+                    re.I)
+
+
+def values(text: str) -> set:
+    """Numbers, amounts and months in the text, normalized: "$5,000,000" -> 5000000,
+    "eighteen (18)" -> 18, "December" -> december. ("may" only as a month next to a digit.)"""
+    out = set()
+    for m in _VALUE.finditer(text):
+        v = m.group(0).lower()
+        if v == "may" and not re.match(r"\s*\d", text[m.end():m.end() + 3]):
+            continue
+        if v[0].isdigit():
+            v = v.replace(",", "").rstrip(".")
+            v = v[:-3] if v.endswith(".00") else v
+        out.add(_NUMBER_WORDS.get(v, v))
+    return out
+
+
+ONLY_WORDS = {"only", "solely", "exclusively"}
+_EXCEPT_ONLY = re.compile(r"\b(?:other than|except|save|unless)\b", re.I)
+_NEGATION_WORDS = {"no", "not", "nothing", "never", "none", "neither", "nor", "cannot"}
+_NOT_NEGATION_AFTER = {"later", "less", "more", "fewer", "earlier", "limitation", "event"}
+# Words of a question that say how it asks, not what it asks about.
+_GENERIC = frozenset(normalize(w) for w in (
+    "specify specified specifies say says state states contain contains include includes address addresses "
+    "set out stipulate stipulates describe describes which what when whether how who where there one other party "
+    "parties agreement contract clause section provision it its any some certain do does is are be has have that "
+    "this these those undergo undergoes occur occurs happen happens experience experiences become becomes "
+    "require requires required trigger triggers result results cause causes lead leads apply applies exist exists "
+    "specific particular given period").split())
+_GENERIC_CONCEPTS = {("THING", "AGREEMENT"), ("ACTOR", "ALL"), ("ACTOR", "ANY"), ("ACTOR", "OTHER"),
+                     ("ACTOR", "NONE"), ("ACTOR", "IT"), ("ACTOR", "WE"), ("ACTOR", "USER")}
+# Single-word phrases too common to show a concept is present ("others", "data").
+_PRESENCE_SKIP = {"others", "other", "data", "information", "any person", "right", "unit", "property", "records",
+                  "accounts", "order", "use", "process", "hold", "keep", "release", "provide", "engage", "carry",
+                  "extend", "return", "exceed", "cap", "fix", "trade", "option", "discretion"}
+_PRESENCE_SUBJECTS = (r"(?:the |this )?(?:agreement|contract|clause|license|licence|lease|document|nda|section|provision|"
+                      r"policy|terms)s?")
+_PRESENCE_VERBS = (r"(?:specify|specifies|say|says|state|states|provide|provides|set out|sets out|contain|contains|"
+                   r"include|includes|address|addresses|stipulate|stipulates|impose|imposes|establish|establishes|"
+                   r"require|requires|grant|grants|give|gives|allow for|provide for)")
+_PRESENCE_PATTERNS = [
+    re.compile(rf"^(?:does|do|did) {_PRESENCE_SUBJECTS} (?P<verb>{_PRESENCE_VERBS})(?: that| whether| for| to)?\s+(?P<rest>.+)$"),
+    re.compile(r"^(?:is|are) there (?:a |an |any )?(?P<rest>.+)$"),
+    re.compile(r"^(?:does|do) (?P<rest>\w+ing\b.+)$"),
+    re.compile(r"^(?:is|are) (?:a|an|the|any|either|each) [\w' -]{2,40}? (?P<verb>entitled|required|obligated) to "
+               r"(?:receive |pay |collect |recover )?(?P<rest>(?!\w+ )?[^?]+)$"),
+    re.compile(r"^(?:does|do) (?:a|an|the|any|either|each) [\w' -]{2,40}? (?:have|has) (?P<rest>.+)$"),
+    # last: any other auxiliary question, as long as it names two things
+    re.compile(r"^(?:does|do|is|are|will|can|must|shall|may) (?P<rest>.+)$"),
+]
+_WHEN_VERBS = {normalize(w) for w in "expire end terminate begin commence start run lapse cease".split()} | {
+    _crude(w) for w in "expire end terminate begin commence start run lapse cease".split()} | {"TERMINATE", "RENEW"}
+_DATE_OR_DURATION = re.compile(
+    r"\b(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|fifteen|twenty|thirty|sixty|ninety)"
+    r"\s*(?:\(\d+\)\s*)?(?:full\s+|calendar\s+|consecutive\s+|contract\s+)?(?:years?|months?|days?|weeks?)\b"
+    r"|\b(?:january|february|march|april|may|june|july|august|september|october|november|december)\s+\d"
+    r"|\b\d{1,2}/\d{1,2}/\d{2,4}\b|\b(?:19|20)\d\d\b|\banniversary\b|\bin perpetuity\b|\bperpetual", re.I)
+
+
+@dataclass(frozen=True)
+class Item:
+    """One thing a presence frame or a condition needs: any stem (a prefix of
+    a sentence word) or any phrase (in the sentence's normalized words)."""
+    label: str
+    stems: frozenset
+    phrases: frozenset
+
+
+def _concept_item(kind: str, name: str, surface: str, lexicon: dict | None = None) -> Item:
+    phrases_in = (lexicon or LEXICON).get((kind, name), [])
+    stems, phrases = set(), {" ".join(tokens(surface))} if surface else set()
+    for p in phrases_in:
+        if p in _PRESENCE_SKIP:
+            continue
+        words = p.split()
+        if len(words) == 1:
+            st = _crude(words[0])
+            if len(st) >= 3:
+                stems.add(st)
+        else:
+            phrases.add(" ".join(tokens(p)))
+    return Item(f"{kind}:{name}", frozenset(stems), frozenset(ph for ph in phrases if ph))
+
+
+def _content_items(tags: list, trie: dict, toks: list | None = None) -> list:
+    """What a stretch of question must find in a clause: concepts (with their
+    synonyms, and the question's own word) and literal words (as stems),
+    minus the generic ones."""
+    items = []
+    for t in tags:
+        # the question's own word, when the tag is that one word ("property"), not a phrase ("initial term")
+        one_word = t.end in (-1, t.start + 1)
+        own = _crude(toks[t.start]) if toks and t.start < len(toks) and one_word else ""
+        if t.kind == "WORD":
+            if t.name in _GENERIC or len(t.name) < 3 or t.name in _NEGATION_WORDS:
+                continue
+            items.append(Item(f"WORD:{t.name}", frozenset([t.name]), frozenset()))
+        elif t.kind in ("THING", "ACTION", "PROP", "ACTOR"):
+            if (t.kind, t.name) in _GENERIC_CONCEPTS or t.kind == "ACTOR" and t.name.isupper() and t.name not in (
+                    "RECEIVER", "DISCLOSER"):
+                continue
+            item = _concept_item(t.kind, t.name, "")
+            if len(own) >= 4 and own not in _PRESENCE_SKIP:
+                item = Item(item.label, item.stems | {own}, item.phrases)
+            items.append(item)
+    return items
+
+
+def _presence_frame(question: str, trie: dict) -> Frame | None:
+    q = " ".join(question.lower().replace("’", "'").split()).rstrip("?. ")
+    q_named = any(t.kind == "ACTOR" and (t.kind, t.name) not in _GENERIC_CONCEPTS for t in tag(tokens(q)[1:], trie))
+    for i, pattern in enumerate(_PRESENCE_PATTERNS):
+        if i >= 3 and q_named:
+            return None
+        m = pattern.match(q)
+        if not m:
+            continue
+        rest = m.group("rest")
+        verb = m.groupdict().get("verb") or ""
+        strict = i >= 3  # "entitled/required to", "does a party have", catch-all
+        if strict and any(t.kind == "ACTOR" and (t.kind, t.name) not in _GENERIC_CONCEPTS
+                          for t in tag(tokens(rest), trie)):
+            return None  # "Must the employee reimburse the employer?" is about who does what
+        if i >= len(_PRESENCE_PATTERNS) - 2:
+            # The catch-alls don't take over action questions the action frame
+            # turned down ("Is the tenant exempt from paying rent?"), nor negations.
+            rtags = tag(tokens(rest), trie)
+            if any(t.kind == "MODAL" and t.name in ("NOT", "BAN", "NEITHER") or t.name == "NONE" for t in rtags):
+                return None
+            # A condition word in the verb's place is the question's verb, which the presence
+            # frame would drop: "does it save my health data?" ("save" as in "save as provided")
+            # is not "is health data mentioned?". ("...continue after the agreement terminates"
+            # keeps its "after".)
+            if any(t.kind == "BLOCK" and 1 <= t.start <= 2 for t in rtags):
+                return None
+            named = [t for t in rtags if t.kind == "ACTOR" and (t.kind, t.name) not in _GENERIC_CONCEPTS]
+            if named and any(t.kind == "ACTION" and t.start > named[0].start for t in rtags):
+                return None
+        require = verb.startswith("requir") or bool(re.search(r"\brequire[sd]?\b", rest))
+        when = bool(re.match(r"(?:when|how long)\b", rest))
+        dated = bool(re.search(r"\b(?:date|dates|how long|duration|period)\b", rest)) and not when
+        negative = bool(re.search(r"\b(no|not|nothing|never|none)\b", rest))
+        # "entitled to X or Y": noun alternatives; elsewhere "or" stays inside one item list
+        parts = [p for p in re.split(r"\s+or\s+", rest)] if i == 3 else [rest]
+        alts = []
+        for part in parts:
+            ptoks = tokens(part)
+            items = _content_items(tag(ptoks, trie), trie, ptoks)
+            if dated:  # "the date on which it becomes effective": the date is the answer, not a word to find
+                items = [it for it in items if it.label not in ("WORD:date", "WORD:dat", "WORD:period", "WORD:duration")]
+            if when:  # "when its initial term expires": the head noun, and a date or duration for the value
+                items = [it for it in items if not it.label.startswith("ACTION:") and it.label.split(":")[1] not in _WHEN_VERBS]
+                items = items[-1:]
+            if items:
+                alts.append(items)
+        if not alts or i == len(_PRESENCE_PATTERNS) - 1 and any(len(a) < 2 for a in alts):
+            return None
+        return Frame("EXISTS", None, None, [], alts=alts, negative=negative, require=require, when=when, strict=strict,
+                     dated=dated)
+    return None
 
 
 def _property_frame(raw: str, tags: list, props: list) -> Frame | str:
@@ -403,7 +659,7 @@ def _clauses(tags: list) -> list:
 
 
 def _upon_notice(t: Tag, tags: list) -> bool:
-    return t.name == "UPON" and any(u.kind == "WORD" and u.name == "notice" and 0 < u.start - t.start <= 8 for u in tags)
+    return t.name == "UPON" and any(u.kind == "WORD" and u.name.startswith("notic") and 0 < u.start - t.start <= 8 for u in tags)
 
 
 def _blocked(tags: list) -> bool:
@@ -422,10 +678,15 @@ def _judge(frame: Frame, sentence: str, trie: dict) -> tuple[str, str | None] | 
     """(answer, qualifier) if the sentence settles the frame, a reason string
     if it would but is blocked, None if it doesn't address the frame. A frame
     without things asks only whether the actor may do the action at all."""
+    if frame.asks == "EXISTS":
+        return _judge_presence(frame, sentence, trie)
+    if frame.values and not set(frame.values) <= values(sentence):
+        return None
     toks = tokens(sentence)
     tags = tag(toks, trie)
     if frame.asks == "PROPERTY":
         return _judge_property(frame, tags)
+    caps = _case_flags(sentence)
     for clause in _clauses(tags):
         wanted = set(frame.actions or [frame.action])
         composite = {v for a in wanted if a in COMPOSITE for v in COMPOSITE[a][0]
@@ -433,7 +694,31 @@ def _judge(frame: Frame, sentence: str, trie: dict) -> tuple[str, str | None] | 
         actions = [t for t in clause if t.kind == "ACTION" and (t.name in wanted or t.name in composite)]
         for action in actions:
             before = [t for t in clause if t.start < action.start]
+            passive = bool(action.start and toks[action.start - 1] in _PASSIVE_AUX)
+            if passive:
+                # "This Agreement may be terminated ... by either party": the agent acts.
+                actor = _agent(clause, action, toks, caps, frame)
+                if actor is None:
+                    continue
+                if not _actor_matches(frame.actor, actor.name):
+                    continue
+                subject_start = max((t.start for t in clause if t.kind == "ACTION" and t.start < action.start), default=-1)
+                # only the modal run right before the verb ("which may be maintained by X"),
+                # not "shall not be limited" earlier in the sentence
+                modals, k = set(), len(before) - 1
+                while k >= 0 and (before[k].kind == "MODAL" or before[k].kind == "WORD" and before[k].name.endswith("ly")):
+                    if before[k].kind == "MODAL":
+                        modals.add(before[k].name)
+                    k -= 1
+                if not all(_has_thing(th, [t for t in clause if t is not actor]) for th in frame.things):
+                    continue
+                verdict = _verdict(frame, sentence, toks, tags, clause, actor, modals, subject_start)
+                if verdict is not None:
+                    return verdict
+                continue
             actors = [t for t in before if t.kind == "ACTOR"]
+            if not actors and frame.actor in ("ANY", "ALL"):
+                actors = [s for s in [_subject_before_modal(before, action, toks, caps)] if s is not None]
             if not actors:
                 continue
             actor = actors[-1]
@@ -454,35 +739,192 @@ def _judge(frame: Frame, sentence: str, trie: dict) -> tuple[str, str | None] | 
                 continue
             if any(t.kind == "ACTION" and t is not action for t in after_actor):
                 continue
-            if action.start and toks[action.start - 1] in _PASSIVE_AUX:
-                continue
             if not all(_has_thing(th, [t for t in clause if t.start > action.start or th[0] == "ACTOR"])
                        for th in frame.things):
                 continue
-            if _blocked(tags):
-                return "the sentence has a condition or exception"
             modals = {t.name for t in before if t.kind == "MODAL" and t.start > actor.start}
-            # "..., nor shall either party use": a "nor" after the previous
-            # action and before this actor negates it. (Only "nor": in "not
-            # contributing with coverage the Sponsor may carry", "not" is not the Sponsor's.)
             prev = max((t.start for t in clause if t.kind == "ACTION" and t.start < actor.start), default=-1)
-            negated = (actor.name == "NONE" or "NOT" in modals or "BAN" in modals
-                       or any(t.name == "NEITHER" and t.start < actor.start for t in clause)
-                       or any(t.kind == "MODAL" and toks[t.start] == "nor" and prev < t.start < actor.start for t in clause))
-            if frame.asks == "PROHIBITED":
-                if negated:
-                    return ("yes", None)
-                if "MAY" in modals:
-                    return ("no", None)
-                return "the text says it happens, not whether it is prohibited"
-            if negated:
-                return ("no", None)
-            if "MAY" in modals:
-                if frame.asks == "MUST":
-                    return "the text permits it but doesn't require it"
-                return ("yes", "may" if frame.asks == "DOES" else None)
-            return ("yes", None)
+            verdict = _verdict(frame, sentence, toks, tags, clause, actor, modals, prev)
+            if verdict is not None:
+                return verdict
     return None
+
+
+def _verdict(frame, sentence, toks, tags, clause, actor, modals, prev):
+    """The answer once actor, action and things are in place: conditions, then modality."""
+    if frame.conds or frame.only:
+        met = _conditions_met(frame, toks, tags, _raw_tokens(sentence), clause)
+        if met is False:
+            return None
+        if isinstance(met, str):
+            return met
+    elif _blocked(tags):
+        return "the sentence has a condition or exception"
+    if frame.only and ("NOT" in modals or "BAN" in modals) and any(t.kind == "BLOCK" for t in clause) \
+            and _EXCEPT_ONLY.search(sentence):
+        modals = modals - {"NOT", "BAN"}  # "agrees not to use ... other than for the purposes": only for them
+    # "..., nor shall either party use": a "nor" after the previous action and
+    # before this actor negates it. (Only "nor": in "not contributing with
+    # coverage the Sponsor may carry", "not" is not the Sponsor's.)
+    negated = (actor.name == "NONE" or "NOT" in modals or "BAN" in modals
+               or any(t.name == "NEITHER" and t.start < actor.start for t in clause)
+               or any(t.kind == "MODAL" and toks[t.start] == "nor" and prev < t.start < actor.start for t in clause))
+    if frame.asks == "PROHIBITED":
+        if negated:
+            return ("yes", None)
+        if "MAY" in modals:
+            return ("no", None)
+        return "the text says it happens, not whether it is prohibited"
+    if negated:
+        return ("no", None)
+    if "MAY" in modals:
+        if frame.asks == "MUST":
+            return "the text permits it but doesn't require it"
+        return ("yes", "may" if frame.asks == "DOES" else None)
+    return ("yes", None)
+
+
+_NOT_SUBJECTS = {"such", "this", "the", "any", "all", "each", "it", "which", "that", "these", "those", "said", "no",
+                 "in", "if", "upon", "during", "after", "before", "notwithstanding", "subject", "except", "unless"}
+
+
+def _case_flags(sentence: str) -> list:
+    """Whether each token (aligned with tokens(sentence)) starts with a capital."""
+    return [w[0].isupper() for w in re.findall(r"[A-Za-z]+(?:'[A-Za-z]+)?|;", re.sub(r"'s\b", "", sentence.replace("’", "'")))]
+
+
+def _subject_before_modal(before: list, action: Tag, toks: list, caps: list) -> Tag | None:
+    """For a question about any party: the capitalized noun right before the
+    modal run ("Customer specifically agrees to maintain", "Buyer shall obtain")."""
+    run = [t for t in before if t.start < action.start]
+    i = len(run) - 1
+    while i >= 0 and (run[i].kind == "MODAL" or run[i].kind == "WORD" and (run[i].name.endswith("ly") or run[i].name == "have")):
+        i -= 1
+    j = i + 1
+    while j < len(run) and run[j].kind == "WORD" and run[j].name.endswith("ly"):
+        j += 1
+    if i < 0 or j >= len(run) or run[j].kind != "MODAL":
+        return None
+    subj = run[i]
+    if subj.kind not in ("THING", "WORD") or subj.start >= len(caps) or not caps[subj.start]:
+        return None
+    if toks[subj.start] in _NOT_SUBJECTS:
+        return None
+    return Tag("ACTOR", f"SUBJ:{toks[subj.start]}", subj.start)
+
+
+def _agent(clause: list, action: Tag, toks: list, caps: list, frame: Frame) -> Tag | None:
+    """The "by ..." agent of a passive action, within a few words after it."""
+    for j in range(action.start + 1, min(action.start + 9, len(toks))):
+        if toks[j] != "by":
+            continue
+        after = [t for t in clause if t.start > j and not (t.kind == "WORD" and t.name in ("either", "both", "one"))][:1]
+        if not after or after[0].start > j + 3:
+            return None
+        t = after[0]
+        if t.kind == "ACTOR":
+            return t
+        if frame.actor in ("ANY", "ALL") and t.kind in ("THING", "WORD") and t.start < len(caps) and caps[t.start] \
+                and toks[t.start] not in _NOT_SUBJECTS:
+            return Tag("ACTOR", f"SUBJ:{toks[t.start]}", t.start)
+        return None
+    return None
+
+
+def _raw_tokens(text: str) -> list:
+    """The sentence's words before normalization, aligned with tokens(text)."""
+    return _TOKEN.findall(re.sub(r"'s\b", "", text.lower().replace("’", "'")))
+
+
+def _item_present(item: Item, raw: list, norm: str, lo: int = 0, hi: int | None = None) -> bool:
+    """Whether the item is in raw[lo:hi] (norm: the normalized words, space-joined, for phrases)."""
+    window = raw[lo:hi]
+    if any(w.startswith(st) for st in item.stems for w in window):
+        return True
+    if item.phrases:
+        text = " " + " ".join(normalize(w) for w in window) + " " if (lo or hi is not None) else norm
+        return any(f" {ph} " in text for ph in item.phrases)
+    return False
+
+
+def _negated_sentence(raw: list, tags: list) -> bool:
+    if any(t.kind == "MODAL" and t.name in ("NOT", "NEITHER", "BAN") or t.kind == "ACTOR" and t.name == "NONE"
+           for t in tags):
+        return True
+    return any(w in ("no", "nothing", "none") and (i + 1 >= len(raw) or raw[i + 1] not in _NOT_NEGATION_AFTER)
+               for i, w in enumerate(raw))
+
+
+def _states_when(frame: Frame, sentence: str) -> bool:
+    """"The term of this Agreement shall be twelve (12) months", "...shall
+    expire on December 31, 2021": the head noun as the subject of a verb that
+    sets its date or duration (not "prior to the expiration of the Term", not a renewal term)."""
+    stems = sorted({st for alt in frame.alts for it in alt for st in it.stems}, key=len, reverse=True)
+    if not stems:
+        return False
+    head = "|".join(map(re.escape, stems))
+    not_after = "".join(f"(?<!{w} )" for w in ("renewal", "current", "applicable", "extension", "successive", "additional", "extend the", "of the",
+                                                 "of its", "of this", "during the", "during its", "within the"))
+    pattern = re.compile(
+        rf"{not_after}\b(?:{head})(?:s|es)?\b(?:[^.;,]{{0,80}}?"
+        r"\b(?:shall|will|is|be|continu\w*|expir\w*|end\w*|run\w*|remain\w*|last\w*)\b[^.;]{0,60}?"
+        rf"|[^.;,]{{0,30}}?\bof\s+)(?:{_DATE_OR_DURATION.pattern})", re.I)
+    return bool(pattern.search(sentence))
+
+
+def _judge_presence(frame: Frame, sentence: str, trie: dict):
+    """"yes" when one alternative's items are all in the sentence with the
+    question's polarity; a reason when present but negated; None otherwise."""
+    raw = _raw_tokens(sentence)
+    norm = " " + " ".join(normalize(w) for w in raw) + " "
+    if not any(all(_item_present(it, raw, norm) for it in alt) for alt in frame.alts):
+        return None
+    if frame.when and not _states_when(frame, sentence):
+        return None
+    if frame.dated and not _DATE_OR_DURATION.search(sentence):
+        return None
+    if frame.values and not set(frame.values) <= values(sentence):
+        return None
+    stags = tag([normalize(w) for w in raw], trie)
+    if frame.strict and _blocked(stags):
+        return "the sentence has a condition or exception"
+    negated = _negated_sentence(raw, stags)
+    if frame.negative:
+        return ("yes", None) if negated else "the question asks for a negation the sentence doesn't have"
+    if frame.require:
+        has_without = any(w in ("without", "unless", "except") for w in raw)
+        if negated and has_without or not negated and not has_without:
+            return ("yes", None)  # "shall not assign without consent" / "subject to the prior consent"
+        return "can't tell whether it is required"
+    if negated:
+        return "the sentence negates it"
+    return ("yes", None)
+
+
+def _conditions_met(frame: Frame, toks: list, tags: list, raw: list, clause: list | None = None) -> bool | str:
+    """For a question with a condition: True when the clause's conditions are
+    the question's ("upon a Change of Control"), False when the clause lacks
+    it, a reason when the clause adds another condition. Judged within the
+    action's clause (between ";" breaks), not the whole sentence."""
+    if clause:
+        lo, hi = clause[0].start, max(t.end if t.end > 0 else t.start + 1 for t in clause)
+        toks, raw = toks[lo:hi], raw[lo:hi]
+        tags = [Tag(t.kind, t.name, t.start - lo, (t.end - lo) if t.end > 0 else -1) for t in clause]
+    norm = " " + " ".join(toks) + " "
+    if not all(_item_present(it, raw, norm) for it in frame.conds):
+        return False
+    if frame.only and not any(w in ONLY_WORDS for w in raw) and not (
+            _EXCEPT_ONLY.search(" ".join(raw)) and any(w in ("not", "no", "nor") for w in raw)):
+        return False  # "only X", or "not ... except X"
+    for t in tags:
+        if t.kind != "BLOCK" or _upon_notice(t, tags):
+            continue
+        if frame.only and raw[t.start] in ONLY_WORDS | {"except", "save", "other", "unless"}:
+            continue
+        if frame.conds and any(_item_present(it, raw, norm, t.start, t.start + 16) for it in frame.conds):
+            continue
+        return "the sentence has another condition"
+    return True
 
 
 def _judge_property(frame: Frame, tags: list):
@@ -501,6 +943,9 @@ def _judge_property(frame: Frame, tags: list):
 
 _BOUNDARY = re.compile(r"[.!?\n]")
 FEW_SENTENCES = 64  # below this, check candidate sentences one by one instead of rescanning
+# A question whose words fill more sentences than this isn't one a single clause
+# settles (and judging them all would break the ~10 ms budget on long documents).
+MAX_CANDIDATES = 64
 
 
 class Sentences:
@@ -534,16 +979,32 @@ def _phrase_forms(phrases) -> frozenset:
         words = re.findall(r"[a-z0-9']+", phrase.lower())
         if not words:
             continue
-        firsts = _forms(words[0]) | {k for k, v in IRREGULAR.items() if v == words[0]}
+        # forms of the word and of its normalized base, so the prefilter is never narrower than the tokenizer
+        firsts = _forms(words[0]) | _forms(normalize(words[0])) | {k for k, v in IRREGULAR.items() if v == words[0]}
         if len(words) == 1:
             out |= firsts
             continue
-        lasts = _forms(words[-1]) | {k for k, v in IRREGULAR.items() if v == words[-1]}
+        lasts = _forms(words[-1]) | _forms(normalize(words[-1])) | {k for k, v in IRREGULAR.items() if v == words[-1]}
         out |= {" ".join([f, *words[1:-1], l]) for f in firsts for l in lasts}
     return frozenset(out)
 
 
 _PREFILTER_TABLE = str.maketrans({"-": " ", "\n": " ", "\t": " ", "’": "'", "\u2011": " ", "\u2013": " "})
+
+
+_LAST_INDEXED: list = [None, None, None]  # (document, Sentences, prefilter text): one question reads the document several times
+
+
+def indexed(document: str) -> tuple:
+    """The document's sentence index and prefilter text, computed once per document."""
+    if _LAST_INDEXED[0] is not document:
+        _LAST_INDEXED[:] = [document, Sentences(document), _prefilter_text(document)]
+    return _LAST_INDEXED[1], _LAST_INDEXED[2]
+
+
+def occurs_any(words, document: str) -> bool:
+    """Whether any of the whole words occurs in the document (one automaton pass)."""
+    return next(_occurs(frozenset(words), False, indexed(document)[1]), None) is not None
 
 
 def _prefilter_text(document: str) -> str:
@@ -609,11 +1070,14 @@ def acting_parties(question: str, document: str, parties: list) -> set | None:
     question has no action or a sentence gives it to every party."""
     trie = _build_trie(_party_lexicon(parties))
     frame = question_frame(question, trie)
-    if isinstance(frame, str) or frame.asks == "PROPERTY":
+    if isinstance(frame, str) or frame.asks in ("PROPERTY", "EXISTS"):
         return None
-    sentences, lowered = Sentences(document), _prefilter_text(document)
+    sentences, lowered = indexed(document)
     found = set()
-    for i in _candidates([(_action_forms(frame, LEXICON), False)], sentences, lowered):
+    candidates = _candidates([(_action_forms(frame, LEXICON), False)], sentences, lowered)
+    if len(candidates) > MAX_CANDIDATES:
+        return None
+    for i in candidates:
         for clause in _clauses(tag(tokens(sentences.text(i)), trie)):
             for action in (t for t in clause if t.kind == "ACTION" and t.name in frame.actions):
                 actors = [t for t in clause if t.kind == "ACTOR" and t.start < action.start]
@@ -640,12 +1104,55 @@ def _thing_slot(kind: str, name: str, lexicon: dict):
     return (_phrase_forms(lexicon[(kind, name)] + narrower), False)
 
 
+def _item_slot(item: Item):
+    """Prefilter forms for an item: its stems, and the first word of each phrase (as a prefix)."""
+    forms = set(item.stems) | {ph.split()[0] for ph in item.phrases if ph}
+    return (frozenset(f for f in forms if len(f) >= 3), True)
+
+
+def _answer_presence(frame: Frame, fd: dict, document: str, trie: dict) -> FrameResult:
+    sentences, lowered = indexed(document)
+    found = set()
+    for alt in frame.alts:
+        slots = [_item_slot(it) for it in alt]
+        if all(sl[0] for sl in slots):
+            found |= set(_candidates(slots, sentences, lowered))
+    if len(found) > MAX_CANDIDATES:
+        return FrameResult(reason=f"{len(found)} sentences name it: too many for one clause to settle", frame=fd)
+    hits, blocked = [], None
+    for i in sorted(found):
+        sentence = sentences.text(i)
+        verdict = _judge_presence(frame, sentence, trie)
+        if isinstance(verdict, str):
+            blocked = blocked or (verdict, sentence)
+        elif verdict:
+            hits.append(sentence)
+    if blocked:
+        return FrameResult(reason=blocked[0], frame=fd, evidence=[{"text": blocked[1], "label": "blocked", "p": 0.0}])
+    if not hits:
+        return FrameResult(reason="no sentence has everything the question names", frame=fd)
+    return FrameResult("yes", None, reason="one sentence has everything the question names", frame=fd,
+                       evidence=[{"text": hits[0], "label": "yes", "p": 1.0}])
+
+
+def _jsonable(o):
+    """Sets as sorted lists. `asdict` leaves Item.stems/phrases frozen sets, and
+    a frame travels to the page as JSON."""
+    if isinstance(o, (set, frozenset)):
+        return sorted(o)
+    if isinstance(o, dict):
+        return {k: _jsonable(v) for k, v in o.items()}
+    if isinstance(o, (list, tuple)):
+        return [_jsonable(v) for v in o]
+    return o
+
+
 def _answer(question: str, document: str, parties) -> FrameResult:
     q_trie = _build_trie(_party_lexicon(parties)) if parties else _BASE_TRIE
     frame = question_frame(question, q_trie)
     if isinstance(frame, str):
         return FrameResult(reason=f"no frame: {frame}")
-    fd = asdict(frame)
+    fd = _jsonable(asdict(frame))
     # Sentences also name actors a question can't ("SpringCo shall ..."): they
     # count as parties when the question asks about any party.
     names = named_actors(document) if frame.actor in ("ANY", "ALL") else []
@@ -654,6 +1161,8 @@ def _answer(question: str, document: str, parties) -> FrameResult:
     # Only sentences holding some form of every slot are tagged. Literal words
     # and things are usually rarer than actions and actors, so they go first
     # and an empty intersection stops early.
+    if frame.asks == "EXISTS":
+        return _answer_presence(frame, fd, document, trie)
     ranked = []
     for kind, name in frame.things:
         slot = _thing_slot(kind, name, lexicon)
@@ -667,8 +1176,11 @@ def _answer(question: str, document: str, parties) -> FrameResult:
             ranked.append((3, actor))
     slots = [slot for _, slot in sorted(ranked, key=lambda x: x[0])]
     hits, blocked = [], None
-    sentences, lowered = Sentences(document), _prefilter_text(document)
-    for i in _candidates(slots, sentences, lowered):
+    sentences, lowered = indexed(document)
+    candidates = _candidates(slots, sentences, lowered)
+    if len(candidates) > MAX_CANDIDATES:
+        return FrameResult(reason=f"{len(candidates)} sentences name it: too many for one clause to settle", frame=fd)
+    for i in candidates:
         sentence = sentences.text(i)
         verdict = _judge(frame, sentence, trie)
         if isinstance(verdict, str):
@@ -687,11 +1199,15 @@ def _answer(question: str, document: str, parties) -> FrameResult:
         # A sentence where the same actor does the same action the other way, even
         # to something else, makes it depend: "shall not disclose to any third
         # party" vs "may disclose to its legal counsel".
-        bare = Frame(frame.asks, frame.actor, frame.action, [], actions=frame.actions)
+        bare = Frame(frame.asks, frame.actor, frame.action, [], actions=frame.actions, conds=frame.conds, only=frame.only)
         bare_slots = [(_action_forms(frame, lexicon), False)]
         if (actor := _actor_slot(frame, lexicon)) is not None:
             bare_slots.append(actor)
-        for i in _candidates(bare_slots, sentences, lowered):
+        others = _candidates(bare_slots, sentences, lowered)
+        if len(others) > MAX_CANDIDATES:
+            return FrameResult(reason=f"{len(others)} sentences have this action: too many to rule out a contrary one",
+                               frame=fd)
+        for i in others:
             other = _judge(bare, sentences.text(i), trie)
             if isinstance(other, tuple) and other[0] != ans:
                 return FrameResult(reason="another sentence says otherwise about the same action", frame=fd,

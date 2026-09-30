@@ -4,27 +4,81 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Router Playground</title>
+<script>
+  // Before the first paint, so a dark page never flashes white: the saved choice, else the system's.
+  (function () {
+    let t = null;
+    try { t = localStorage.getItem("theme"); } catch (e) {}
+    if (t !== "light" && t !== "dark") t = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    document.documentElement.dataset.theme = t;
+  })();
+</script>
 <style>
   :root {
+    color-scheme: light;
+    --bg: #fff;
+    --elev: #fff;
     --text: #1c1c1c;
     --muted: #737373;
     --faint: #a3a3a3;
     --line: #e7e7e7;
+    --hover: #f5f5f5;
     --code-bg: #f3f3f3;
     --gutter: #eaeaea;
     --chip: #ececec;
+    --chip-hover: #dedede;
+    --icon: #3d3d3d;
+    --icon-bg: #f0f0f0;
     --ring: #4f7cf7;
     --ring-track: #d9e3fd;
+    --run: #111;
+    --run-hover: #333;
+    --run-text: #fff;
+    --run-off: #8d8d8d;
+    --error: #b42318;
+    --shadow: 0 6px 20px rgba(0, 0, 0, .10);
+    --j-key: #1c1c1c;
+    --j-str: #a31515;
+    --j-num: #0b7a4b;
+    --j-lit: #0550ae;
     --sans: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
     --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #111214;
+    --elev: #1a1b1e;
+    --text: #e8e9eb;
+    --muted: #9b9ea4;
+    --faint: #6c6f75;
+    --line: #26282c;
+    --hover: #1d1e21;
+    --code-bg: #18191c;
+    --gutter: #222428;
+    --chip: #26282c;
+    --chip-hover: #313338;
+    --icon: #c8cacf;
+    --icon-bg: #1f2023;
+    --ring: #7c9cff;
+    --ring-track: #2a3350;
+    --run: #ececec;
+    --run-hover: #fff;
+    --run-text: #111;
+    --run-off: #4a4c50;
+    --error: #ff7b72;
+    --shadow: 0 8px 28px rgba(0, 0, 0, .55);
+    --j-key: #9cdcfe;
+    --j-str: #ce9178;
+    --j-num: #b5cea8;
+    --j-lit: #569cd6;
+  }
   * { box-sizing: border-box; }
   html, body { height: 100%; margin: 0; }
-  body { font-family: var(--sans); font-size: 15px; color: var(--text); background: #fff; display: flex; }
+  body { font-family: var(--sans); font-size: 15px; color: var(--text); background: var(--bg); display: flex; }
   svg { flex: none; }
 
   .rail { width: 60px; border-right: 1px solid var(--line); display: flex; flex-direction: column; align-items: center; padding-top: 12px; }
-  .rail .icon { width: 40px; height: 40px; border-radius: 8px; display: grid; place-items: center; color: #3d3d3d; background: #f0f0f0; }
+  .rail .icon { width: 40px; height: 40px; border-radius: 8px; display: grid; place-items: center; color: var(--icon); background: var(--icon-bg); }
 
   .pane { flex: 1; min-width: 0; display: flex; flex-direction: column; }
   .pane.left { border-right: 1px solid var(--line); }
@@ -32,8 +86,10 @@
   .title { font-size: 17px; color: var(--muted); display: flex; align-items: center; gap: 10px; }
   .spacer { flex: 1; }
   .btn { font: inherit; background: none; border: 1px solid transparent; border-radius: 6px; padding: 7px 12px; color: var(--text); cursor: pointer; }
-  .btn:hover { background: #f5f5f5; }
+  .btn:hover { background: var(--hover); }
   .btn.outline { border-color: var(--line); }
+  .icon-btn { width: 34px; height: 34px; flex: none; display: grid; place-items: center; border: 1px solid transparent; border-radius: 8px; background: none; color: var(--muted); cursor: pointer; padding: 0; }
+  .icon-btn:hover { background: var(--hover); color: var(--text); }
 
   .section { display: flex; flex-direction: column; min-height: 0; }
   .section.doc { flex: 1; }
@@ -52,23 +108,31 @@
   .chip { font: inherit; font-size: 14px; color: var(--text); background: var(--chip); border: 0; border-radius: 4px; padding: 6px 8px; cursor: pointer; }
   .hint { color: var(--faint); font-size: 13px; }
   .toggle { display: flex; align-items: center; gap: 6px; color: var(--text); cursor: pointer; user-select: none; }
-  .toggle input { margin: 0; accent-color: #111; }
-  .run { width: 140px; border: 0; background: #111; color: #fff; font: inherit; font-size: 17px; cursor: pointer; }
-  .run:hover { background: #333; }
-  .run:disabled { background: #8d8d8d; cursor: default; }
+  .toggle input { margin: 0; accent-color: var(--text); }
+  .run { width: 140px; border: 0; background: var(--run); color: var(--run-text); font: inherit; font-size: 17px; cursor: pointer; }
+  .run:hover { background: var(--run-hover); }
+  .run:disabled { background: var(--run-off); cursor: default; }
 
   .when { color: var(--muted); }
-  .account { margin-top: auto; padding: 12px 4px 14px; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 12px; }
-  .account .avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--chip); color: #3d3d3d; display: grid; place-items: center; font-weight: 600; font-size: 14px; text-transform: uppercase; }
-  .account .name { max-width: 100%; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .account a { color: var(--muted); text-decoration: none; white-space: nowrap; }
-  .account a:hover { color: var(--text); text-decoration: underline; }
+  .bar-end { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+  .account { position: relative; }
+  .account .trigger { display: flex; align-items: center; gap: 8px; border: 0; background: none; border-radius: 20px; padding: 3px 8px 3px 3px; font: inherit; font-size: 14px; color: var(--text); cursor: pointer; }
+  .account .trigger:hover, .account .trigger[aria-expanded="true"] { background: var(--hover); }
+  .account .trigger > svg { color: var(--muted); }
+  .account .avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--chip); color: var(--icon); display: grid; place-items: center; font-weight: 600; font-size: 14px; text-transform: uppercase; }
+  .account .short { max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .account .menu { position: absolute; right: 0; top: 42px; z-index: 10; min-width: 200px; background: var(--elev); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); padding: 6px; font-size: 14px; }
+  .account .menu[hidden] { display: none; }
+  .account .who { padding: 6px 10px 8px; margin-bottom: 4px; border-bottom: 1px solid var(--line); color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .account .menu a { display: block; padding: 7px 10px; border-radius: 6px; color: var(--text); text-decoration: none; white-space: nowrap; }
+  .account .menu a:hover { background: var(--hover); }
+
   .grid { display: grid; grid-template-columns: 44px minmax(0, 1fr) 300px; column-gap: 12px; }
   .head-row { height: 56px; flex: none; border-bottom: 1px solid var(--line); align-items: center; padding: 0 20px 0 12px; color: var(--muted); }
   .head-row .model { display: flex; align-items: center; gap: 8px; }
   .out { overflow: auto; }
   .row { padding: 22px 20px 20px 12px; border-bottom: 1px solid var(--line); }
-  .chev { background: none; border: 0; padding: 2px 0 0 8px; color: #555; cursor: pointer; align-self: start; }
+  .chev { background: none; border: 0; padding: 2px 0 0 8px; color: var(--muted); cursor: pointer; align-self: start; }
   .chev svg { transition: transform .15s; }
   .row.collapsed .chev svg { transform: rotate(-90deg); }
   .key { font-family: var(--mono); font-size: 17px; overflow-wrap: anywhere; }
@@ -85,20 +149,35 @@
   .details dd { margin: 0; }
   .clause { font-family: var(--mono); font-size: 13px; background: var(--code-bg); border-radius: 4px; padding: 8px 10px; margin-bottom: 6px; }
   .clause b { font-family: var(--sans); font-weight: 600; margin-right: 8px; }
+  .ids { color: var(--muted); }
+  .ids code { font-family: var(--mono); font-size: 13px; color: var(--text); user-select: all; }
   .empty { padding: 28px 20px; color: var(--faint); }
-  .error { padding: 28px 20px; color: #b42318; }
+  .error { padding: 28px 20px; color: var(--error); }
+
+  /* The reply as JSON, under the overview: line numbers, folding, copy. */
+  .json-head { height: 48px; display: flex; align-items: center; gap: 8px; padding: 0 20px; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 14px; }
+  .json-head b { font-weight: 600; color: var(--text); }
+  .code { position: relative; padding: 12px 64px 16px 0; font-family: var(--mono); font-size: 13.5px; line-height: 1.65; }
+  .code .copy { position: absolute; top: 10px; right: 16px; border-color: var(--line); background: var(--bg); }
+  .jl { display: grid; grid-template-columns: 64px minmax(0, 1fr); }
+  .jn { display: flex; justify-content: flex-end; align-items: center; gap: 2px; padding-right: 14px; color: var(--faint); user-select: none; font-variant-numeric: tabular-nums; height: 1.65em; }
+  .jn .slot { width: 14px; display: grid; place-items: center; }
+  .j-fold { width: 14px; height: 14px; padding: 0; border: 0; background: none; color: var(--faint); cursor: pointer; display: grid; place-items: center; }
+  .j-fold:hover { color: var(--text); }
+  .j-fold.shut svg { transform: rotate(-90deg); }
+  .jc { padding-left: calc(var(--d) * 2ch); white-space: pre-wrap; overflow-wrap: anywhere; }
+  .j-k { color: var(--j-key); }
+  .j-s { color: var(--j-str); }
+  .j-n { color: var(--j-num); }
+  .j-l { color: var(--j-lit); }
+  .j-more { font: inherit; font-size: 12px; line-height: 1; margin: 0 3px; padding: 1px 6px 3px; border: 1px solid var(--line); border-radius: 4px; background: var(--chip); color: var(--muted); cursor: pointer; vertical-align: 1px; }
+  .j-more:hover { color: var(--text); background: var(--chip-hover); }
 </style>
 </head>
 <body>
 <nav class="rail">
   <div class="icon" title="Playground">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2v7.3L4.2 19.1A2 2 0 0 0 5.9 22h12.2a2 2 0 0 0 1.7-2.9L14 9.3V2"/><path d="M8.5 2h7"/><path d="M7 16h10"/></svg>
-  </div>
-  <div class="account" id="account" hidden>
-    <div class="avatar" id="avatar"></div>
-    <div class="name" id="who"></div>
-    <a href="/admin" id="admin-link" hidden>Admin</a>
-    <a href="/oauth2/sign_out">Log out</a>
   </div>
 </nav>
 
@@ -119,7 +198,7 @@
   </div>
   <div class="section question">
     <div class="section-head">Question</div>
-    <div class="editor"><textarea id="question" spellcheck="false" placeholder="Ask a yes/no question, e.g. Can we audit their books?"></textarea></div>
+    <div class="editor"><textarea id="question" spellcheck="false" placeholder="Ask about the text, e.g. Can we audit their books? When is rent due? Who pays for water?"></textarea></div>
   </div>
   <div class="bottom">
     <div class="tools">
@@ -132,7 +211,20 @@
 </section>
 
 <section class="pane right">
-  <div class="bar"><span class="title">Response</span><span class="when" id="when"></span></div>
+  <div class="bar"><span class="title">Response</span><span class="when" id="when"></span>
+    <div class="bar-end">
+      <button class="icon-btn" id="theme"></button>
+      <div class="account" id="account" hidden>
+        <button class="trigger" id="trigger" aria-haspopup="true" aria-expanded="false"><span class="avatar" id="avatar"></span><span class="short" id="short"></span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
+        <div class="menu" id="menu" hidden>
+          <div class="who" id="who"></div>
+          <a href="/admin" id="admin-link" hidden>Admin</a>
+          <a href="/oauth2/sign_out">Log out</a>
+        </div>
+      </div>
+    </div>
+  </div>
   <div class="grid head-row">
     <span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg></span>
     <span>Question &amp; route</span>
@@ -173,21 +265,58 @@ const PATHS = {
   tier0: "one sentence of the document settles it",
   llm_task: "asked the task's own question, since our classifier is weak on this task",
   llm_fallback: "fallback, asked your question",
+  llm_judgment: "advice or a legal conclusion: the text alone can't settle it, so Jev answered",
+  span: "copied from the text: one clause names what you asked about, with one value in it",
+  llm_span: "Jev picked it among the values the text states",
+  choice: "the text states this alternative, not the other",
+  llm_choice: "Jev picked it among the alternatives",
 };
-let lastRun = null;
-let lastMs = 0;
+const KINDS = { boolean: "yes/no", judgmental: "advice or a legal conclusion", request: "a request", choice: "a choice",
+  span: "asks for a fact", backward: "asks why", forward: "asks what happens if", process: "asks how", unclassified: "unclassified" };
+const ICONS = {
+  moon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>',
+  sun: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',
+  copy: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>',
+  check: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
+  fold: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>',
+};
 let isAdmin = false;
 function showUser(me) {
   if (!me || !me.user) return;
   if (me.admin !== undefined) isAdmin = me.admin;  // /api/ask replies don't carry it
   const name = me.user.split("@")[0];
-  $("who").textContent = name;
-  $("who").title = me.user;
+  $("who").textContent = me.user;
+  $("short").textContent = name;
   $("avatar").textContent = name.charAt(0);
   $("admin-link").hidden = !isAdmin;
   $("account").hidden = false;
   $("left").textContent = `${me.remaining} of ${me.daily_limit} questions left today`;
 }
+function setMenu(open) {
+  $("menu").hidden = !open;
+  $("trigger").setAttribute("aria-expanded", open);
+}
+$("trigger").addEventListener("click", (e) => { e.stopPropagation(); setMenu($("menu").hidden); });
+document.addEventListener("click", (e) => { if (!$("account").contains(e.target)) setMenu(false); });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") setMenu(false); });
+
+function applyTheme(t) {
+  document.documentElement.dataset.theme = t;
+  $("theme").innerHTML = t === "dark" ? ICONS.sun : ICONS.moon;
+  $("theme").title = t === "dark" ? "Switch to light theme" : "Switch to dark theme";
+  $("theme").setAttribute("aria-label", $("theme").title);
+}
+$("theme").onclick = () => {
+  const t = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+  try { localStorage.setItem("theme", t); } catch (e) {}
+  applyTheme(t);
+};
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", (e) => {
+  let saved = null;
+  try { saved = localStorage.getItem("theme"); } catch (_) {}
+  if (!saved) applyTheme(e.matches ? "dark" : "light");  // follow the system until a choice is made here
+});
+applyTheme(document.documentElement.dataset.theme);
 let nextExample = 0;
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -198,21 +327,86 @@ function ring(p) {
     `<circle cx="9" cy="9" r="${r}" fill="none" stroke="var(--ring)" stroke-width="3" stroke-dasharray="${(p * c).toFixed(2)} ${c.toFixed(2)}" transform="rotate(-90 9 9)"/></svg>`;
 }
 const latency = (ms) => `${ms.toLocaleString()} ms (${(ms / 1000).toFixed(2)} s)`;
-function tick() {
-  if (!lastRun) { $("when").textContent = ""; return; }
-  const s = Math.round((Date.now() - lastRun) / 1000);
-  $("when").textContent = "· Ran " + (s < 60 ? `${s} sec ago` : `${Math.round(s / 60)} min ago`) + ` · ${latency(lastMs)}`;
+
+// The JSON as lines, like `JSON.stringify(value, null, 2)`, with each
+// multi-line {…}/[…] foldable. Long blocks below the top level start folded.
+const FOLD_OVER = 14;
+function jsonLines(value) {
+  const lines = [];
+  const scalar = (v) => {
+    const cls = typeof v === "string" ? "j-s" : typeof v === "number" ? "j-n" : "j-l";
+    return `<span class="${cls}">${esc(JSON.stringify(v))}</span>`;
+  };
+  const walk = (v, depth, lead, comma) => {
+    if (v === null || typeof v !== "object") { lines.push({ depth, html: lead + scalar(v) + comma }); return; }
+    const items = Array.isArray(v) ? v.map((x) => [null, x]) : Object.entries(v);
+    const [open, close] = Array.isArray(v) ? ["[", "]"] : ["{", "}"];
+    if (!items.length) { lines.push({ depth, html: lead + open + close + comma }); return; }
+    const at = lines.length;
+    lines.push({ depth, html: lead + open });
+    items.forEach(([k, x], i) => walk(x, depth + 1, k === null ? "" : `<span class="j-k">${esc(JSON.stringify(k))}</span>: `,
+      i < items.length - 1 ? "," : ""));
+    lines.push({ depth, html: close + comma });
+    Object.assign(lines[at], {
+      end: lines.length - 1,
+      folded: depth > 0 && lines.length - at > FOLD_OVER,
+      foldedHtml: lead + open + `<button class="j-more" data-i="${at}" title="Expand">…</button>` + close + comma,
+    });
+  };
+  walk(value, 0, "", "");
+  return lines;
 }
-setInterval(tick, 5000);
+
+function renderJson(value) {
+  const lines = jsonLines(value);
+  const code = $("code");
+  const draw = () => {
+    let html = "";
+    for (let i = 0; i < lines.length; i++) {
+      const l = lines[i];
+      const fold = l.end === undefined ? "" :
+        `<button class="j-fold${l.folded ? " shut" : ""}" data-i="${i}" aria-label="${l.folded ? "Expand" : "Collapse"}">${ICONS.fold}</button>`;
+      html += `<div class="jl"><span class="jn">${i + 1}<span class="slot">${fold}</span></span>` +
+        `<span class="jc" style="--d:${l.depth}">${l.folded ? l.foldedHtml : l.html}</span></div>`;
+      if (l.folded) i = l.end;
+    }
+    code.querySelectorAll(".jl").forEach((n) => n.remove());
+    code.insertAdjacentHTML("beforeend", html);
+  };
+  code.onclick = (e) => {
+    const b = e.target.closest("[data-i]");
+    if (!b) return;
+    const l = lines[+b.dataset.i];
+    l.folded = !l.folded;
+    draw();
+  };
+  const copy = $("copy");
+  copy.onclick = async () => {
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(value, null, 2));
+      copy.innerHTML = ICONS.check;
+      copy.title = "Copied";
+    } catch (e) {
+      copy.title = "Copy failed: the browser blocked the clipboard";
+    }
+    setTimeout(() => { copy.innerHTML = ICONS.copy; copy.title = "Copy JSON"; }, 1500);
+  };
+  draw();
+}
 
 function render(a) {
-  $("model-head").textContent = { classifier: "free classifier", tier0: "Tier 0", pretier0: "Pre-Tier 0" }[a.path] || a.answered_by;
-  const opts = Object.entries(a.probabilities).sort((x, y) => y[1] - x[1]).map(([label, p]) => {
+  const notAnswered = a.path === "deferred" || a.path === "declined";
+  const fact = ["span", "llm_span", "choice", "llm_choice"].includes(a.path);
+  $("model-head").textContent = { classifier: "free classifier", tier0: "Tier 0", pretier0: "Pre-Tier 0",
+    deferred: "not answered", declined: "not answered", span: "Pre-Tier 0 facts", choice: "Pre-Tier 0 choice" }[a.path] || a.answered_by;
+  const opts = notAnswered ? `<span class="opt dim">not answered</span>` : Object.entries(a.probabilities).sort((x, y) => y[1] - x[1]).map(([label, p]) => {
     const dim = label === a.answer ? "" : " dim";
     return `<span class="opt${dim}">${esc(label)}</span><span class="pct${dim}">${pct(p)}</span>${ring(p)}`;
   }).join("");
   const r = a.route;
-  const router = !r ? (a.path === "llm_fallback" ? "skipped: the free classifiers are on standby" :
+  const judged = a.path === "llm_judgment";
+  const skip = notAnswered || fact ? (a.path === "declined" ? "skipped: a request" : "skipped: not a yes/no question") : "skipped: not a lookup";
+  const router = !r ? (a.path === "llm_fallback" ? "skipped: the free classifiers are on standby" : judged || notAnswered || fact ? skip :
     `not needed: ${a.path === "pretier0" ? "Pre-Tier 0" : "Tier 0"} answered`) :
     `picked <span class="key" style="font-size:13px">${esc(r.choice)}</span> · p(none) ${r.p_none} · margin ${r.margin}` +
     (r.accepted ? "" : " · not trusted, so the LLM answered");
@@ -220,12 +414,14 @@ function render(a) {
   let evidence = "";
   const t = a.tier0;
   const p0 = a.pretier0;
-  const pretier0 = a.path === "pretier0" ? "" : !p0 ? `<dt>Pre-Tier 0</dt><dd class="dim">off</dd>` :
+  const pretier0 = a.path === "pretier0" ? "" : judged || notAnswered || fact ? `<dt>Pre-Tier 0</dt><dd class="dim">${skip}</dd>` : !p0 ? `<dt>Pre-Tier 0</dt><dd class="dim">off</dd>` :
     `<dt>Pre-Tier 0</dt><dd>passed: ${esc(p0.reason)}${p0.parties.length ? ` (${p0.parties.map(esc).join(", ")})` : ""} <span class="dim">${p0.ms} ms</span></dd>` +
     (p0.frames ? `<dt>Pre-Tier 0 frames</dt><dd>defer: ${esc(p0.frames.reason)} <span class="dim">${p0.frames.ms} ms</span>` +
       clauses(p0.frames.evidence || []) + "</dd>" : "");
-  let tier0 = a.path === "pretier0" ? "" : `<dt>Tier 0</dt><dd class="dim">off</dd>`;
-  if (a.path === "pretier0") {
+  let tier0 = a.path === "pretier0" ? "" : judged || notAnswered || fact ? `<dt>Tier 0</dt><dd class="dim">${skip}</dd>` : `<dt>Tier 0</dt><dd class="dim">off</dd>`;
+  if (fact || (notAnswered && a.evidence && a.evidence.length)) {
+    evidence = `<dt>${fact ? "Where it says so" : "Closest clause"}</dt><dd>${clauses(a.evidence)}</dd>`;
+  } else if (a.path === "pretier0") {
     evidence = `<dt>Matching sentence</dt><dd>${clauses(a.evidence)}<span class="dim">${p0.ms} ms</span></dd>`;
   } else if (a.path === "tier0") {
     tier0 = "";
@@ -239,27 +435,36 @@ function render(a) {
     evidence = `<dt>Closest parts</dt><dd><div class="dim" style="margin-bottom:6px">The document was checked in ${a.n_units} parts; top ${a.evidence.length}:</div>` +
       a.evidence.map((e) => `<div class="clause"><b>${pct(e.p)} ${esc(e.label)}</b>${esc(e.text)}</div>`).join("") + "</dd>";
   }
-  const by = a.path === "classifier" ? a.answered_by : `${a.answered_by} (${PATHS[a.path]})`;
-  const key = a.path === "tier0" || a.path === "pretier0" ? a.path : a.task || "fallback";
+  const by = a.path === "classifier" || notAnswered ? a.answered_by : `${a.answered_by} (${PATHS[a.path] || a.path})`;
+  const key = a.path === "tier0" || a.path === "pretier0" ? a.path : judged ? "judgment"
+    : (notAnswered || fact) && a.qtree ? a.qtree.leaf + (a.qtree.answer_type ? " · " + a.qtree.answer_type : "") : a.task || "fallback";
+  const q = a.qtree;
+  const kind = q ? `<dt>Question type</dt><dd>${esc(KINDS[q.leaf] || q.leaf)}${q.cue ? ` <span class="dim">("${esc(q.cue)}")</span>` : ""}</dd>` : "";
   $("out").innerHTML = `
     <div class="row" id="row">
       <div class="grid">
         <button class="chev" id="chev" title="Show or hide details"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
         <div><div class="key">${esc(key)}</div><div class="instr">${esc(a.question)}</div></div>
-        <div class="opts">${opts}<div class="conf">Confidence: ${pct(a.confidence)}</div></div>
+        <div class="opts">${opts}${notAnswered ? "" : `<div class="conf">Confidence: ${pct(a.confidence)}</div>`}</div>
       </div>
       <dl class="details">
         <dt>Answered by</dt><dd>${esc(by)}</dd>
         <dt>Why</dt><dd>${esc(a.reason)}</dd>
+        ${kind}
         <dt>Question answered</dt><dd>${esc(a.asked)}</dd>
         ${evidence}
         ${pretier0}
         ${tier0}
         <dt>Router</dt><dd>${router}</dd>
         <dt>Cost</dt><dd>${a.llm_calls} LLM call${a.llm_calls === 1 ? "" : "s"} · ${latency(a.ms)}</dd>
+        ${a.request_id ? `<dt>IDs</dt><dd class="ids"><div>request <code>${esc(a.request_id)}</code></div><div>document <code>${esc(a.document_id)}</code></div></dd>` : ""}
       </dl>
-    </div>`;
+    </div>
+    <div class="json-head"><b>JSON</b><span>· the full reply</span></div>
+    <div class="code" id="code"><button class="icon-btn copy" id="copy" title="Copy JSON" aria-label="Copy JSON">${ICONS.copy}</button></div>`;
   $("chev").onclick = () => $("row").classList.toggle("collapsed");
+  const { user, daily_limit, remaining, ...answer } = a;  // the account fields aren't part of the answer
+  renderJson(answer);
 }
 
 async function run() {
@@ -274,14 +479,14 @@ async function run() {
       body: JSON.stringify({ question, document: text, reader: "jev", tier0: $("tier0").checked, pretier0: $("pretier0").checked }),
     });
     if (resp.status === 401) { location.reload(); return; }  // sign-in expired: the proxy sends the page to Google
-    const data = await resp.json();
+    // A crash upstream comes back as the proxy's HTML error page, not JSON.
+    const data = await resp.json().catch(() => ({ error: `The server hit an error (HTTP ${resp.status}). Please try again.` }));
     showUser(data);
-    if (!resp.ok) throw new Error(data.error || resp.statusText);
+    if (!resp.ok || data.error) throw new Error((data.error || resp.statusText) + (data.request_id ? ` (request ${data.request_id})` : ""));
     render(data);
-    lastRun = Date.now();
-    lastMs = data.ms;
-    tick();
+    $("when").textContent = `· ${latency(data.ms)}`;
   } catch (err) {
+    $("when").textContent = "";
     $("out").innerHTML = `<div class="error">${esc(err.message)}</div>`;
   } finally {
     $("run").disabled = false;
@@ -294,7 +499,7 @@ for (const id of ["pretier0", "tier0"]) {
   $(id).onchange = () => { try { localStorage.setItem(id, $(id).checked ? "on" : "off"); } catch (e) {} };
 }
 $("run").onclick = run;
-$("clear").onclick = () => { $("document").value = ""; $("question").value = ""; $("out").innerHTML = EMPTY; lastRun = null; tick(); };
+$("clear").onclick = () => { $("document").value = ""; $("question").value = ""; $("out").innerHTML = EMPTY; $("when").textContent = ""; };
 $("example").onclick = () => { const e = EXAMPLES[nextExample++ % EXAMPLES.length]; $("document").value = e.doc; $("question").value = e.q; };
 document.addEventListener("keydown", (e) => { if ((e.metaKey || e.ctrlKey) && e.key === "Enter") run(); });
 fetch("/api/me").then((r) => (r.ok ? r.json() : null)).then(showUser).catch(() => {});

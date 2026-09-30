@@ -1,0 +1,962 @@
+{
+ "generated": "2026-09-30",
+ "proposer": "accounts/fireworks/models/qwen3p8-max",
+ "verifier": "accounts/fireworks/models/kimi-k3",
+ "note": "LLM-proposed, LLM-verified phrases (both must agree); mined from the DEV split only. Loaded by frames.py and merged into LEXICON after the hand-curated phrases.",
+ "concepts": {
+  "MODAL:NOT": {
+   "phrases": [
+    "none",
+    "nothing"
+   ],
+   "rejected": {
+    "absent": "verifier said no",
+    "barred": "already MODAL:BAN",
+    "devoid": "verifier said no",
+    "lacking": "verifier said no",
+    "neither": "already MODAL:NEITHER",
+    "precluded": "already MODAL:BAN",
+    "without": "verifier said no"
+   }
+  },
+  "MODAL:BAN": {
+   "phrases": [
+    "barred from",
+    "forbidden from",
+    "is prohibited from",
+    "must not",
+    "precluded from",
+    "prohibited from",
+    "shall be prohibited",
+    "shall not"
+   ],
+   "rejected": {
+    "may not": "verifier said no",
+    "not authorized to": "verifier said no"
+   }
+  },
+  "ACTION:SHARE": {
+   "phrases": [
+    "circulate",
+    "disseminate",
+    "furnish",
+    "hand over",
+    "impart",
+    "publish",
+    "supply"
+   ],
+   "rejected": {
+    "convey": "verifier said no",
+    "deliver": "verifier said no"
+   }
+  },
+  "ACTION:SELL": {
+   "phrases": [
+    "auction off",
+    "resell",
+    "sell off",
+    "vend"
+   ],
+   "rejected": {}
+  },
+  "ACTION:COLLECT": {
+   "phrases": [
+    "acquire",
+    "compile"
+   ],
+   "rejected": {
+    "aggregate": "verifier said no",
+    "capture": "verifier said no",
+    "harvest": "verifier said no",
+    "procure": "already ACTION:CARRY"
+   }
+  },
+  "ACTION:USE": {
+   "phrases": [
+    "make use of",
+    "put to use"
+   ],
+   "rejected": {
+    "deploy": "verifier said no",
+    "employ": "verifier said no",
+    "operate": "verifier said no"
+   }
+  },
+  "ACTION:STORE": {
+   "phrases": [
+    "archive"
+   ],
+   "rejected": {
+    "cache": "verifier said no",
+    "stockpile": "verifier said no",
+    "warehouse": "verifier said no"
+   }
+  },
+  "ACTION:DELETE": {
+   "phrases": [
+    "expunge",
+    "obliterate",
+    "purge"
+   ],
+   "rejected": {
+    "destroy": "verifier said no"
+   }
+  },
+  "ACTION:RETURN_DESTROY": {
+   "phrases": [
+    "deliver up",
+    "destroy and return",
+    "return and destroy"
+   ],
+   "rejected": {
+    "surrender": "verifier said no"
+   }
+  },
+  "ACTION:COPY": {
+   "phrases": [
+    "make a duplicate",
+    "make a reproduction",
+    "make duplicates",
+    "make reproductions"
+   ],
+   "rejected": {
+    "replicate": "verifier said no"
+   }
+  },
+  "ACTION:DEVELOP_INDEPENDENTLY": {
+   "phrases": [
+    "develop on its own",
+    "develop on their own",
+    "develop without assistance"
+   ],
+   "rejected": {
+    "developed independently": "already in this concept",
+    "independently developed": "already in this concept"
+   }
+  },
+  "ACTION:TRACK": {
+   "phrases": [
+    "keep track of"
+   ],
+   "rejected": {
+    "audit": "verifier said no"
+   }
+  },
+  "ACTION:AUDIT": {
+   "phrases": [
+    "carry out an audit",
+    "conduct an audit",
+    "perform an audit",
+    "scrutinize"
+   ],
+   "rejected": {}
+  },
+  "ACTION:ASSIGN": {
+   "phrases": [
+    "cede"
+   ],
+   "rejected": {
+    "delegate": "verifier said no",
+    "novate": "verifier said no",
+    "subcontract": "verifier said no",
+    "sublet": "verifier said no",
+    "sublicense": "verifier said no"
+   }
+  },
+  "ACTION:SUBLET": {
+   "phrases": [
+    "grant a sublease",
+    "sub lease",
+    "sub let",
+    "underlet"
+   ],
+   "rejected": {
+    "subleasing": "already in this concept",
+    "subletting": "already in this concept"
+   }
+  },
+  "ACTION:TERMINATE": {
+   "phrases": [
+    "termination"
+   ],
+   "rejected": {
+    "dissolve": "verifier said no",
+    "end": "verifier said no"
+   }
+  },
+  "ACTION:PAY": {
+   "phrases": [
+    "disburse",
+    "make payment",
+    "pay out",
+    "pay over",
+    "reimburse",
+    "remit",
+    "remit payment",
+    "render payment"
+   ],
+   "rejected": {
+    "compensate": "verifier said no",
+    "recompense": "verifier said no"
+   }
+  },
+  "ACTION:REPAIR": {
+   "phrases": [
+    "keep in good repair",
+    "keep in repair",
+    "mend",
+    "overhaul",
+    "patch",
+    "recondition"
+   ],
+   "rejected": {
+    "rebuild": "verifier said no",
+    "rectify": "verifier said no",
+    "refurbish": "verifier said no",
+    "remediate": "verifier said no"
+   }
+  },
+  "ACTION:INSURE": {
+   "phrases": [
+    "arrange insurance",
+    "bind insurance",
+    "effect insurance",
+    "effectuate insurance",
+    "hold insurance",
+    "place insurance",
+    "secure insurance",
+    "take out insurance"
+   ],
+   "rejected": {
+    "furnish insurance": "verifier said no",
+    "provide insurance": "verifier said no"
+   }
+  },
+  "ACTION:SOLICIT": {
+   "phrases": [
+    "canvass",
+    "lure",
+    "solicit away"
+   ],
+   "rejected": {
+    "canvas": "verifier said no"
+   }
+  },
+  "ACTION:COMPETE": {
+   "phrases": [
+    "compete against",
+    "compete with",
+    "engage in competition"
+   ],
+   "rejected": {}
+  },
+  "ACTION:DISPARAGE": {
+   "phrases": [
+    "belittle",
+    "cast aspersions",
+    "denigrate",
+    "hold up to ridicule",
+    "malign",
+    "slander",
+    "speak ill of",
+    "vilify"
+   ],
+   "rejected": {
+    "bring into disrepute": "verifier said no",
+    "discredit": "verifier said no"
+   }
+  },
+  "ACTION:CHALLENGE": {
+   "phrases": [
+    "controvert",
+    "gainsay",
+    "impugn",
+    "question the validity"
+   ],
+   "rejected": {
+    "assail": "verifier said no",
+    "call into question": "verifier said no"
+   }
+  },
+  "ACTION:PURCHASE": {
+   "phrases": [
+    "make a purchase",
+    "place an order"
+   ],
+   "rejected": {}
+  },
+  "ACTION:GRANT": {
+   "phrases": [
+    "confer",
+    "give a licence",
+    "give a license"
+   ],
+   "rejected": {
+    "bestow": "verifier said no"
+   }
+  },
+  "ACTION:INDEMNIFY": {
+   "phrases": [
+    "hold harmless and defend",
+    "hold harmless and indemnify",
+    "indemnify and defend",
+    "indemnify and hold harmless"
+   ],
+   "rejected": {}
+  },
+  "ACTION:OPT_OUT": {
+   "phrases": [
+    "decline to participate"
+   ],
+   "rejected": {
+    "cancel subscription": "verifier said no",
+    "revoke consent": "verifier said no",
+    "withdraw consent": "verifier said no"
+   }
+  },
+  "THING:USER_DATA": {
+   "phrases": [
+    "personal details",
+    "your personal details"
+   ],
+   "rejected": {
+    "customer data": "verifier said no",
+    "customer information": "verifier said no",
+    "end user data": "verifier said no",
+    "end user information": "verifier said no",
+    "user data": "verifier said no",
+    "user information": "verifier said no",
+    "user's data": "verifier said no",
+    "user's information": "verifier said no"
+   }
+  },
+  "THING:CONFIDENTIAL_INFO": {
+   "phrases": [
+    "confidential data",
+    "confidential knowledge",
+    "non public information",
+    "nonpublic information",
+    "proprietary data",
+    "proprietary knowledge",
+    "secret information"
+   ],
+   "rejected": {
+    "inside information": "verifier said no"
+   }
+  },
+  "THING:THIRD_PARTIES": {
+   "phrases": [
+    "any third person",
+    "non parties",
+    "non signatories",
+    "outside parties",
+    "third persons"
+   ],
+   "rejected": {
+    "any other person": "verifier said no",
+    "other persons": "verifier said no"
+   }
+  },
+  "THING:ADVERTISERS": {
+   "phrases": [
+    "advertiser"
+   ],
+   "rejected": {
+    "ad clients": "verifier said no",
+    "ad partners": "verifier said no",
+    "advertising clients": "verifier said no"
+   }
+  },
+  "THING:ANALYTICS": {
+   "phrases": [
+    "analytics suppliers",
+    "analytics vendors"
+   ],
+   "rejected": {
+    "analytics platforms": "verifier said no",
+    "analytics services": "verifier said no",
+    "analytics software": "verifier said no",
+    "analytics solutions": "verifier said no",
+    "analytics tools": "verifier said no",
+    "data analytics": "verifier said no"
+   }
+  },
+  "THING:SERVICE_PROVIDERS": {
+   "phrases": [
+    "service suppliers",
+    "sub processors"
+   ],
+   "rejected": {
+    "subcontractors": "verifier said no",
+    "third party providers": "verifier said no"
+   }
+  },
+  "THING:ADVISORS": {
+   "phrases": [
+    "financial advisers",
+    "financial advisors",
+    "independent advisers",
+    "independent advisors",
+    "legal advisers",
+    "legal advisors",
+    "outside counsel",
+    "tax advisers",
+    "tax advisors"
+   ],
+   "rejected": {
+    "counsel": "verifier said no"
+   }
+  },
+  "THING:AFFILIATES": {
+   "phrases": [
+    "affiliated companies",
+    "affiliated company",
+    "affiliated entities",
+    "affiliated entity",
+    "subsidiary"
+   ],
+   "rejected": {
+    "controlled entities": "verifier said no",
+    "parent company": "verifier said no",
+    "parent entity": "verifier said no"
+   }
+  },
+  "THING:BOOKS": {
+   "phrases": [
+    "account books",
+    "accounting records",
+    "books and accounts",
+    "books of account",
+    "ledgers",
+    "record books",
+    "records and accounts"
+   ],
+   "rejected": {
+    "financial records": "verifier said no"
+   }
+  },
+  "THING:PREMISES": {
+   "phrases": [
+    "demised premises",
+    "dwelling",
+    "leased premises",
+    "leased space",
+    "rental property",
+    "residence",
+    "suite"
+   ],
+   "rejected": {
+    "building": "verifier said no",
+    "land": "verifier said no",
+    "real property": "verifier said no"
+   }
+  },
+  "THING:AGREEMENT": {
+   "phrases": [
+    "compact",
+    "indenture",
+    "memorandum of understanding",
+    "pact"
+   ],
+   "rejected": {
+    "accord": "verifier said no"
+   }
+  },
+  "THING:CONSENT": {
+   "phrases": [
+    "assent",
+    "concurrence",
+    "permission",
+    "prior approval",
+    "prior consent",
+    "written approval",
+    "written consent"
+   ],
+   "rejected": {
+    "authorisation": "verifier said no",
+    "authorization": "verifier said no",
+    "written authorization": "verifier said no"
+   }
+  },
+  "THING:LIABILITY": {
+   "phrases": [
+    "civil liability",
+    "contractual liability",
+    "direct liability",
+    "financial liability",
+    "joint liability",
+    "legal liability",
+    "potential liability",
+    "several liability",
+    "strict liability",
+    "vicarious liability"
+   ],
+   "rejected": {
+    "liable": "verifier said no"
+   }
+  },
+  "THING:IP": {
+   "phrases": [
+    "copyright",
+    "copyright rights",
+    "patent",
+    "patent rights",
+    "service marks",
+    "trade dress",
+    "trade secret",
+    "trademark",
+    "trademark rights"
+   ],
+   "rejected": {
+    "mark": "verifier said no",
+    "marks": "verifier said no",
+    "trade secrets": "already THING:CONFIDENTIAL_INFO"
+   }
+  },
+  "THING:INSURANCE": {
+   "phrases": [
+    "insurance agreement",
+    "insurance contract",
+    "insurance cover"
+   ],
+   "rejected": {
+    "insurance arrangement": "verifier said no",
+    "insurance plan": "verifier said no",
+    "insurance program": "verifier said no",
+    "insurance protection": "verifier said no"
+   }
+  },
+  "THING:REVENUE": {
+   "phrases": [
+    "gross receipts",
+    "gross sales",
+    "total sales",
+    "turnover"
+   ],
+   "rejected": {
+    "sales": "verifier said no"
+   }
+  },
+  "THING:WITHOUT_CAUSE": {
+   "phrases": [
+    "at its convenience",
+    "for any reason whatsoever",
+    "for its convenience",
+    "for no reason whatsoever",
+    "without any cause",
+    "without assigning cause",
+    "without assigning reason"
+   ],
+   "rejected": {}
+  },
+  "THING:EXISTENCE": {
+   "phrases": [
+    "existence hereof"
+   ],
+   "rejected": {
+    "existence of any transaction": "verifier said no"
+   }
+  },
+  "PROP:NON_TRANSFERABLE": {
+   "phrases": [
+    "non transferrable",
+    "nontransferrable",
+    "not transferrable"
+   ],
+   "rejected": {
+    "non delegable": "verifier said no",
+    "non sublicensable": "verifier said no",
+    "nondelegable": "verifier said no",
+    "not delegable": "verifier said no",
+    "not sublicensable": "verifier said no"
+   }
+  },
+  "PROP:NON_EXCLUSIVE": {
+   "phrases": [
+    "not exclusive",
+    "without exclusivity"
+   ],
+   "rejected": {
+    "non exclusive": "already in this concept"
+   }
+  },
+  "PROP:EXCLUSIVE": {
+   "phrases": [
+    "exclusivity",
+    "sole and exclusive"
+   ],
+   "rejected": {}
+  },
+  "PROP:IRREVOCABLE": {
+   "phrases": [
+    "cannot be revoked",
+    "irrevocability",
+    "non revocable",
+    "not revocable",
+    "not subject to revocation"
+   ],
+   "rejected": {
+    "may not be revoked": "verifier said no"
+   }
+  },
+  "PROP:PERPETUAL": {
+   "phrases": [
+    "for all time",
+    "never expires",
+    "no expiration",
+    "without end",
+    "without expiration",
+    "without expiry"
+   ],
+   "rejected": {}
+  },
+  "PROP:ROYALTY_FREE": {
+   "phrases": [
+    "free of royalties",
+    "free of royalty",
+    "without royalties",
+    "without royalty"
+   ],
+   "rejected": {
+    "paid up": "verifier said no"
+   }
+  },
+  "PROP:WORLDWIDE": {
+   "phrases": [
+    "across the globe",
+    "in all countries",
+    "in every country",
+    "on a worldwide basis",
+    "throughout the globe"
+   ],
+   "rejected": {
+    "global": "verifier said no",
+    "globally": "verifier said no",
+    "on a global basis": "verifier said no",
+    "without geographic limitation": "verifier said no"
+   }
+  },
+  "PROP:SUBLICENSABLE": {
+   "phrases": [
+    "authorized to sublicense",
+    "right to grant sublicenses",
+    "right to sublicense",
+    "sublicensing permitted"
+   ],
+   "rejected": {
+    "sublicense rights": "verifier said no",
+    "sublicensing rights": "verifier said no"
+   }
+  },
+  "PROP:UNLIMITED": {
+   "phrases": [
+    "no cap",
+    "no ceiling",
+    "no maximum",
+    "not capped",
+    "without cap",
+    "without ceiling",
+    "without maximum"
+   ],
+   "rejected": {}
+  },
+  "PROP:CAPPED": {
+   "phrases": [
+    "aggregate limit",
+    "ceiling",
+    "maximum amount",
+    "not greater than",
+    "not to be exceeded",
+    "subject to a maximum",
+    "upper limit"
+   ],
+   "rejected": {
+    "no more than": "already NEUTRAL:BOILERPLATE",
+    "shall be limited": "verifier said no",
+    "up to": "verifier said no"
+   }
+  },
+  "PROP:JOINTLY_OWNED": {
+   "phrases": [
+    "co proprietors",
+    "joint proprietors",
+    "joint title",
+    "shared ownership"
+   ],
+   "rejected": {
+    "co own": "already in this concept",
+    "common ownership": "verifier said no"
+   }
+  },
+  "BLOCK:CONDITION": {
+   "phrases": [
+    "conditional on",
+    "conditional upon",
+    "contingent on",
+    "contingent upon",
+    "except for",
+    "in the event of",
+    "in the event that",
+    "insofar as",
+    "save for",
+    "to the extent that"
+   ],
+   "rejected": {}
+  },
+  "THING:W_OBLIGATION": {
+   "phrases": [
+    "obligation",
+    "duty"
+   ],
+   "rejected": {
+    "commitment": "verifier said no",
+    "covenant": "already MODAL:MUST",
+    "responsibility": "verifier said no",
+    "undertaking": "already MODAL:MUST"
+   }
+  },
+  "THING:W_LAST": {
+   "phrases": [
+    "last"
+   ],
+   "rejected": {
+    "duration": "verifier said no",
+    "expiration": "verifier said no",
+    "final": "verifier said no",
+    "term": "verifier said no",
+    "most recent": "reviewer: another sense of 'last' (not duration)"
+   }
+  },
+  "THING:W_GOVERN": {
+   "phrases": [
+    "govern",
+    "governed",
+    "governed by",
+    "governing",
+    "governing law",
+    "governs"
+   ],
+   "rejected": {
+    "choice of law": "verifier said no"
+   }
+  },
+  "THING:W_AMOUNT": {
+   "phrases": [
+    "amount",
+    "quantities",
+    "quantity",
+    "sum"
+   ],
+   "rejected": {
+    "number": "verifier said no",
+    "volume": "verifier said no"
+   }
+  },
+  "THING:W_SIMILAR": {
+   "phrases": [
+    "similar",
+    "analogous",
+    "comparable",
+    "of a like nature",
+    "of a similar nature",
+    "of like kind",
+    "of the same kind",
+    "of the same nature"
+   ],
+   "rejected": {}
+  },
+  "THING:W_TERM": {
+   "phrases": [
+    "term",
+    "agreement duration",
+    "agreement term",
+    "contract duration",
+    "contract term",
+    "initial term",
+    "renewal term",
+    "term length",
+    "term of the agreement",
+    "term of this agreement"
+   ],
+   "rejected": {
+    "duration": "verifier said no"
+   }
+  },
+  "THING:W_CONTINU": {
+   "phrases": [
+    "continu",
+    "continuance",
+    "continuation",
+    "continue",
+    "remain in effect",
+    "remain in force",
+    "shall continue"
+   ],
+   "rejected": {
+    "in force": "verifier said no",
+    "survival": "verifier said no",
+    "survive": "verifier said no",
+    "surviving": "verifier said no"
+   }
+  },
+  "THING:W_TERMINATION": {
+   "phrases": [
+    "termination",
+    "cancellation"
+   ],
+   "rejected": {
+    "cessation": "verifier said no",
+    "dissolution": "verifier said no"
+   }
+  },
+  "THING:W_RESTRICTED": {
+   "phrases": [
+    "restricted",
+    "restriction",
+    "restrictions"
+   ],
+   "rejected": {
+    "cap": "verifier said no",
+    "ceiling": "verifier said no",
+    "constraint": "verifier said no",
+    "constraints": "verifier said no",
+    "limit": "verifier said no",
+    "limitation": "verifier said no",
+    "limitations": "verifier said no",
+    "limits": "verifier said no"
+   }
+  },
+  "THING:W_BENEFICIARY": {
+   "phrases": [
+    "beneficiary",
+    "beneficiaries",
+    "creditor beneficiary",
+    "donee beneficiary",
+    "intended beneficiary",
+    "named beneficiary",
+    "third party beneficiary"
+   ],
+   "rejected": {}
+  },
+  "THING:Q_PRICE_INCREASES": {
+   "phrases": [
+    "price increases",
+    "escalation in price",
+    "escalations in price",
+    "increase in price",
+    "increases in price",
+    "price escalation",
+    "price escalations",
+    "price increase",
+    "price rise",
+    "price rises",
+    "price uplift",
+    "price uplifts"
+   ],
+   "rejected": {},
+   "question_phrase": true
+  },
+  "THING:Q_NON_COMPETE_OR_EXCLUSIVITY_OBLIGATIONS": {
+   "phrases": [
+    "non compete or exclusivity obligations",
+    "exclusivity covenants",
+    "exclusivity obligations",
+    "exclusivity requirements",
+    "exclusivity restrictions",
+    "non compete covenants",
+    "non compete obligations",
+    "non compete requirements",
+    "non compete restrictions",
+    "non competition covenants",
+    "non competition obligations",
+    "non competition requirements",
+    "non competition restrictions"
+   ],
+   "rejected": {},
+   "question_phrase": true
+  },
+  "THING:Q_ADDITIONAL_FEES": {
+   "phrases": [
+    "additional fees",
+    "additional charges",
+    "excess charges",
+    "excess fees",
+    "excess usage charges",
+    "excess usage fees",
+    "extra charges",
+    "extra fees",
+    "overage charges",
+    "overage fees"
+   ],
+   "rejected": {
+    "additional costs": "verifier said no",
+    "surcharge": "verifier said no"
+   },
+   "question_phrase": true
+  },
+  "THING:Q_LIQUIDATED_DAMAGES": {
+   "phrases": [
+    "liquidated damages",
+    "agreed damages",
+    "liquidated damage",
+    "stipulated damage",
+    "stipulated damages"
+   ],
+   "rejected": {},
+   "question_phrase": true
+  },
+  "THING:Q_TERMINATION_FEE": {
+   "phrases": [
+    "termination fee",
+    "early termination charge",
+    "early termination fee",
+    "termination charge"
+   ],
+   "rejected": {
+    "cancellation charge": "verifier said no",
+    "cancellation fee": "verifier said no",
+    "cancellation penalty": "verifier said no",
+    "early termination penalty": "verifier said no",
+    "exit fee": "verifier said no",
+    "termination penalty": "verifier said no"
+   },
+   "question_phrase": true
+  },
+  "THING:Q_BEST_TERMS": {
+   "phrases": [
+    "best terms",
+    "most favorable conditions",
+    "most favorable terms",
+    "most favored customer",
+    "most favourable conditions",
+    "most favourable terms",
+    "most favoured customer",
+    "no less favorable terms",
+    "no less favourable terms"
+   ],
+   "rejected": {
+    "most favored nation": "verifier said no",
+    "most favoured nation": "verifier said no"
+   },
+   "question_phrase": true
+  }
+ },
+ "reviewed": "2026-09-30: phrases spot-checked; removed where the sense differs (see 'rejected')",
+ "generated_q": "2026-09-30",
+ "reviewed_out": {
+  "THING:Q_LICENSEE_AFFILIATES": "reviewer: a parser chunk mixing a party with a thing, not a phrase with its own meaning",
+  "THING:Q_LICENSOR_AFFILIATES": "reviewer: a parser chunk mixing a party with a thing, not a phrase with its own meaning",
+  "THING:Q_MUST_PARTY_PURCHASE": "reviewer: a parser chunk mixing a party with a thing, not a phrase with its own meaning",
+  "THING:Q_MUST_PARTY_SHARE_REVENUE": "reviewer: a parser chunk mixing a party with a thing, not a phrase with its own meaning",
+  "THING:Q_OTHER_PARTY_CONSENT": "reviewer: a parser chunk mixing a party with a thing, not a phrase with its own meaning",
+  "THING:Q_OTHER_PARTY_CUSTOMERS": "reviewer: a parser chunk mixing a party with a thing, not a phrase with its own meaning",
+  "THING:Q_OTHER_PARTY_EMPLOYEES": "reviewer: a parser chunk mixing a party with a thing, not a phrase with its own meaning",
+  "THING:Q_OTHER_PARTY_INTELLECTUAL_PROPERTY": "reviewer: a parser chunk mixing a party with a thing, not a phrase with its own meaning",
+  "THING:Q_PARTY_LIABILITY": "reviewer: a parser chunk mixing a party with a thing, not a phrase with its own meaning",
+  "THING:Q_PARTY_RETURN": "reviewer: a parser chunk mixing a party with a thing, not a phrase with its own meaning",
+  "THING:Q_USAGE_THRESHOLD_TRIGGER": "reviewer: a parser chunk mixing a party with a thing, not a phrase with its own meaning",
+  "THING:Q_SPECIFIED_PERIOD": "reviewer: a parser chunk mixing a party with a thing, not a phrase with its own meaning",
+  "THING:Q_OTHER_CUSTOMERS": "reviewer: a parser chunk mixing a party with a thing, not a phrase with its own meaning",
+  "THING:Q_SIMILAR_INFORMATION": "reviewer: no synonyms; as a concept it would only narrow the question's items"
+ }
+}

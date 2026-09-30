@@ -3,13 +3,20 @@ Signed-in users, their per-day question limits, and a log of their requests,
 in SQLite. Used by ask_ui.py when it runs behind the sign-in proxy.
 
 The request log keeps who asked, when, and how the question was answered
-(path, reader, latency, LLM calls), never the question or document text.
+(path, reader, latency, LLM calls), and since 2026-09-30 what was asked and
+answered: the question, the answer with its confidence and evidence, and the
+document. Each request has an id ("req_..."); each document is stored once,
+under an id made from its text ("doc_..."), so asking again about the same
+text doesn't store it again.
 """
 from __future__ import annotations
 
 import datetime as dt
+import hashlib
+import json
 import sqlite3
 import threading
+import uuid
 from pathlib import Path
 
 SCHEMA = """
@@ -23,11 +30,31 @@ CREATE TABLE IF NOT EXISTS requests (
 );
 CREATE INDEX IF NOT EXISTS requests_day ON requests (day);
 CREATE INDEX IF NOT EXISTS requests_email ON requests (email);
+CREATE TABLE IF NOT EXISTS documents (id TEXT PRIMARY KEY, text TEXT NOT NULL, first_seen TEXT NOT NULL);
 """
+# Added to `requests` later, so also to a database made before them. Rows
+# logged earlier keep NULL here.
+REQUEST_CONTENT = (
+    ("id", "TEXT"),  # new_request_id()
+    ("question", "TEXT"),
+    ("document_id", "TEXT"),  # documents.id
+    ("answer", "TEXT"),
+    ("confidence", "REAL"),
+    ("evidence", "TEXT"),  # JSON: [{"text", "label", "p"}]
+)
 
 
 def _now() -> dt.datetime:
     return dt.datetime.now(dt.timezone.utc)
+
+
+def new_request_id() -> str:
+    return "req_" + uuid.uuid4().hex
+
+
+def document_id(text: str) -> str:
+    """The same for the same text, so each document is stored once."""
+    return "doc_" + hashlib.sha256(text.encode()).hexdigest()[:16]
 
 
 class Usage:
@@ -37,6 +64,13 @@ class Usage:
         self._db = sqlite3.connect(path, check_same_thread=False)
         self._lock = threading.Lock()
         self._db.executescript(SCHEMA)
+        have = {row[1] for row in self._db.execute("PRAGMA table_info(requests)")}
+        with self._db:
+            for name, kind in REQUEST_CONTENT:
+                if name not in have:
+                    self._db.execute(f"ALTER TABLE requests ADD COLUMN {name} {kind}")
+            self._db.execute("CREATE UNIQUE INDEX IF NOT EXISTS requests_id ON requests (id)")
+            self._db.execute("CREATE INDEX IF NOT EXISTS requests_document ON requests (document_id)")
 
     @staticmethod
     def _today() -> str:
@@ -71,13 +105,22 @@ class Usage:
             limit, used = self._limit(email), self._used(email, self._today())
         return {"user": email, "daily_limit": limit, "remaining": max(0, limit - used)}
 
-    def log(self, email: str, status: str, reader: str | None = None, answer: dict | None = None) -> None:
+    def log(self, email: str, status: str, reader: str | None = None, answer: dict | None = None, *,
+            request_id: str | None = None, question: str | None = None, document: str | None = None) -> None:
         now = _now()
+        ts = now.isoformat(timespec="seconds")
         a = answer or {}
+        doc_id = document_id(document) if document else None
+        evidence = json.dumps(a["evidence"], default=str) if "evidence" in a else None
         with self._lock, self._db:
-            self._db.execute("INSERT INTO requests VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", (
-                now.isoformat(timespec="seconds"), now.date().isoformat(), email, status, reader,
-                a.get("path"), a.get("answered_by"), a.get("ms"), a.get("llm_calls")))
+            if doc_id:
+                self._db.execute("INSERT OR IGNORE INTO documents VALUES (?, ?, ?)", (doc_id, document, ts))
+            self._db.execute(
+                "INSERT INTO requests (ts, day, email, status, reader, path, answered_by, ms, llm_calls, "
+                "id, question, document_id, answer, confidence, evidence) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", (
+                    ts, now.date().isoformat(), email, status, reader,
+                    a.get("path"), a.get("answered_by"), a.get("ms"), a.get("llm_calls"),
+                    request_id, question, doc_id, a.get("answer"), a.get("confidence"), evidence))
 
     def set_limit(self, email: str, daily_limit: int | None) -> None:
         """A per-user limit (0 blocks the user); None goes back to the default."""

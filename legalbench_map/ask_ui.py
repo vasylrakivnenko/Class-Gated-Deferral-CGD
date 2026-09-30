@@ -24,15 +24,23 @@ import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
+from router import qtree
 from router.bank import Bank
 from router.harness import Harness
 from router.systemone import SystemOne, SystemOneError
 from router.tier0 import Tier0
-from router.usage import Usage
+from router.usage import Usage, document_id, new_request_id
 
 PAGE = Path(__file__).resolve().parent / "router" / "ui.html"
 ADMIN_PAGE = Path(__file__).resolve().parent / "router" / "admin.html"
 USER_HEADER = "X-Forwarded-Email"
+
+
+def _plain(o):
+    """A last resort for json.dumps: sets as sorted lists, anything else as text."""
+    if isinstance(o, (set, frozenset)):
+        return sorted(o, key=str)
+    return repr(o)
 
 
 class App:
@@ -44,6 +52,7 @@ class App:
         self.admins = admins
         self.classifiers = classifiers  # off: the free classifiers are on standby
         self.tier0 = Tier0()  # loads spaCy and the NLI model once, at startup
+        qtree.classify("Is this loaded at startup?")  # the question tree's parser, likewise
         self._lock = threading.Lock()  # one question at a time: the clients' call counters are shared
 
     def ask(self, question: str, document: str, reader: str, tier0: bool = True, pretier0: bool = True) -> dict:
@@ -123,27 +132,31 @@ def make_handler(app: App):
             if not question or not document:
                 self._json(400, {"error": "Enter both a document and a question."})
                 return
+            ids = {"request_id": new_request_id(), "document_id": document_id(document)}
+            saved = {"request_id": ids["request_id"], "question": question, "document": document}
             if app.usage and not app.usage.take(email):
-                app.usage.log(email, "limited", reader)
-                self._json(429, {"error": f"You've used all {app.usage.status(email)['daily_limit']} questions for today. The limit resets at 00:00 UTC.",
+                app.usage.log(email, "limited", reader, **saved)
+                self._json(429, {**ids, "error": f"You've used all {app.usage.status(email)['daily_limit']} questions for today. The limit resets at 00:00 UTC.",
                                  **app.usage.status(email)})
                 return
             try:
                 result = app.ask(question, document, reader, tier0, pretier0)
             except SystemOneError as e:
                 if app.usage:
-                    app.usage.log(email, "error", reader)
-                self._json(502, {"error": f"LLM call failed: {e}"})
+                    app.usage.log(email, "error", reader, **saved)
+                self._json(502, {**ids, "error": f"LLM call failed: {e}"})
                 return
             if app.usage:
-                app.usage.log(email, "ok", reader, result)
-            self._json(200, {**result, **(app.usage.status(email) if app.usage else {})})
+                app.usage.log(email, "ok", reader, result, **saved)
+            self._json(200, {**ids, **result, **(app.usage.status(email) if app.usage else {})})
 
         def _body(self) -> dict:
             return json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))) or b"{}")
 
         def _json(self, code: int, obj: dict):
-            self._send(code, json.dumps(obj).encode(), "application/json")
+            # The diagnostic fields carry whatever the pipeline built; never let one
+            # of them break the reply, or the page gets the proxy's HTML error page.
+            self._send(code, json.dumps(obj, default=_plain).encode(), "application/json")
 
         def _send(self, code: int, body: bytes, content_type: str):
             self.send_response(code)

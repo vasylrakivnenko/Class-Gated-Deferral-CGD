@@ -28,6 +28,7 @@ from __future__ import annotations
 import re
 from dataclasses import asdict, dataclass, field
 
+from router.frames import _GENERIC, LEXICON, normalize, tokens
 from router.harness import _SENTENCE_END
 from router.pretier0 import PARTY_SCAN_CHARS, TOPIC_QUESTION, find_parties
 
@@ -103,6 +104,72 @@ def sentences(document: str) -> list:
 def _stems(text: str) -> set:
     """Content words cut to 5 letters, so "pays"/"payment" and "sublet"/"subletting" meet."""
     return {w[:5] for w in _WORD.findall(text.lower()) if w not in STOPWORDS and len(w) > 1}
+
+
+# A "yes" needs the deciding sentence to name the object of the question's verb,
+# itself or by a synonym from the lexicon ("accounts" for "books"): the NLI model
+# found "The Licensee can audit the Licensor's tits." entailed at 0.93 by a
+# clause about auditing books and records. Generic objects ("the agreement") are
+# exempt. On the Tier 0 eval (2026-09-30, threshold 0.9) it blocked 3 of the 9
+# wrong "yes" answers and at most 27 of 364 correct ones, which go to the LLM:
+# mostly paraphrases the lexicon lacks ("coverage" for "insurance") and kinds
+# ("keep a pet" from "may keep one cat").
+_OBJECT_DEPS = ("dobj", "attr", "oprd")
+_GENERIC_OBJECTS = set(_GENERIC) | {normalize(w) for w in
+                                    "information agreement party parties term terms right rights thing anything".split()}
+
+
+def _norm(text: str) -> str:
+    return " ".join(tokens(text))
+
+
+def _synonym_index() -> dict:
+    """Each lexicon phrase -> the phrases of every concept it belongs to."""
+    index = {}
+    for phrases in LEXICON.values():
+        group = {_norm(p) for p in phrases} - {""}
+        for p in group:
+            index.setdefault(p, set()).update(group)
+    return index
+
+
+_SYNONYMS = _synonym_index()
+
+
+def _objects(statement) -> list:
+    """The parsed statement's objects, each with the nouns joined to it by
+    "and"/"or": "audit the books and records" -> [[books, records]]."""
+    nouns = ("NOUN", "PROPN")
+    return [[t] + [c for c in t.conjuncts if c.pos_ in nouns]
+            for t in statement if t.dep_ in _OBJECT_DEPS and t.pos_ in nouns]
+
+
+def _names(noun) -> list:
+    """What a noun goes by: with its compound and adjective words ("intellectual property"), then alone."""
+    mods = [c for c in noun.lefts if c.dep_ in ("compound", "amod")]
+    alone = _norm(noun.text)
+    return [_norm(" ".join(c.text for c in mods + [noun])), alone] if mods else [alone]
+
+
+def _unnamed_object(objects: list, sentence: str) -> str | None:
+    """The first object that `sentence` names neither itself nor by a lexicon
+    synonym; None if it names them all. One noun of an "and"/"or" group is enough."""
+    s = _norm(sentence)
+    padded = f" {s} "
+    prefixes = {w[:5] for w in s.split() if len(w) >= 5}
+
+    def named(noun) -> bool:
+        for n in filter(None, _names(noun)):
+            if f" {n} " in padded or (" " not in n and len(n) >= 5 and n[:5] in prefixes):
+                return True
+            if any(f" {syn} " in padded for syn in _SYNONYMS.get(n, ())):
+                return True
+        return False
+
+    for group in objects:
+        if not any(normalize(n.text.lower()) in _GENERIC_OBJECTS or named(n) for n in group):
+            return " or ".join(n.text for n in group)
+    return None
 
 
 def _subject_end(doc) -> int | None:
@@ -217,7 +284,17 @@ class Tier0:
             mismatched.append((r[0], actors))
             return False
 
-        yes = sorted((r for r in rows if r[1]["entailment"] >= self.threshold and on_topic(r) and same_party(r)),
+        objects = _objects(self.nlp(hypothesis))
+        unnamed = []
+
+        def names_object(r):
+            missing = _unnamed_object(objects, r[0])
+            if missing:
+                unnamed.append((r, missing))
+            return missing is None
+
+        yes = sorted((r for r in rows if r[1]["entailment"] >= self.threshold and on_topic(r) and same_party(r)
+                      and names_object(r)),
                      key=lambda r: (-on_topic(r), -r[1]["entailment"]))
         no = sorted((r for r in rows if r[1]["contradiction"] >= self.threshold and on_topic(r) and same_party(r)),
                     key=lambda r: (-on_topic(r), -r[1]["contradiction"]))
@@ -228,6 +305,10 @@ class Tier0:
         if yes and no:
             return Tier0Result(False, reason=f"sentences disagree ({len(yes)} say yes, {len(no)} say no)",
                                evidence=(ev(yes, "yes", "entailment") + ev(no, "no", "contradiction"))[:3], **base)
+        if not yes and not no and unnamed:
+            r, missing = unnamed[0]
+            return Tier0Result(False, reason=f'the sentence that would say yes never names "{missing}" (nor a synonym)',
+                               evidence=ev([r], "yes", "entailment"), **base)
         if not yes and not no and mismatched:
             text, actors = mismatched[0]
             return Tier0Result(False, reason=f"the sentence that would settle it is about {' and '.join(sorted(actors))}, "

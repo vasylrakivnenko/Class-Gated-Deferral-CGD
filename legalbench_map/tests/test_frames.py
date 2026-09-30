@@ -148,3 +148,119 @@ def test_not_before_another_actor_does_not_negate_it():
     doc = ("All policies of insurance procured by Racing herein shall be written as primary policies, "
            "not contributing with or in excess of coverage that the Sponsor may carry.")
     assert check("Is a party required to maintain insurance?", doc).answer != "no"
+
+
+# --- presence frames ("Does the agreement specify ...", "Is there ...", gerund subjects)
+
+GOV = "This Agreement shall be governed by and construed in accordance with the laws of the State of Delaware."
+
+
+def test_presence_specify_is_yes_when_one_sentence_names_everything():
+    assert run("Does the agreement specify which law governs it?", "Rent is due monthly. " + GOV) == ("yes", None)
+    assert run("Does the agreement specify which law governs it?", "Each party shall comply with applicable law.") == (None, None)
+
+
+def test_presence_negated_sentence_defers_and_negative_question_needs_negation():
+    assert run("Is there a third-party beneficiary to the agreement?",
+               "There are no third party beneficiaries to this Agreement.") == (None, None)
+    assert run("Does the agreement say that no license to the confidential information is granted to the receiving party?",
+               "Nothing in this Agreement grants the Receiving Party any license to the Confidential Information.") == ("yes", None)
+
+
+def test_presence_require_reads_not_without_consent_as_a_requirement():
+    q = "Does assigning the agreement require the other party's consent?"
+    assert run(q, "Neither party may assign this Agreement without the prior written consent of the other party.") == ("yes", None)
+    assert run(q, "Either party may assign this Agreement without the consent of the other party.") == (None, None)
+
+
+def test_when_questions_need_the_term_stated_as_a_date_or_duration():
+    q = "Does the agreement specify when its initial term expires?"
+    assert run(q, "The initial term of this Agreement shall be three (3) years from the Effective Date.") == ("yes", None)
+    assert run(q, "Either party shall give notice at least ninety (90) days prior to the expiration of the Term.") == (None, None)
+    assert run(q, "The Consultant may terminate the engagement by giving 120 days prior written notice.") == (None, None)
+
+
+def test_catch_all_presence_leaves_questions_about_a_named_party_alone():
+    doc = "Employer shall reimburse Employee for reasonable travel expenses."
+    assert run("Must the employee reimburse the employer for travel expenses?", doc) == (None, None)
+
+
+def test_catch_all_presence_defers_on_conditions():
+    doc = "Employee shall receive severance equal to six months' salary if terminated without Cause."
+    assert run("Is a party entitled to severance?", doc) == (None, None)
+
+
+# --- values: numbers, amounts and dates must match
+
+@pytest.mark.parametrize("question, doc", [
+    ("Is the purchase price $500,000?", "The Purchase Price is Five Million Dollars ($5,000,000), payable at Closing."),
+    ("Does the agreement expire on December 31, 2025?", "This Agreement shall expire on December 31, 2026."),
+    ("Can the agreement be terminated with 30 days' notice?", "Either party may terminate this Agreement upon ninety (90) days' prior written notice."),
+    ("Must the landlord repair the heating system within 24 hours?", "Landlord shall repair the heating system within 48 hours of notice."),
+])
+def test_values_in_the_question_must_be_in_the_sentence(question, doc):
+    assert run(question, doc) == (None, None)
+
+
+# --- conditions in the question are matched, not rejected
+
+def test_question_condition_matches_the_clause_condition():
+    q = "Can a party terminate the agreement if the other party undergoes a change of control?"
+    assert run(q, "Licensor may terminate this Agreement upon a change of control of Licensee.") == ("yes", None)
+    assert run(q, "Licensor may terminate this Agreement for convenience.") == (None, None)
+    assert run(q, "Licensor may terminate this Agreement upon a change of control of Licensee, unless Licensee cures.") == (None, None)
+
+
+def test_only_question_accepts_not_except():
+    q = "Must the receiving party use the confidential information only for the purposes of the agreement?"
+    assert run(q, "The Receiving Party shall use the Confidential Information solely for the purpose of evaluating the deal.") == ("yes", None)
+    assert run(q, "The Receiving Party agrees not to use the Confidential Information except for the purpose of evaluating the deal.") == ("yes", None)
+
+
+# --- grammar: passive agents, unlisted capitalized subjects
+
+def test_passive_with_an_agent_is_the_agents_action():
+    q = "Can a party terminate the agreement without cause?"
+    assert run(q, "This Agreement may be terminated at any time without cause by either Acme or Beta on written notice.") == ("yes", None)
+
+
+def test_passive_modality_is_the_verbs_own():
+    doc = "The insurance shall not be limited in any way by reason of any insurance which may be maintained by Pretzel Time."
+    assert check("Is a party required to maintain insurance?", doc).answer != "no"
+
+
+def test_capitalized_subject_counts_as_a_party_for_a_party_question():
+    doc = "Customer specifically agrees to maintain insurance coverage for any finished Products."
+    assert run("Is a party required to maintain insurance?", doc) == ("yes", None)
+
+
+# --- the LLM-grown lexicon and the long-document budget
+
+def test_extra_lexicon_is_loaded_and_never_remaps_curated_forms():
+    from router.frames import LEXICON, tokens
+    assert "cede" in LEXICON[("ACTION", "ASSIGN")]  # from lexicon_extra.json
+    assert tokens("accounts expires") == ["accounts", "expir"]
+
+
+def test_too_many_candidate_sentences_defer():
+    doc = "Either party may terminate this Agreement upon written notice. " * 80
+    assert "too many" in check("Can a party terminate the agreement?", doc).frames["reason"]
+
+
+def test_condition_is_judged_in_the_actions_clause():
+    q = "Must the receiving party use the confidential information only for the purposes of the agreement?"
+    doc = ("The Receiving Party shall limit disclosure to its employees who need to know, and only for that purpose; "
+           "the Receiving Party agrees to use the same degree of protection it uses for its own information.")
+    assert run(q, doc) == (None, None)
+
+
+def test_date_questions_need_a_date():
+    q = "Does the agreement specify the date on which it becomes effective?"
+    assert run(q, "This Agreement shall become effective on the signing date.") == (None, None)
+    assert run(q, "This Agreement shall become effective on January 1, 2021.") == ("yes", None)
+
+
+def test_head_noun_is_the_noun_not_its_adjective():
+    q = "Does the agreement specify when its initial term expires?"
+    assert run(q, "This initial order shall be received no later than April 1, 2000.") == (None, None)
+    assert run(q, "This Agreement will renew for successive terms of one (1) year each.") == (None, None)

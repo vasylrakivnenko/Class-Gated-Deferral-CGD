@@ -2,6 +2,8 @@
 rewording questions into a we/you document's voice."""
 from __future__ import annotations
 
+import json
+
 import pytest
 
 from router.harness import Harness
@@ -94,3 +96,17 @@ def test_covered_needs_a_word_for_the_text():
     doc = "Landlord shall provide Tenant with two parking spaces."
     assert not check("Are the parking spaces covered?", doc).fired
     assert check("Are parking spaces covered in this lease?", doc).fired
+
+
+def test_result_is_json_serializable():
+    """The page gets this dict as JSON; a frame's Items hold frozen sets."""
+    r = check("Is the purpose of life discussed there?", AUDIT)
+    assert not r.fired
+    assert json.loads(json.dumps(r.to_dict()))["frames"]["frame"]["alts"][0][0]["stems"] == ["purpos"]
+
+
+def test_a_verb_the_lexicon_reads_as_a_condition_is_not_dropped():
+    # "save" is a condition word in the lexicon ("save as provided"); here it's the question's verb,
+    # and "is health data mentioned?" is not the question. (PrivacyQA, M4 2026-09-30)
+    doc = "We will ask for your explicit consent to share any sensitive personal information such as health."
+    assert not check("does it save any of my health data?", doc).fired
