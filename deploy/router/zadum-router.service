@@ -1,0 +1,14 @@
+[Unit]
+Description=Zadum router playground (ask_ui.py on 127.0.0.1:8765, behind oauth2-proxy)
+After=network-online.target kev.service
+Wants=network-online.target kev.service
+
+[Service]
+WorkingDirectory=/root/projects/zadumai/legalbench_map
+ExecStart=/root/projects/zadumai/.venv/bin/python ask_ui.py --port 8765 --require-user --daily-limit 50 --usage-db /var/lib/zadum-router/usage.db --admin vasyl@alumni.gsb.stanford.edu
+Environment=PYTHONUNBUFFERED=1
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

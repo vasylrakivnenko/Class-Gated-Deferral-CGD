@@ -1,0 +1,28 @@
+[Unit]
+Description=oauth2-proxy: Google sign-in for router.zadum.ai (127.0.0.1:4180 -> 127.0.0.1:8765)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+DynamicUser=yes
+EnvironmentFile=/etc/oauth2-proxy/env
+ExecStart=/usr/local/bin/oauth2-proxy \
+  --provider=google \
+  --email-domain=* \
+  --http-address=127.0.0.1:4180 \
+  --upstream=http://127.0.0.1:8765/ \
+  --redirect-url=https://router.zadum.ai/oauth2/callback \
+  --reverse-proxy=true \
+  --trusted-proxy-ip=127.0.0.1/32 \
+  --pass-user-headers=true \
+  --cookie-secure=true \
+  --cookie-name=_zadum_router \
+  --cookie-expire=168h \
+  --provider-display-name=Google \
+  --custom-sign-in-logo=- \
+  --banner="Zadum Router"
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

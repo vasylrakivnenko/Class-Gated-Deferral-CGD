@@ -1,0 +1,19 @@
+# Router playground: Google sign-in (oauth2-proxy on 127.0.0.1:4180) in front of
+# ask_ui.py (127.0.0.1:8765), which enforces per-user daily limits.
+router.zadum.ai {
+	reverse_proxy 127.0.0.1:4180 {
+		# Only oauth2-proxy may set who the user is.
+		header_up -X-Forwarded-Email
+		header_up -X-Forwarded-User
+		header_up -X-Forwarded-Preferred-Username
+		header_up -X-Forwarded-Groups
+	}
+}
+
+# Old address and bare IP: send to the domain.
+5-78-143-140.sslip.io {
+	redir https://router.zadum.ai{uri}
+}
+http://5.78.143.140 {
+	redir https://router.zadum.ai{uri}
+}

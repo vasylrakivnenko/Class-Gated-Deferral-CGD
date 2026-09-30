@@ -1,0 +1,13 @@
+[Unit]
+Description=Kev decision model (kev-0.8b, /v1/systemone on 127.0.0.1:8008)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+WorkingDirectory=/root/projects/kev
+ExecStart=/root/projects/kev/.venv/bin/python -m kev.serve --run jaredpalmer/kev-0.8b --host 127.0.0.1 --port 8008
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
