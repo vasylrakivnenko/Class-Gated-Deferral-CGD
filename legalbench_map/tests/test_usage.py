@@ -34,6 +34,25 @@ def test_log_saves_question_answer_and_document(tmp_path):
     assert rows(db, "SELECT text FROM documents WHERE id = ?", doc_id) == [(DOC,)]
 
 
+def test_tier2_logs_its_service_tier_and_timings(tmp_path):
+    db = tmp_path / "usage.db"
+    u = Usage(db, daily_limit=5)
+    usage = {"prompt_tokens": 540, "completion_tokens": 60, "server_s": 0.183, "ttft_s": 0.133,
+             "service_tier": "priority", "attempts": 1}
+    read = {**ANSWER, "path": "reader", "reader": {"fired": True, "ms": 301.26, "usage": usage,
+                                                    "reason": "copied word for word from a clause; Jev checked it (0.98)"}}
+    down = {**ANSWER, "path": "deferred", "reader": {"fired": False, "ms": 0.0, "usage": {"service_tier": "standard"},
+                                                      "reason": "the reader was unavailable (Fireworks failed: HTTP 503)"}}
+    for rid, a in (("req_1", read), ("req_2", down), ("req_3", ANSWER)):
+        u.log("a@x.org", "ok", "jev", a, request_id=rid, question="Q?", document=DOC)
+    got = rows(db, "SELECT id, tier2, tier2_ms, tier2_server_ms, tier2_result, tier2_usage FROM requests ORDER BY id")
+    assert got[0][:4] == ("req_1", "priority", 301.3, 183.0) and got[0][4].startswith("copied")
+    assert json.loads(got[0][5]) == {"prompt_tokens": 540, "completion_tokens": 60, "server_s": 0.183, "ttft_s": 0.133,
+                                     "attempts": 1}
+    assert got[1][:4] == ("req_2", "standard", None, None) and "unavailable" in got[1][4]
+    assert got[2][1:] == (None, None, None, None, None)  # Tier 2 didn't run
+
+
 def test_a_document_is_stored_once(tmp_path):
     db = tmp_path / "usage.db"
     u = Usage(db, daily_limit=5)

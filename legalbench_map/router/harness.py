@@ -29,13 +29,13 @@ leaves the machine.
 from __future__ import annotations
 
 import re
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, replace
 
 from router import pretier0 as pre
-from router import choice, qtree, spans
+from router import choice, qtree, reader, spans
 from router.bank import Bank
 from router.menu import CRITERIA, DIVERSITY_FAMILY, INSTRUCTIONS, SPLIT_UNIT, TEXT_TYPES, family
-from router.systemone import SystemOne
+from router.systemone import SystemOne, SystemOneError
 
 # Calibrated on Jev's answers to the results_jev_pilot routing sets: correct
 # routes had p(none_of_these) <= 0.04 (65 of 65), wrong routes 0.17-0.47
@@ -86,7 +86,7 @@ class Answer:
     question: str
     answer: str  # "yes" / "no", or a category label
     confidence: float  # probability of `answer` from whoever answered
-    path: str  # "pretier0" | "tier0" | "classifier" | "llm_task" | "llm_fallback" | "llm_judgment" | "span" | "llm_span" | "choice" | "llm_choice" | "deferred" | "declined"
+    path: str  # "pretier0" | "tier0" | "classifier" | "llm_task" | "llm_fallback" | "llm_judgment" | "span" | "llm_span" | "reader" | "choice" | "llm_choice" | "deferred" | "declined"
     reason: str
     asked: str = ""  # the question actually answered: the task's criteria, or the user's own question
     task: str | None = None
@@ -100,6 +100,7 @@ class Answer:
     pretier0: dict | None = None  # Pre-Tier 0's check (router/pretier0.py), None if it wasn't run
     qtree: dict | None = None  # the question's kind (router/qtree.py), decided before anything else
     span: dict | None = None  # a fact question's search (router/spans.py), None for other kinds
+    reader: dict | None = None  # Tier 2's read of a deferred fact (router/reader.py), None if it didn't run
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -182,13 +183,14 @@ def aggregate(units: list, proba, classes: list) -> tuple[str, float, list, dict
 
 class Harness:
     def __init__(self, router: SystemOne, llm: SystemOne, bank: Bank, tier0=None, pretier0: bool = False,
-                 classifiers: bool = True):
+                 classifiers: bool = True, reader=None):
         self.router = router
         self.llm = llm
         self.bank = bank
         self.tier0 = tier0  # a router.tier0.Tier0, tried before routing; None to skip
         self.pretier0 = pretier0  # run router/pretier0.py's checks first
         self.classifiers = classifiers  # False: free classifiers on standby, their tasks go to the fallback
+        self.reader = reader  # Tier 2 for deferred facts: an LLM call (router/reader.py), checked by `llm`; None to skip
 
     def route(self, question: str) -> Route:
         out = self.router.choice(question, INSTRUCTIONS, CRITERIA)
@@ -199,6 +201,9 @@ class Harness:
     def answer(self, question: str, document: str) -> Answer:
         frame = qtree.classify(question)
         result = self._answer_kind(question, document, frame)
+        if result.path == "choice" and frame.leaf == "boolean":  # the document decided: it asked which one
+            frame = replace(frame, leaf="choice", lehnert="disjunctive", options=frame.maybe_options,
+                            trace=[*frame.trace, "the text states exactly one alternative: it asks which"])
         result.qtree = frame.to_dict()
         return result
 
@@ -226,6 +231,16 @@ class Harness:
             return self._choice(question, document, frame)
         if frame.leaf != "boolean":
             return self._not_answered(question, frame, "deferred", NOT_ANSWERED[frame.leaf])
+        if frame.maybe_options:
+            # "Does the photographer deliver on a USB drive or through an online gallery?": if the
+            # text states exactly one of the two, the question was which one. By rule only.
+            r = choice.answer(replace(frame, options=frame.maybe_options), document, llm=None)
+            if r.fired:
+                return Answer(question=question, answer=r.answer, confidence=r.confidence, path="choice",
+                              reason=f"the text states only one of the alternatives ({' / '.join(frame.maybe_options)}), "
+                                     f"so the question asks which: {r.reason}",
+                              asked=frame.lookup or question, answered_by="Pre-Tier 0 choice rules (router/choice.py)",
+                              evidence=r.evidence, probabilities={r.answer: r.confidence}, span=r.to_dict())
         result = self._lookup(frame.lookup or question, document)
         result.question = question  # as asked; `asked` holds what the tiers answered
         return result
@@ -237,6 +252,8 @@ class Harness:
         r = spans.answer(frame, document, llm=self.llm)
         calls = self._calls() - before
         if not r.fired:
+            if self.reader is not None and frame.answer_type in spans.ANSWERED_TYPES:
+                return self._read(question, document, frame, r, before)
             a = self._not_answered(question, frame, "deferred",
                                    f"asks for a fact ({(frame.answer_type or '').lower()}); {r.reason}")
             a.span, a.llm_calls, a.evidence = r.to_dict(), calls, r.evidence
@@ -248,6 +265,29 @@ class Harness:
                       (self.llm.model_version or self.llm.model),
                       evidence=r.evidence, probabilities={r.answer: r.confidence} if rule else r.probabilities,
                       llm_calls=calls, span=r.to_dict())
+
+    def _read(self, question: str, document: str, frame, r, before: int) -> Answer:
+        """Tier 2: the reader copies the fact from the clauses about it; Jev checks the clause
+        states it. Only for the fact types the bake-off measured (spans.ANSWERED_TYPES)."""
+        asked = frame.lookup or question
+        try:
+            t2 = reader.read(asked, reader.select_clauses(asked, document), self.reader, check=self.llm.noul,
+                             answer_type=frame.answer_type, document=document)
+        except (reader.ReaderError, SystemOneError) as e:
+            t2 = reader.ReaderResult(False, reason=f"the reader was unavailable ({str(e)[:120]})",
+                                     usage={"service_tier": getattr(self.reader, "service_tier", None)})
+        calls = self._calls() - before
+        name = getattr(self.reader, "name", "LLM reader")
+        if not t2.fired:
+            a = self._not_answered(question, frame, "deferred", f"asks for a fact ({(frame.answer_type or '').lower()}); "
+                                                                f"{r.reason}; Tier 2: {t2.reason}")
+            a.span, a.reader, a.llm_calls, a.evidence = r.to_dict(), t2.to_dict(), calls, r.evidence
+            return a
+        return Answer(question=question, answer=t2.answer, confidence=t2.check, path="reader",
+                      reason=f"{r.reason}; Tier 2: {t2.reason}", asked=asked,
+                      answered_by=f"Tier 2: {name}, checked by {self.llm.model_version or self.llm.model}",
+                      evidence=[{"text": t2.clause, "label": t2.answer, "p": t2.check}],
+                      probabilities={t2.answer: t2.check}, llm_calls=calls, span=r.to_dict(), reader=t2.to_dict())
 
     def _choice(self, question: str, document: str, frame) -> Answer:
         """A choice question: the one alternative the text states (router/choice.py), by rule

@@ -27,6 +27,7 @@ from pathlib import Path
 from router import qtree
 from router.bank import Bank
 from router.harness import Harness
+from router.reader import FireworksLLM
 from router.systemone import SystemOne, SystemOneError
 from router.tier0 import Tier0
 from router.usage import Usage, document_id, new_request_id
@@ -44,13 +45,16 @@ def _plain(o):
 
 
 class App:
-    def __init__(self, usage: Usage | None = None, admins: frozenset = frozenset(), classifiers: bool = False):
+    def __init__(self, usage: Usage | None = None, admins: frozenset = frozenset(), classifiers: bool = False,
+                 tier2: str | None = None):
         self.bank = Bank()
         self.jev = SystemOne.jev()
         self.kev = SystemOne.kev()
         self.usage = usage  # None: no sign-in, no limits (local use)
         self.admins = admins
         self.classifiers = classifiers  # off: the free classifiers are on standby
+        # Tier 2 for deferred facts (router/reader.py): gpt-oss-120b on Fireworks, "standard" or "priority"; None: off
+        self.tier2 = FireworksLLM(tier="priority" if tier2 == "priority" else None) if tier2 else None
         self.tier0 = Tier0()  # loads spaCy and the NLI model once, at startup
         qtree.classify("Is this loaded at startup?")  # the question tree's parser, likewise
         self._lock = threading.Lock()  # one question at a time: the clients' call counters are shared
@@ -59,7 +63,9 @@ class App:
         llm = self.kev if reader == "kev" else self.jev
         with self._lock:
             start = time.perf_counter()
-            harness = Harness(self.jev, llm, self.bank, self.tier0 if tier0 else None, pretier0, self.classifiers)
+            # With Kev the document stays on this machine, so no hosted Tier 2.
+            harness = Harness(self.jev, llm, self.bank, self.tier0 if tier0 else None, pretier0, self.classifiers,
+                              reader=self.tier2 if reader == "jev" else None)
             answer = harness.answer(question, document)
             elapsed = time.perf_counter() - start
         return {**answer.to_dict(), "seconds": round(elapsed, 1), "ms": round(elapsed * 1000)}
@@ -180,10 +186,13 @@ def main() -> None:
     p.add_argument("--admin", action="append", default=[], help="email allowed to open /admin (repeatable; needs --require-user)")
     p.add_argument("--classifiers", action="store_true",
                    help="answer with the free classifiers; without it they are on standby (their tasks go to the LLM)")
+    p.add_argument("--tier2", choices=["standard", "priority"],
+                   help="Tier 2: fact questions the span tier defers go to gpt-oss-120b on Fireworks (this service "
+                        "tier), checked by Jev; without it they defer. Jev reader only (Kev keeps documents local)")
     args = p.parse_args()
     usage = Usage(args.usage_db, args.daily_limit) if args.require_user else None
     admins = frozenset(a.strip().lower() for a in args.admin)
-    server = ThreadingHTTPServer(("127.0.0.1", args.port), make_handler(App(usage, admins, args.classifiers)))
+    server = ThreadingHTTPServer(("127.0.0.1", args.port), make_handler(App(usage, admins, args.classifiers, args.tier2)))
     print(f"Router playground: http://127.0.0.1:{args.port}  (Ctrl+C to stop)", flush=True)
     server.serve_forever()
 

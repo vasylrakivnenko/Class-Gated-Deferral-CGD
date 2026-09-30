@@ -326,6 +326,18 @@ _DOC_DATE_Q = re.compile(r"\bdate of (?:this|the) (?:agreement|contract|lease|do
 _PREAMBLE_DATE = re.compile(r"\b(?:dated|as of|made|entered into|executed|effective)\b|\bday of\b", re.I)
 
 
+def document_date_kind(question: str) -> str | None:
+    """Which of the document's own dates a date question asks for ("agreement", "effectiv",
+    "commenc", "start", "begin", "expir"), or None when it asks about some other date."""
+    terms = key_terms(question)
+    about_doc = re.search(r"\b(?:this|the)\s+(?:agreement|contract|lease|license|nda|plan)\b", question, re.I)
+    kind = "agreement" if _DOC_DATE_Q.search(question) else next(
+        (k for k in ("effectiv", "commenc", "start", "begin", "expir") if any(t[:5] == k[:5] for t in terms)), None) \
+        or ("effectiv" if re.search(r"\bkick(?:s|ed)? in\b|\b(?:take|takes|go|goes) (?:into )?effect\b", question, re.I)
+            else None)
+    return kind if kind and (about_doc or kind == "agreement") else None
+
+
 def _term_words(term: str) -> set:
     """The words a key term can appear as in a clause."""
     if ":" in term:
@@ -369,16 +381,10 @@ def answer(frame, document: str, llm=None) -> SpanResult:
     if typ == "DEFINITION":
         return _definition(question, us, cands, frame, llm)
     terms = key_terms(question)
-    if typ == "DATE":
+    if typ == "DATE" and (kind := document_date_kind(question)):
         # Dates of the document itself ("When does this agreement become effective?"): only their
         # anchors answer by rule; amendments and exhibits carry other "effective" dates.
-        about_doc = re.search(r"\b(?:this|the)\s+(?:agreement|contract|lease|license|nda|plan)\b", question, re.I)
-        kind = "agreement" if _DOC_DATE_Q.search(question) else next(
-            (k for k in ("effectiv", "commenc", "start", "begin", "expir") if any(t[:5] == k[:5] for t in terms)), None) \
-            or ("effectiv" if re.search(r"\bkick(?:s|ed)? in\b|\b(?:take|takes|go|goes) (?:into )?effect\b", question, re.I)
-                else None)
-        if kind and (about_doc or kind == "agreement"):
-            return _document_date(us, cands, frame, llm, kind)
+        return _document_date(us, cands, frame, llm, kind)
     if not terms:
         return SpanResult(False, reason="couldn't tell what the question is about")
     unit_terms = {i: _unit_terms(us[i]) for i in {c.unit for c in cands}}
@@ -470,6 +476,24 @@ def _anchored_dates(us: list, cands: list, kinds: str) -> list:
 _STARTS = re.compile(r"\b(?:commenc\w*|begin\w*|take\s+effect|become\s+effective|be\s+effective|effective)\s*"
                      r"(?:on|as\s+of|from|upon)?\s*(?:the\s+date\s+of\s*)?$", re.I)
 _THIS_TERM = re.compile(r"\bthis\b[^.;]{0,60}?\b(?:agreement|contract|lease|license)\b|\bthe\s+(?:initial\s+)?term\b", re.I)
+# "Constellation may terminate this Agreement, effective as of December 31, 2023": the date some other
+# event takes effect (an ending, renewal or change), not the agreement's start. Lowercase only, so the
+# words in prose count and headings ("TERM AND TERMINATION") and document names ("This Amended and
+# Restated Agreement", "This SECOND AMENDMENT ... effective as of") don't.
+_OTHER_EVENT = re.compile(r"\b(?:terminat|expir|cancel|rescind|rescission|withdr[ae]w|suspen[ds]|amend|modif|renew|"
+                          r"extend|extension|replac|supersed|assign|transfer|appoint)[a-z]*\b|\belect(?:s|ed|ion)?\b")
+
+
+def other_event(text: str):
+    """The first other-event word in `text`, skipping "this amendment" (the document itself) and
+    "unless ... terminated," (a condition, not the event the date belongs to); None if none."""
+    text = re.sub(r"\bunless\b[^,]*,?", " ", text)
+    return next((m for m in _OTHER_EVENT.finditer(text) if not re.search(r"\bthis\s+$", text[:m.start()], re.I)),
+                None)
+
+
+_DATE_KIND_NAMES = {"effectiv": "effective", "commenc": "commencement", "start": "start", "begin": "start",
+                    "expir": "expiration"}
 
 
 def _preamble_dates(us: list, cands: list, starts: bool = False) -> list:
@@ -481,7 +505,8 @@ def _preamble_dates(us: list, cands: list, starts: bool = False) -> list:
         if _OTHER_DOC.search(before):
             continue
         if starts:
-            if _THIS_TERM.search(before) and _STARTS.search(before[-40:]):
+            sentence = re.split(r"[.;]\s", before)[-1][-150:]
+            if _THIS_TERM.search(before) and _STARTS.search(before[-40:]) and not other_event(sentence):
                 out.append(c)
         elif c.unit < 6 and _THIS_DOC.search(before) and _MADE.search(before):
             out.append(c)
@@ -501,7 +526,7 @@ def _document_date(us: list, cands: list, frame, llm, kind: str = "agreement") -
         c = found[0]
         return SpanResult(True, c.text, 1.0, "rule",
                           reason="the date the document defines as its " + ("date" if kind == "agreement" else
-                                                                            f"{kind} date"),
+                                                                            f"{_DATE_KIND_NAMES[kind]} date"),
                           evidence=[{"text": us[c.unit], "label": c.text, "p": 1.0}])
     if llm is None or not found:
         return SpanResult(False, reason="the document names no single date of its own for this" if not found else

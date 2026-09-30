@@ -41,6 +41,7 @@ class QuestionFrame:
     wh: str | None = None
     answer_type: str | None = None  # span: DATE, DURATION, MONEY, PARTY, JURISDICTION, ...
     options: list = field(default_factory=list)  # choice: the alternatives, as written
+    maybe_options: list = field(default_factory=list)  # boolean with an "or" the wording doesn't settle
     slots: dict = field(default_factory=dict)  # QA-SRL-style: aux, subject, verb, object, complement, preps
     negated: bool = False
     trace: list = field(default_factory=list)  # the rule that decided at each test
@@ -388,13 +389,9 @@ def _trim_options(alt: list) -> list:
     return out
 
 
-def _options(q: str, doc, form: str, wh: str | None) -> list:
-    """The alternatives of a choice question; [] when "or" joins things either
-    of which answers yes ("Is the license irrevocable or perpetual?", "Must a
-    party share revenue or profits?")."""
-    low = q.lower()
-    if " or " not in low or re.search(r"\bor not\s*[?.!]*$", low):
-        return []  # "Is termination possible, or not?" is a yes/no question
+def _alternatives(low: str, doc):
+    """The two sides of the question's "or", as written, with the parse's conjuncts:
+    ([option A, option B], left, right, text before "or", text after it)."""
     before, after = low.split(" or ", 1)
     or_tok = next((t for t in doc if t.lower_ == "or" and t.dep_ == "cc"), None)
     left = or_tok.head if or_tok is not None else None
@@ -406,6 +403,41 @@ def _options(q: str, doc, form: str, wh: str | None) -> list:
         alt = [doc[min(a_idx):max(a_idx) + 1].text, doc[min(b_idx):max(b_idx) + 1].text.rstrip("?.! ")]
     else:
         alt = [" ".join(before.split()[-3:]), " ".join(after.split()[:3]).rstrip("?.!")]
+    return alt, left, right, before, after
+
+
+# An "or" question the wording doesn't settle may still be "which one?": the document decides
+# (router/harness.py). Not after permission or obligation words, nor in presence questions,
+# where "or" offers either ("Can we share it with consultants or advisors?").
+_EITHER_READING = re.compile(r"^(?:can|could|may|might|must|shall|should|will|would)\b|\b(?:entitled|prohibited|"
+                             r"required|require|requires|obligated|allowed|permitted|forbidden|restricted|right (?:of|to)|"
+                             r"have to|has to|need to|needs to|any|either)\b")
+
+
+def _maybe_options(q: str, doc) -> list:
+    low = q.lower()
+    if " or " not in low or re.search(r"\bor not\s*[?.!]*$", low) or cues.PRESENCE_LEAD.match(low) \
+            or _EITHER_READING.search(low) or low.count(" or ") > 1:
+        return []
+    alt = _trim_options(_alternatives(low, doc)[0])
+    keys = {re.sub(r"[^a-z0-9]", "", a.lower()) for a in alt}
+    if len(alt) != 2 or not all(keys) or len(keys) != 2:
+        return []
+    # Each alternative must name something ("first" / "straight" in "mediation first or straight
+    # to court" are too common to find in a clause).
+    contentful = lambda text: any(t.pos_ in ("NOUN", "PROPN", "NUM", "ADJ") or t.like_num or "$" in t.text
+                                  for t in _nlp()(text))
+    return alt if all(contentful(a) for a in alt) else []
+
+
+def _options(q: str, doc, form: str, wh: str | None) -> list:
+    """The alternatives of a choice question; [] when "or" joins things either
+    of which answers yes ("Is the license irrevocable or perpetual?", "Must a
+    party share revenue or profits?")."""
+    low = q.lower()
+    if " or " not in low or re.search(r"\bor not\s*[?.!]*$", low):
+        return []  # "Is termination possible, or not?" is a yes/no question
+    alt, left, right, before, after = _alternatives(low, doc)
     if cues.PRESENCE_LEAD.match(low) and not cues.CLAUSE_ALTERNATIVE.search(low):
         return []  # "Is there a clause requiring arbitration or mediation?"
     if re.search(r"\bor not \w", low):
@@ -562,8 +594,9 @@ def classify(question: str) -> QuestionFrame:
         trace.append(f"choice: {' | '.join(options)}")
         return QuestionFrame(q, form, "lookup", "choice", "disjunctive", options=options, trace=trace, **base)
     if form == "polar":
-        trace.append("boolean")
-        return QuestionFrame(q, form, "lookup", "boolean", "verification", trace=trace, **base)
+        maybe = _maybe_options(mq, mdoc)
+        trace.append("boolean" + (f" (or which of {' | '.join(maybe)}: the document decides)" if maybe else ""))
+        return QuestionFrame(q, form, "lookup", "boolean", "verification", maybe_options=maybe, trace=trace, **base)
     typ = "ENTITY" if cues.STEPS_SPAN.search(low) else _span_type(mq, wh, mdoc)
     lehnert = "quantification" if typ in ("MONEY", "CARDINAL", "DURATION", "FREQUENCY", "QUANTITY", "PERCENT") \
         else "feature specification" if typ == "PROPERTY" else "concept completion"

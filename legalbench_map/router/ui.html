@@ -268,6 +268,7 @@ const PATHS = {
   llm_judgment: "advice or a legal conclusion: the text alone can't settle it, so Jev answered",
   span: "copied from the text: one clause names what you asked about, with one value in it",
   llm_span: "Jev picked it among the values the text states",
+  reader: "copied word for word from a clause, and Jev checked the clause states it",
   choice: "the text states this alternative, not the other",
   llm_choice: "Jev picked it among the alternatives",
 };
@@ -396,9 +397,10 @@ function renderJson(value) {
 
 function render(a) {
   const notAnswered = a.path === "deferred" || a.path === "declined";
-  const fact = ["span", "llm_span", "choice", "llm_choice"].includes(a.path);
+  const fact = ["span", "llm_span", "reader", "choice", "llm_choice"].includes(a.path);
   $("model-head").textContent = { classifier: "free classifier", tier0: "Tier 0", pretier0: "Pre-Tier 0",
-    deferred: "not answered", declined: "not answered", span: "Pre-Tier 0 facts", choice: "Pre-Tier 0 choice" }[a.path] || a.answered_by;
+    deferred: "not answered", declined: "not answered", span: "Pre-Tier 0 facts", choice: "Pre-Tier 0 choice",
+    reader: "Tier 2 reader" }[a.path] || a.answered_by;
   const opts = notAnswered ? `<span class="opt dim">not answered</span>` : Object.entries(a.probabilities).sort((x, y) => y[1] - x[1]).map(([label, p]) => {
     const dim = label === a.answer ? "" : " dim";
     return `<span class="opt${dim}">${esc(label)}</span><span class="pct${dim}">${pct(p)}</span>${ring(p)}`;
@@ -456,7 +458,7 @@ function render(a) {
         ${pretier0}
         ${tier0}
         <dt>Router</dt><dd>${router}</dd>
-        <dt>Cost</dt><dd>${a.llm_calls} LLM call${a.llm_calls === 1 ? "" : "s"} · ${latency(a.ms)}</dd>
+        <dt>Cost</dt><dd>${a.llm_calls} LLM call${a.llm_calls === 1 ? "" : "s"}${a.reader && a.reader.ms ? ` + 1 Tier 2 read (${latency(Math.round(a.reader.ms))})` : ""} · ${latency(a.ms)}</dd>
         ${a.request_id ? `<dt>IDs</dt><dd class="ids"><div>request <code>${esc(a.request_id)}</code></div><div>document <code>${esc(a.document_id)}</code></div></dd>` : ""}
       </dl>
     </div>

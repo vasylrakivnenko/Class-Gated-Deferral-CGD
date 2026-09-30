@@ -49,8 +49,15 @@ def _numbers(text: str) -> set:
     return out
 
 
+# Prepositions don't identify an option: "through an online gallery" is stated by "via a
+# private online gallery".
+_PREPOSITIONS = frozenset(frames.normalize(w) for w in "through via into onto within upon over under after before during "
+                                                        "across along around toward towards between among without".split())
+
+
 def _words(text: str) -> set:
-    return {w for w in frames.tokens(text) if w not in frames.STOPWORDS and len(w) > 2 and not w.isdigit()}
+    return {w for w in frames.tokens(text)
+            if w not in frames.STOPWORDS and w not in _PREPOSITIONS and len(w) > 2 and not w.isdigit()}
 
 
 def _states(option: str, unit: str) -> bool:
@@ -74,6 +81,13 @@ def _states(option: str, unit: str) -> bool:
     return True
 
 
+_TIME_WORDS = frozenset(frames.normalize(w) for w in "year years month months week weeks day days quarter quarters".split())
+
+
+def _matching(us: list, required: list) -> list:
+    return [i for i, u in enumerate(us) if required and all(spans._covers(t, spans._unit_terms(u)) for t in required)]
+
+
 def answer(frame, document: str, llm=None) -> ChoiceResult:
     options = [o.strip(" ,?.") for o in frame.options if o.strip(" ,?.")]
     keys = {re.sub(r"[^a-z0-9]", "", o.lower()) for o in options}
@@ -81,12 +95,22 @@ def answer(frame, document: str, llm=None) -> ChoiceResult:
         return ChoiceResult(False, reason="couldn't tell the alternatives apart", options=options)
     question = frame.lookup or frame.question
     us = spans.units(document)
-    option_words = set().union(*(_words(o) for o in options))
+    option_words = set().union(*(set(frames.tokens(o)) for o in options))  # all of them, prepositions too
     terms = [t for t in spans.key_terms(question)
              if ":" in t or not any(t == w or t[:5] == w[:5] for w in option_words)]
-    required = [t for t in terms if t not in spans.SOFT_TERMS]
-    matching = [i for i, u in enumerate(us) if required and all(spans._covers(t, spans._unit_terms(u)) for t in required)]
     parties = find_parties(document[:PARTY_SCAN_CHARS])
+    required = [t for t in terms if t not in spans.SOFT_TERMS]
+    matching = _matching(us, required)
+    # Second look when the first settles nothing: a party the clause leaves out ("the images will be
+    # delivered through an online gallery") and a period it words differently ("each year" /
+    # "in any 12-month period") don't have to be in it; the options still decide.
+    subject = set(frames.tokens((frame.slots or {}).get("subject") or "")) - option_words  # "the Photographer"
+    droppable = {frames.normalize(p.lower()) for p in parties} | subject | _TIME_WORDS
+    looser = [t for t in required if t not in droppable]
+    if looser != required and sum(any(_states(o, us[i]) for i in matching) for o in options) != 1:
+        wider = _matching(us, looser)
+        if sum(any(_states(o, us[i]) for i in wider) for o in options) == 1:
+            matching = wider
     party_options = [o for o in options if any(re.fullmatch(rf"(?:the\s+)?{re.escape(p)}", o, re.I) for p in parties)]
     stated = {}
     if matching and len(party_options) == len(options):

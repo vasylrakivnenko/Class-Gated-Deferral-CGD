@@ -3,16 +3,23 @@
 ## Live now
 - router.zadum.ai = `zadum-router` systemd service, running **straight from this working tree**
   (`legalbench_map/ask_ui.py`). Restarting it deploys whatever is on disk, committed or not.
-- Deployed = commit the commit "Classify questions first, then answer facts and choices from the text" (`git log`) (branch `router-pretier0-tier0`, not pushed; 2026-09-30 19:35 UTC), which includes the B + D edits:
-  `router/frames.py`, `router/pretier0.py`, `router/lexicon_extra.json` (new), `tests/test_frames.py`.
-  They were reviewed, tested (135 pass) and deployed on 2026-09-30, and committed in the commit "Classify questions first, then answer facts and choices from the text" (`git log`) with M0–M4.
+- Deployed = the commit "Read deferred facts with a checked LLM (Tier 2); let the document decide 'or' questions"
+  (`git log`; branch `router-pretier0-tier0`, pushed to origin; deployed 2026-09-30 23:40 UTC, 275 tests pass).
+  Earlier commits on the branch: "Classify questions first, then answer facts and choices from the text" (M0–M4,
+  19:35 UTC) and "Answer questions locally with Pre-Tier 0 and Tier 0 before calling Jev" (the B + D edits:
+  `router/frames.py`, `router/pretier0.py`, `router/lexicon_extra.json`, `tests/test_frames.py`).
+- Tier 2 (hosted LLM reader) is ON: `--tier2 priority` in /etc/systemd/system/zadum-router.service (see TIER 2 LIVE).
 - Since 2026-09-30 ~17:00 UTC every `/api/ask` call is saved in `/var/lib/zadum-router/usage.db` (`router/usage.py`):
   `requests` has the question, answer, confidence, evidence (JSON) and `id` (= the reply's `request_id`, `req_…`);
   `documents` stores each document once under `document_id` (`doc_` + sha256 of the text). Older rows have NULLs.
-  Backup from before the change: `usage.db.bak-2026-09-30`. The db is now mode 600 (it holds user text).
+  Since 23:40 UTC, requests where Tier 2 ran also log `tier2` (service tier), `tier2_ms`, `tier2_server_ms`,
+  `tier2_result`, `tier2_usage`. Backup from before the change: `usage.db.bak-2026-09-30`. The db is now mode 600 (it holds user text).
   Decided 2026-09-30: no auto-delete for now, and the saved calls aren't shown in the admin page for now.
 
-Pipeline for each question:
+Pipeline for each question (`router/harness.py`):
+0. **Question tree** (`router/qtree.py`) classifies it first: a request → declined; advice or a legal conclusion →
+   Jev (`llm_judgment`); a fact → step 4; a choice → `router/choice.py` (rule, then Jev `choice`); why / what if /
+   how → deferred; yes/no → steps 1–3 (a yes/no with "or" whose text states exactly one option → a choice).
 1. **Pre-Tier 0** (`router/pretier0.py` + `router/frames.py` + `router/lexicon_extra.json`): regex + Aho-Corasick,
    ~0.2 ms (≤8 ms on 300 KB). Answers alone:
    - topic questions ("Is X discussed here?"); clause frames (party, may/must/not, action, object, conditions);
@@ -25,6 +32,10 @@ Pipeline for each question:
    lexicon synonym (`_unnamed_object`; it caught "Can we audit their tits?", said yes at 0.93). Eval: blocks 3 of 9
    wrong yeses and at most 27 of 364 correct ones (`extensive/results/*_v3obj.jsonl`; adv cases 81-84 added).
 3. **Jev**: one call with the user's question. Free classifiers are on standby (`--classifiers` turns them back on) and routing is skipped.
+4. **Facts** (`router/spans.py`): a rule copies the one typed value attached to what the question names, else Jev
+   picks among the text's candidates (≥ 0.9). What they defer goes to **Tier 2** (`router/reader.py`): gpt-oss-120b
+   on Fireworks copies the answer from a clause, and it counts only if it's verbatim, fits the question
+   (`reader.fits`) and Jev confirms the clause states it (≥ 0.7); otherwise the question defers. Kev mode skips Tier 2.
 
 Lexicon: 94 concepts / 767 phrases. The LLM-proposed ones are in `lexicon_extra.json`: `qwen3p8-max` proposes and
 `kimi-k3` verifies, via Fireworks, key `FIREWORKS_API_KEY` in `/root/.env`; 202 requests used. Work files are in
@@ -168,18 +179,89 @@ sets are split dev/test; rules are tuned on dev only, test is reported. Firework
   "at least" (took "at least 25 images" for "a minimum of 400"). 248 tests pass.
   Our own saved questions (usage.db): only 3 so far — too few to measure.
 
-**WHERE THINGS STAND (2026-09-30 19:30 UTC)** — M0–M4 done and live; M5 not justified by the data.
+- [x] "The document decides" DEPLOYED 20:09 UTC (the user picked option 2 for "or" questions the wording
+  doesn't settle). qtree: a boolean with one "or" gets `maybe_options` unless it's a permission/obligation/
+  presence question (`_EITHER_READING`: can/must/may/will..., entitled/prohibited/required/allowed/right of...,
+  "is there", "any", "either"), or an option names nothing ("first" / "straight"). Harness: before the yes/no
+  cascade, `choice.answer(..., llm=None)` on those options; if the clauses about it state exactly one → path
+  `choice` (qtree reported as leaf choice). choice.py: prepositions don't identify an option ("via an online
+  gallery" states "through an online gallery"); if the strict clause match settles nothing, one retry without
+  the question's subject, the document's party names and period words (passive clauses drop the agent).
+  Results: choice dev coverage 90.8→96.1%, test 95.1→96.7%, test2 89.6→91.0%, precision unchanged
+  (97.3 / 100 / 96.8%); LegalBench "or" rows touched: 0 of 280 ("irrevocable or perpetual" is the only
+  wording that qualifies); adversarial: none. 256 tests pass. Committed with Tier 2.
+
+**WHERE THINGS STAND (2026-09-30 23:45 UTC)** — M0–M4 done and live; M5 not justified by the data; Tier 2 live.
 | | precision when answering | coverage | set |
 |---|---|---|---|
 | classifier (8 leaves) | accuracy 98.5% | — | blind generated_test3 (459) |
 | judgment/request exits | recall 100% / 100% | — | blind generated_test3 |
 | span (facts) | 124/124 = 100% | 86.7% | blind spans_test2 (8 new doc types) |
 | span (facts) | 101/103 = 98.1% | 50.0% | blind cuad_blind2 (60 real contracts) |
+| span + Tier 2 | 137/137 = 100% | 95.8% | spans_test2 (blind for Tier 2) |
+| span + Tier 2 | 133/141 = 94.3% (4 Tier 2 misses, all defensible) | 70.0% | **fresh cuad_blind3** (span alone: 95/99 = 96.0%, 50.0%) |
 | choice | 60/62 = 96.8% | 89.6% | blind choice_test2 |
 | Pre-Tier 0 yes/no | 718/720 = 99.7% | 5.8% | LegalBench held-out (reused many times) |
 Ideas not done: choice→boolean misroutes (~13%); span coverage on long documents (loose pools were 77% right
-there, so they defer); ENTITY/PROPERTY/QUANTITY/LOCATION facts and non-party "who" answers; a fresh LegalBench
-held-out set. (Committed: the commit "Classify questions first, then answer facts and choices from the text" (`git log`).)
+there, so they defer); ENTITY/PROPERTY/QUANTITY/LOCATION facts and non-party "who" answers (Tier 2 could read them,
+unmeasured); Tier 2 for deferred choice questions; a fresh LegalBench held-out set.
+
+**TIER 2 BAKE-OFF (2026-09-30; led to TIER 2 LIVE below; `/root/zadumai_nli_proto/qtree/bakeoff.py`, `verify.py`)**
+Reader: the LLM copies the answer verbatim from one of ≤8 selected clauses, or null; code checks the copy is
+in the clause; then Jev noul checks the clause states that answer to the question. It runs only when today's
+span tier defers. A key-term check on the cited clause (`bakeoff.about_the_question`, "+about") was too strict
+(coverage 81→55%); Jev's check replaced it.
+- Prices per 1M tokens (2026-09-30): Fireworks gpt-oss-120b Standard $0.15 in / $0.60 out, Priority $0.18 / $0.72;
+  Gemma 4 26B-A4B via OpenRouter→NextBit $0.0765 / $0.255 (+5.5% OpenRouter credit fee). NextBit has no
+  priority/fast tier. ~540 tokens in, ~60 out per Tier 2 call.
+- Local CPU is too slow (4 cores, prefill ~45 tok/s → 10–16 s p50): Qwen3.5-4B, Gemma 4 26B-A4B, gpt-oss-20b.
+  SaulLM-7B was worse and slower; Lawma-8B outputs choice letters only. GLM 5.3 was less precise.
+- Finalists at 320 questions (`bakeoff.py 320`: 160 CUAD contracts, 221 answerable, 99 not). Today's system alone:
+  164/165, coverage 74%. Combined with today's system:
+  | reader | Jev check | precision | coverage | latency p50 / p99 | $ per 10k questions |
+  |---|---|---|---|---|---|
+  | gpt-oss-120b, Fireworks Priority | ≥ 0.7 | 202/204 = 99.0% | 91% | 0.33 / 0.74 s | 1.42 (Standard 1.18) |
+  | Gemma 4 26B-A4B, OpenRouter pinned to NextBit | ≥ 0.8 | 199/202 = 98.5% | 90% | 0.52 / 1.15 s | 0.46 |
+  Thresholds were picked on the first 160; on the unseen second 160 gpt-oss added 18 right, 0 wrong; Gemma 16
+  right, 1 wrong (an exhibit's price-list date). Both share one arguable miss ("the date on which the Parties sign").
+  Standard vs Priority on the same 145 calls: same replies; p50 0.35 vs 0.33 s, p99 0.82 vs 0.74 s.
+- OpenRouter `:nitro` for Gemma: all 286 calls went to Makora; p50 0.32 s but p99 2.7 s (NextBit 1.15 s); same quality.
+
+**TIER 2 LIVE (since 2026-09-30 23:16 UTC)** — gpt-oss-120b on Fireworks, the user's pick.
+- Switch: `ask_ui.py --tier2 priority|standard` in /etc/systemd/system/zadum-router.service; `priority` since 23:40 UTC
+  (`standard` 23:16–23:40). Remove the flag, `systemctl daemon-reload`, restart to turn Tier 2 off.
+- What runs: harness `_span` → `_read` when the span tier defers a fact of a type in `spans.ANSWERED_TYPES` (the
+  types the bake-off measured), Jev reader only (Kev keeps documents local). Reader copies from ≤ 8 clauses
+  (`select_clauses`) → verbatim check (`grounded`) → `fits` → Jev noul ≥ `CHECK_MIN` 0.7 (`CHECK` wording, shared with
+  qtree/verify.py). Path `reader`; confidence = Jev's check; `Answer.reader` holds the attempt. A Fireworks outage or
+  Jev error → the question defers (never a 502). Key: FIREWORKS_API_KEY from env / repo .env / ~/.env.
+  UI: head "Tier 2 reader", cost line "+ 1 Tier 2 read (ms)".
+- **Service-tier A/B (the user's plan):** priority first, later standard for a week, then compare on live traffic.
+  Requests where Tier 2 ran log in /var/lib/zadum-router/usage.db: `tier2` (standard|priority, as requested:
+  Fireworks doesn't echo it), `tier2_ms` (round trip from this server), `tier2_server_ms` (Fireworks' own queue +
+  compute, its `Fireworks-Server-Processing-Time` header), `tier2_result` (answered / not stated / dropped /
+  unavailable), `tier2_usage` (tokens, ttft_s, attempts). Rows before 23:40 have NULLs. Compare with percentiles:
+  `SELECT tier2, COUNT(*), AVG(tier2_ms), AVG(tier2_server_ms), SUM(tier2_result LIKE '%unavailable%') FROM requests
+  WHERE tier2 IS NOT NULL GROUP BY tier2;`
+- `reader.fits` (added after cuad_blind2 showed 93.0%): the answer must be the type asked for (a date, a duration...;
+  redacted "[***] days" and capitals count); for the document's own date (`spans.document_date_kind`) the answer's
+  sentence must name the document, with no other event before it (`spans.other_event`: terminate/assign/transfer/
+  appoint..., skipping "this amendment" and "unless ... terminated,"), and the answer must say more than the question.
+- Results, today's system → + Tier 2 (`qtree/eval_tier2.py SET`, strict CUAD scoring):
+  | set | precision | coverage |
+  |---|---|---|
+  | bakeoff 320 (dev) | 164/164 → 201/203 = 99.0% | 74.2 → 91.0% |
+  | spans_test2 (blind) | 124/124 → 137/137 = 100% | 86.7 → 95.8% (measured before `fits`) |
+  | cuad_blind2 (seen: `fits` was designed after its errors) | 101/103 → 152/157 = 96.8% | 50.0 → 75.2% |
+  | **cuad_blind3 (fresh, 60 new contracts, run once)** | 95/99 = 96.0% → 133/141 = 94.3% | **50.0 → 70.0%** |
+  Tier 2's 4 misses on cuad_blind3 are all defensible readings CUAD scores wrong: "commencing on the date of
+  execution by both Parties" / "as of the latest date referenced on the signature page" (gold = the signature date),
+  "when two or more counterparts have been signed..." and "60 days" notice of intent not to renew (no CUAD label).
+  Latency: reader call p50 ~0.29 s, Jev check ~65 ms. Today's own misses on cuad_blind3: 4 (3 false fires).
+- Dec 31 fix (spans `_preamble_dates`): a date after "terminate/renew/assign... this Agreement, effective as of" is
+  that event's date, not the start. cuad 167/171 → 167/170; other sets unchanged. Reason text "effectiv date" fixed.
+- Ideas: redo cuad scoring by hand for textual answers vs dates; ENTITY/LOCATION facts through Tier 2 (not measured);
+  Tier 2 for deferred choice questions; the next fresh set is cuad_blind4 (228 unused contracts left).
 
 ## Next steps (from before the question tree)
 1. ~~Commit the B + D edits~~ done in the commit "Classify questions first, then answer facts and choices from the text" (`git log`).
@@ -193,7 +275,13 @@ held-out set. (Committed: the commit "Classify questions first, then answer fact
 
 ## How to check things
 - Tests: `cd legalbench_map && ../.venv/bin/python -m pytest -q tests/test_frames.py tests/test_pretier0.py tests/test_tier0.py tests/test_router.py tests/test_usage.py tests/test_qtree.py`
-- Question-tree evals: `/root/zadumai_nli_proto/qtree/` — `eval_classify.py dev|test|test2|test3`, `eval_spans.py spans_dev|spans_test|spans_test2|cuad|cuad_blind|cuad_blind2 [--llm]`, `eval_choice.py dev|test|test2 [--llm]`, `m4_privacyqa.py [--llm]` (Jev calls are cached under `qtree/llm/`)
+- Question-tree evals: `/root/zadumai_nli_proto/qtree/` — `eval_classify.py dev|test|test2|test3`, `eval_spans.py spans_dev|spans_test|spans_test2|cuad|cuad_blind|cuad_blind2|cuad_blind3 [--llm]`, `eval_choice.py dev|test|test2 [--llm]`, `m4_privacyqa.py [--llm]` (Jev calls are cached under `qtree/llm/`)
+- Tier 2 evals (same folder): `eval_tier2.py bakeoff|spans_test2|cuad_blind2|cuad_blind3 [--tier priority]
+  [--no-typecheck]` (today's system + Tier 2 exactly as live; reader replies cached in `results/tier2/`),
+  `bakeoff.py N --models ...` (model bake-off, cached in `results/bakeoff/`), `verify.py MODEL N` (Jev-check
+  thresholds). Used CUAD sets: test.json (tuned on), cuad_blind, cuad_blind2, cuad_blind3; next fresh: add cuad_blind4
+  to both loaders (random.Random(17) over the 228 contracts left).
+- The eval workspace `/root/zadumai_nli_proto/` is NOT in git (only `legalbench_map/` is); back it up before big changes.
 - Pre-Tier 0 eval: `PYTHONPATH=. ../.venv/bin/python /root/zadumai_nli_proto/extensive/v2/evalv2.py dev|heldout`
   (split: `extensive/v2_split.json`, 11 of the 52 tasks held out as unseen)
 - Tier 0 eval and adversarial set: `/root/zadumai_nli_proto/extensive/` (`run_eval.py`, `adversarial.jsonl`); prototype cases: `/root/zadumai_nli_proto/cases.jsonl`
@@ -203,4 +291,6 @@ held-out set. (Committed: the commit "Classify questions first, then answer fact
 - Check pytest's own exit code before a deploy (`pytest ... ; echo $?`): `pytest | tail` always exits 0.
 - Live API checks count against your 50/day quota (it's per account, and the `/admin` page changes it).
 - Port 8766 has an old test server from an earlier session; leave it alone.
+- Stop the 8777 test server in its own Bash call, with a command line that doesn't contain its own pattern
+  (`pkill -f "ask_ui.py --port 877[7]"` alone): if the same command line holds "--port 8777", pkill kills the shell.
 - Git has no identity on this machine; commits use `-c user.name=... -c user.email=...` from earlier commits.

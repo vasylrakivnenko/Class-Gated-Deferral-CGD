@@ -196,12 +196,120 @@ def test_facts_the_text_does_not_state_are_deferred(question):
     assert a.path == "deferred" and a.answer == "not answered", a.reason
 
 
+def test_a_termination_date_is_not_the_start_date():
+    doc = ("This Sponsorship Agreement is made between Constellation and the HOF Entities.\n"
+           "4. TERMINATION. Constellation may terminate this Agreement, effective as of December 31, 2023, in the "
+           "event that the investment is not recovered.")
+    llm = FakeLLM(choice={"none of these": 0.95})
+    a = Harness(llm, llm, StubBank(), None, pretier0=True, classifiers=False).answer(
+        "When does this agreement become effective?", doc)
+    assert a.answer != "December 31, 2023", a.reason
+    started = Harness(llm, llm, StubBank(), None, pretier0=True, classifiers=False).answer(
+        "When does this agreement become effective?", doc.replace("4. TERMINATION.", "This Agreement shall "
+                                                                  "commence on January 1, 2020.\n4. TERMINATION."))
+    assert (started.path, started.answer) == ("span", "January 1, 2020"), started.reason
+    assert "effective date" in started.reason
+
+
 def test_the_llm_picks_among_candidates_when_the_rule_cannot():
     doc = LEASE_FACTS + "\n9. PETS. A pet fee of $300 applies; the pet deposit is $500 per animal."
     llm = FakeLLM(choice={"$500": 0.93, "$300": 0.05, "none of these": 0.02})
     a = Harness(llm, llm, StubBank(), None, pretier0=True, classifiers=False).answer(
         "How much is the pet deposit per animal?", doc)
     assert (a.path, a.answer, a.llm_calls) in (("llm_span", "$500", 1), ("span", "$500", 0))
+
+
+# ---- Tier 2: a reader copies deferred facts from the text, Jev checks them (router/reader.py)
+
+PETS = LEASE_FACTS + "\n9. PETS. If Tenant keeps a pet, Tenant shall pay a pet deposit of $500 per animal."  # a condition: the rule defers
+
+
+class FakeReader:
+    name = "fake reader"
+
+    def __init__(self, reply=None, error=None):
+        self.reply, self.error, self.prompts = reply, error, []
+
+    def __call__(self, prompt):
+        self.prompts.append(prompt)
+        if self.error:
+            raise self.error
+        return self.reply
+
+
+def _tier2(reader, noul=0.95):
+    llm = FakeLLM(choice={"none of these": 0.9}, noul={"Question about this text": noul})
+    return Harness(llm, llm, StubBank(), None, pretier0=True, classifiers=False, reader=reader), llm
+
+
+def test_tier2_answers_a_deferred_fact_when_jev_confirms_it():
+    h, llm = _tier2(FakeReader('{"answer": "$500 per animal", "clause": null}'))
+    a = h.answer("How much is the pet deposit?", PETS)
+    assert (a.path, a.answer, a.confidence) == ("reader", "$500 per animal", 0.95), a.reason
+    assert "9. PETS" in a.evidence[0]["text"] and a.reader["check"] == 0.95
+    assert a.llm_calls == 2  # Jev's pick among candidates (none), then its check
+
+
+def test_tier2_defers_when_jev_doubts_the_clause_states_it():
+    h, _ = _tier2(FakeReader('{"answer": "$500 per animal", "clause": null}'), noul=0.3)
+    a = h.answer("How much is the pet deposit?", PETS)
+    assert a.path == "deferred" and "Jev doubts" in a.reason and a.reader["check"] == 0.3
+
+
+def test_tier2_drops_an_answer_not_copied_from_the_text():
+    h, llm = _tier2(FakeReader('{"answer": "$450", "clause": 1}'))
+    a = h.answer("How much is the pet deposit?", PETS)
+    assert a.path == "deferred" and "word for word" in a.reason
+    assert not [c for c in llm.log if c[0] == "noul"]  # nothing to check
+
+
+def test_tier2_outage_defers_instead_of_failing():
+    from router.reader import ReaderError
+    h, _ = _tier2(FakeReader(error=ReaderError("Fireworks failed: HTTP 503")))
+    a = h.answer("How much is the pet deposit?", PETS)
+    assert a.path == "deferred" and "unavailable" in a.reason
+
+
+EFFECTIVE = "When does this agreement become effective?"
+
+
+@pytest.mark.parametrize("answer, clause, question, answer_type, fits", [
+    # the document's own date: the sentence names the document, and no other event is dated
+    ("the Closing Date", "This Agreement shall become effective on the Closing Date.", EFFECTIVE, "DATE", True),
+    ("July 1, 2019", "AGREEMENT PERIOD Effective Date: July 1, 2019", EFFECTIVE, "DATE", True),
+    ("December 9, 1996", "This amendment to Section 2 of the Co-Branding Agreement is made effective December 9, 1996 "
+                         "by and between PC Quote, Inc. and HyperFeed.", EFFECTIVE, "DATE", True),
+    ("effective as of the date hereof", 'The term of this Agreement, unless mutually extended by the Parties or unless '
+                                        'sooner terminated as provided herein, shall commence effective as of the date '
+                                        'hereof.', EFFECTIVE, "DATE", True),
+    ("effective upon creation", "Turpin does hereby assign and transfer to the Company, effective upon creation, all "
+                                "right, title and interest in the Work Product.", EFFECTIVE, "DATE", False),
+    ("Effective as of the Closing Date", "Effective as of the Closing Date, Equifax agrees to transfer to Certegy all "
+                                         "right, title and interest in the Assets.", EFFECTIVE, "DATE", False),
+    ("as of the Effective Date", 'This License Agreement (the "Agreement") is made as of the Effective Date.', EFFECTIVE,
+     "DATE", False),  # restates the question
+    ("December 31, 2023", "Constellation may terminate this Agreement, effective as of December 31, 2023.", EFFECTIVE,
+     "DATE", False),
+    # other types: a value of the type asked for, redacted or in capitals
+    ("for the duration of this Agreement", "CBC warrants it will retain all approvals for the duration of this "
+                                           "Agreement.", "How long does the warranty last?", "DURATION", False),
+    ("[* * *] days", "Either party may give notice [* * *] days before the end of the term.",
+     "How much notice is needed to prevent automatic renewal?", "DURATION", True),
+    ("THE STATE OF DELAWARE", "THIS AGREEMENT IS GOVERNED BY THE LAWS OF THE STATE OF DELAWARE.",
+     "Which state's law governs this agreement?", "JURISDICTION", True),
+    ("no more than 5%", "The Processor may raise the monthly fee each year by no more than 5%.",
+     "By how much can the Processor raise the monthly fee each year?", "MONEY", True),
+])
+def test_tier2_answers_must_fit_the_question(answer, clause, question, answer_type, fits):
+    from router.reader import fits as fits_
+    assert fits_(answer, clause, question, answer_type) is fits
+
+
+def test_tier2_only_reads_fact_types_it_was_measured_on():
+    reader = FakeReader('{"answer": "Tenant", "clause": null}')
+    h, _ = _tier2(reader)
+    a = h.answer("What color is the front door?", PETS)
+    assert a.path != "reader" and not reader.prompts
 
 
 # ---- M3: choice questions (router/choice.py)
@@ -260,3 +368,45 @@ def test_age_answers():
     a = Harness(FakeLLM(), FakeLLM(), StubBank(), None, pretier0=True, classifiers=False).answer(
         "How old must users be to buy Premium?", doc)
     assert (a.path, a.answer) == ("span", "sixteen (16) years of age")
+
+
+# ---- "or" questions the wording doesn't settle: the document decides
+
+GALLERY = ("3. DELIVERY OF IMAGES. The Photographer shall deliver a sneak peek of at least twenty-five (25) edited "
+           "images within seventy-two (72) hours after the wedding. The full gallery of edited images shall be "
+           "delivered via an online gallery within sixty (60) days after the wedding date.\n"
+           "5. ACCOUNTINGS. Additional accountings within the same calendar year cost $25.00 each.")
+
+
+def test_the_document_decides_which_one_when_it_states_exactly_one():
+    f = classify("Does the Photographer deliver the images on a USB drive or through an online gallery?")
+    assert f.leaf == "boolean" and f.maybe_options == ["on a USB drive", "through an online gallery"]
+    a = Harness(FakeLLM(), FakeLLM(), StubBank(), None, pretier0=True, classifiers=False).answer(f.question, GALLERY)
+    assert (a.path, a.answer, a.llm_calls) == ("choice", "through an online gallery", 0)
+
+
+def test_an_option_stated_about_something_else_does_not_decide():
+    # "$25.00" is what ADDITIONAL accountings cost; the first one isn't named here, so yes/no it stays
+    a = Harness(FakeLLM(noul={"": 0.5}), FakeLLM(noul={"": 0.5}), StubBank(), None, pretier0=True,
+                classifiers=False).answer("Is the first accounting of disclosures each year free or $25.00?", GALLERY)
+    assert a.path != "choice"
+
+
+@pytest.mark.parametrize("question", [
+    "Is the license irrevocable or perpetual?",  # LegalBench: either one answers yes... but no permission word,
+])
+def test_either_questions_keep_yes_no_when_the_text_states_both(question):
+    doc = "Licensor grants Licensee a perpetual, irrevocable license to use the Software."
+    a = Harness(FakeLLM(), FakeLLM(), StubBank(), None, pretier0=True, classifiers=False).answer(question, doc)
+    assert a.path != "choice"
+
+
+@pytest.mark.parametrize("question", [
+    "Can the receiving party share confidential information with its consultants or advisors?",
+    "Must a party share revenue or profits with the other party?",
+    "Is a party entitled to liquidated damages or a termination fee?",
+    "Is there a clause requiring arbitration or mediation?",
+    "Is termination on 30 days' notice possible, or not?",
+])
+def test_permission_obligation_and_presence_questions_are_never_undecided(question):
+    assert classify(question).maybe_options == []

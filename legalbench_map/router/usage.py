@@ -7,7 +7,10 @@ The request log keeps who asked, when, and how the question was answered
 answered: the question, the answer with its confidence and evidence, and the
 document. Each request has an id ("req_..."); each document is stored once,
 under an id made from its text ("doc_..."), so asking again about the same
-text doesn't store it again.
+text doesn't store it again. When Tier 2 ran, the Fireworks service tier it
+used and its timings (tier2_*), to compare standard and priority:
+    SELECT tier2, COUNT(*), AVG(tier2_ms), AVG(tier2_server_ms) FROM requests
+    WHERE tier2 IS NOT NULL GROUP BY tier2;
 """
 from __future__ import annotations
 
@@ -41,6 +44,12 @@ REQUEST_CONTENT = (
     ("answer", "TEXT"),
     ("confidence", "REAL"),
     ("evidence", "TEXT"),  # JSON: [{"text", "label", "p"}]
+    # Tier 2 (router/reader.py), when it ran: to compare Fireworks' service tiers on live traffic
+    ("tier2", "TEXT"),  # "standard" | "priority" (as requested)
+    ("tier2_ms", "REAL"),  # the reader call's round trip from this server
+    ("tier2_server_ms", "REAL"),  # Fireworks' own processing time (queue + compute), from its reply headers
+    ("tier2_result", "TEXT"),  # what came of it: answered and checked, not stated, dropped, unavailable
+    ("tier2_usage", "TEXT"),  # JSON: tokens, time to first token, attempts
 )
 
 
@@ -112,15 +121,23 @@ class Usage:
         a = answer or {}
         doc_id = document_id(document) if document else None
         evidence = json.dumps(a["evidence"], default=str) if "evidence" in a else None
+        t2 = a.get("reader") or {}
+        t2_usage = t2.get("usage") or {}
         with self._lock, self._db:
             if doc_id:
                 self._db.execute("INSERT OR IGNORE INTO documents VALUES (?, ?, ?)", (doc_id, document, ts))
             self._db.execute(
                 "INSERT INTO requests (ts, day, email, status, reader, path, answered_by, ms, llm_calls, "
-                "id, question, document_id, answer, confidence, evidence) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", (
+                "id, question, document_id, answer, confidence, evidence, "
+                "tier2, tier2_ms, tier2_server_ms, tier2_result, tier2_usage) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", (
                     ts, now.date().isoformat(), email, status, reader,
                     a.get("path"), a.get("answered_by"), a.get("ms"), a.get("llm_calls"),
-                    request_id, question, doc_id, a.get("answer"), a.get("confidence"), evidence))
+                    request_id, question, doc_id, a.get("answer"), a.get("confidence"), evidence,
+                    t2_usage.get("service_tier") if t2 else None, round(t2["ms"], 1) if t2.get("ms") else None,
+                    round(t2_usage["server_s"] * 1000, 1) if "server_s" in t2_usage else None,
+                    t2.get("reason") or None,
+                    json.dumps({k: v for k, v in t2_usage.items() if k != "service_tier"}) if t2_usage else None))
 
     def set_limit(self, email: str, daily_limit: int | None) -> None:
         """A per-user limit (0 blocks the user); None goes back to the default."""
