@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Router Playground</title>
+<style>
+  :root {
+    --text: #1c1c1c;
+    --muted: #737373;
+    --faint: #a3a3a3;
+    --line: #e7e7e7;
+    --code-bg: #f3f3f3;
+    --gutter: #eaeaea;
+    --chip: #ececec;
+    --ring: #4f7cf7;
+    --ring-track: #d9e3fd;
+    --sans: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { font-family: var(--sans); font-size: 15px; color: var(--text); background: #fff; display: flex; }
+  svg { flex: none; }
+
+  .rail { width: 60px; border-right: 1px solid var(--line); display: flex; flex-direction: column; align-items: center; padding-top: 12px; }
+  .rail .icon { width: 40px; height: 40px; border-radius: 8px; display: grid; place-items: center; color: #3d3d3d; background: #f0f0f0; }
+
+  .pane { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .pane.left { border-right: 1px solid var(--line); }
+  .bar { height: 56px; flex: none; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 6px; padding: 0 16px 0 20px; }
+  .title { font-size: 17px; color: var(--muted); display: flex; align-items: center; gap: 10px; }
+  .spacer { flex: 1; }
+  .btn { font: inherit; background: none; border: 1px solid transparent; border-radius: 6px; padding: 7px 12px; color: var(--text); cursor: pointer; }
+  .btn:hover { background: #f5f5f5; }
+  .btn.outline { border-color: var(--line); }
+
+  .section { display: flex; flex-direction: column; min-height: 0; }
+  .section.doc { flex: 1; }
+  .section.question { flex: none; border-top: 1px solid var(--line); }
+  .section-head { height: 52px; flex: none; border-bottom: 1px solid var(--line); display: flex; align-items: center; padding: 0 20px; font-size: 16px; color: var(--muted); }
+  .editor { flex: 1; min-height: 0; display: flex; padding: 18px 20px; }
+  .editor textarea {
+    flex: 1; resize: none; outline: none; border: 0; border-left: 30px solid var(--gutter); border-radius: 2px;
+    background: var(--code-bg); color: var(--text); font-family: var(--mono); font-size: 14px; line-height: 1.6; padding: 10px 14px;
+  }
+  .editor textarea::placeholder { color: var(--faint); }
+  .section.question textarea { height: 92px; }
+
+  .bottom { height: 56px; flex: none; border-top: 1px solid var(--line); display: flex; }
+  .tools { flex: 1; display: flex; align-items: center; gap: 10px; padding: 0 16px; color: var(--muted); font-size: 14px; }
+  .chip { font: inherit; font-size: 14px; color: var(--text); background: var(--chip); border: 0; border-radius: 4px; padding: 6px 8px; cursor: pointer; }
+  .hint { color: var(--faint); font-size: 13px; }
+  .run { width: 140px; border: 0; background: #111; color: #fff; font: inherit; font-size: 17px; cursor: pointer; }
+  .run:hover { background: #333; }
+  .run:disabled { background: #8d8d8d; cursor: default; }
+
+  .when { color: var(--muted); }
+  .grid { display: grid; grid-template-columns: 44px minmax(0, 1fr) 300px; column-gap: 12px; }
+  .head-row { height: 56px; flex: none; border-bottom: 1px solid var(--line); align-items: center; padding: 0 20px 0 12px; color: var(--muted); }
+  .head-row .model { display: flex; align-items: center; gap: 8px; }
+  .out { overflow: auto; }
+  .row { padding: 22px 20px 20px 12px; border-bottom: 1px solid var(--line); }
+  .chev { background: none; border: 0; padding: 2px 0 0 8px; color: #555; cursor: pointer; align-self: start; }
+  .chev svg { transition: transform .15s; }
+  .row.collapsed .chev svg { transform: rotate(-90deg); }
+  .key { font-family: var(--mono); font-size: 17px; overflow-wrap: anywhere; }
+  .instr { margin-top: 10px; font-style: italic; color: var(--muted); line-height: 1.5; }
+  .opts { display: grid; grid-template-columns: minmax(0, 1fr) auto 18px; align-items: center; column-gap: 8px; row-gap: 9px; align-self: start; }
+  .opt { font-family: var(--mono); font-size: 16px; overflow-wrap: anywhere; }
+  .pct { text-align: right; font-size: 16px; }
+  .dim { color: var(--muted); }
+  .conf { grid-column: 1 / -1; margin-top: 12px; color: var(--muted); }
+
+  .details { margin: 18px 0 0 56px; display: grid; grid-template-columns: 140px minmax(0, 1fr); gap: 10px 16px; font-size: 14px; line-height: 1.5; }
+  .row.collapsed .details { display: none; }
+  .details dt { color: var(--muted); }
+  .details dd { margin: 0; }
+  .clause { font-family: var(--mono); font-size: 13px; background: var(--code-bg); border-radius: 4px; padding: 8px 10px; margin-bottom: 6px; }
+  .clause b { font-family: var(--sans); font-weight: 600; margin-right: 8px; }
+  .empty { padding: 28px 20px; color: var(--faint); }
+  .error { padding: 28px 20px; color: #b42318; }
+</style>
+</head>
+<body>
+<nav class="rail">
+  <div class="icon" title="Playground">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2v7.3L4.2 19.1A2 2 0 0 0 5.9 22h12.2a2 2 0 0 0 1.7-2.9L14 9.3V2"/><path d="M8.5 2h7"/><path d="M7 16h10"/></svg>
+  </div>
+</nav>
+
+<section class="pane left">
+  <div class="bar">
+    <span class="title">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2v7.3L4.2 19.1A2 2 0 0 0 5.9 22h12.2a2 2 0 0 0 1.7-2.9L14 9.3V2"/><path d="M8.5 2h7"/><path d="M7 16h10"/></svg>
+      Playground
+    </span>
+    <span class="spacer"></span>
+    <button class="btn" id="example">Example</button>
+    <button class="btn outline" id="clear">Clear</button>
+  </div>
+  <div class="section doc">
+    <div class="section-head">Document</div>
+    <div class="editor"><textarea id="document" spellcheck="false"
+      placeholder="Paste the text to ask about: a contract or clause, a privacy policy, terms of service, a court opinion, a supply-chain statement, a person's legal-help post..."></textarea></div>
+  </div>
+  <div class="section question">
+    <div class="section-head">Question</div>
+    <div class="editor"><textarea id="question" spellcheck="false" placeholder="Ask a yes/no question, e.g. Can we audit their books?"></textarea></div>
+  </div>
+  <div class="bottom">
+    <div class="tools">
+      Reader
+      <select class="chip" id="reader" title="Who reads the document when our classifiers can't answer">
+        <option value="jev">jev-latest</option>
+        <option value="kev">kev-latest (local)</option>
+      </select>
+      <span class="hint">⌘↵ to run</span>
+    </div>
+    <button class="run" id="run">Run</button>
+  </div>
+</section>
+
+<section class="pane right">
+  <div class="bar"><span class="title">Response</span><span class="when" id="when"></span></div>
+  <div class="grid head-row">
+    <span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg></span>
+    <span>Question &amp; route</span>
+    <span class="model"><span id="model-head">Answered by</span>
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></span>
+  </div>
+  <div class="out" id="out"><div class="empty">Run a question to see the answer here.</div></div>
+</section>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const EMPTY = '<div class="empty">Run a question to see the answer here.</div>';
+const CONTRACT = [
+  "1. TERM. This Agreement commences on the Effective Date and continues for three (3) years, unless terminated earlier as provided herein.",
+  "2. CONFIDENTIALITY. Each party shall hold the other party's Confidential Information in strict confidence and use it only to perform this Agreement.",
+  "3. LIMITATION OF LIABILITY. EXCEPT FOR BREACHES OF SECTION 2, NEITHER PARTY'S TOTAL LIABILITY UNDER THIS AGREEMENT SHALL EXCEED THE FEES PAID IN THE TWELVE (12) MONTHS PRECEDING THE CLAIM.",
+  "4. ASSIGNMENT. Neither party may assign this Agreement without the prior written consent of the other party, which shall not be unreasonably withheld.",
+  "5. GOVERNING LAW. This Agreement is governed by the laws of the State of Delaware.",
+].join("\n\n");
+const EXAMPLES = [
+  { doc: "Licensee shall have the right, upon thirty (30) days' prior written notice, to audit the books and records of Licensor relating to this Agreement, no more than once per calendar year.",
+    q: "Can we audit their books?" },
+  { doc: CONTRACT, q: "Is there a cap on how much either party can be made to pay?" },
+  { doc: "We may share information about you with our advertising partners and analytics providers so that they can show you ads that are more relevant to your interests.",
+    q: "Do they share my data with advertisers?" },
+  { doc: CONTRACT, q: "Does this contract say Delaware law governs it?" },
+];
+const PATHS = {
+  llm_task: "asked the task's own question, since our classifier is weak on this task",
+  llm_fallback: "fallback, asked your question",
+};
+let lastRun = null;
+let nextExample = 0;
+
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const pct = (p) => Math.round(p * 100) + "%";
+function ring(p) {
+  const r = 6, c = 2 * Math.PI * r;
+  return `<svg width="18" height="18" viewBox="0 0 18 18"><circle cx="9" cy="9" r="${r}" fill="none" stroke="var(--ring-track)" stroke-width="3"/>` +
+    `<circle cx="9" cy="9" r="${r}" fill="none" stroke="var(--ring)" stroke-width="3" stroke-dasharray="${(p * c).toFixed(2)} ${c.toFixed(2)}" transform="rotate(-90 9 9)"/></svg>`;
+}
+function tick() {
+  if (!lastRun) { $("when").textContent = ""; return; }
+  const s = Math.round((Date.now() - lastRun) / 1000);
+  $("when").textContent = "· Ran " + (s < 60 ? `${s} sec ago` : `${Math.round(s / 60)} min ago`);
+}
+setInterval(tick, 5000);
+
+function render(a) {
+  $("model-head").textContent = a.path === "classifier" ? "free classifier" : a.answered_by;
+  const opts = Object.entries(a.probabilities).sort((x, y) => y[1] - x[1]).map(([label, p]) => {
+    const dim = label === a.answer ? "" : " dim";
+    return `<span class="opt${dim}">${esc(label)}</span><span class="pct${dim}">${pct(p)}</span>${ring(p)}`;
+  }).join("");
+  const r = a.route;
+  const router = `picked <span class="key" style="font-size:13px">${esc(r.choice)}</span> · p(none) ${r.p_none} · margin ${r.margin}` +
+    (r.accepted ? "" : " · not trusted, so the LLM answered");
+  let evidence = "";
+  if (a.path === "classifier" && a.n_units > 1) {
+    evidence = `<dt>Closest parts</dt><dd><div class="dim" style="margin-bottom:6px">The document was checked in ${a.n_units} parts; top ${a.evidence.length}:</div>` +
+      a.evidence.map((e) => `<div class="clause"><b>${pct(e.p)} ${esc(e.label)}</b>${esc(e.text)}</div>`).join("") + "</dd>";
+  }
+  const by = a.path === "classifier" ? a.answered_by : `${a.answered_by} (${PATHS[a.path]})`;
+  $("out").innerHTML = `
+    <div class="row" id="row">
+      <div class="grid">
+        <button class="chev" id="chev" title="Show or hide details"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
+        <div><div class="key">${esc(a.task || "fallback")}</div><div class="instr">${esc(a.question)}</div></div>
+        <div class="opts">${opts}<div class="conf">Confidence: ${pct(a.confidence)}</div></div>
+      </div>
+      <dl class="details">
+        <dt>Answered by</dt><dd>${esc(by)}</dd>
+        <dt>Why</dt><dd>${esc(a.reason)}</dd>
+        <dt>Question answered</dt><dd>${esc(a.asked)}</dd>
+        ${evidence}
+        <dt>Router</dt><dd>${router}</dd>
+        <dt>Cost</dt><dd>${a.llm_calls} LLM call${a.llm_calls === 1 ? "" : "s"} · ${a.seconds}s</dd>
+      </dl>
+    </div>`;
+  $("chev").onclick = () => $("row").classList.toggle("collapsed");
+}
+
+async function run() {
+  const question = $("question").value.trim();
+  const text = $("document").value.trim();
+  if (!question || !text) { $("out").innerHTML = '<div class="error">Enter both a document and a question.</div>'; return; }
+  $("run").disabled = true;
+  $("run").textContent = "Running…";
+  try {
+    const resp = await fetch("/api/ask", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question, document: text, reader: $("reader").value }),
+    });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.error || resp.statusText);
+    render(data);
+    lastRun = Date.now();
+    tick();
+  } catch (err) {
+    $("out").innerHTML = `<div class="error">${esc(err.message)}</div>`;
+  } finally {
+    $("run").disabled = false;
+    $("run").textContent = "Run";
+  }
+}
+
+$("run").onclick = run;
+$("clear").onclick = () => { $("document").value = ""; $("question").value = ""; $("out").innerHTML = EMPTY; lastRun = null; tick(); };
+$("example").onclick = () => { const e = EXAMPLES[nextExample++ % EXAMPLES.length]; $("document").value = e.doc; $("question").value = e.q; };
+document.addEventListener("keydown", (e) => { if ((e.metaKey || e.ctrlKey) && e.key === "Enter") run(); });
+</script>
+</body>
+</html>
