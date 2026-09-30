@@ -43,3 +43,6 @@ legalbench_map/results_kev_*/summary.json
 # CGD tables and the one-pager build: regenerable with legalbench_map/phase2/cgd_tables.py
 legalbench_map/results_cgd/
 legalbench_map/results_gate/paper/*.pdf
+
+# router's fitted classifiers: regenerable with legalbench_map/build_router_bank.py
+legalbench_map/router/bank/

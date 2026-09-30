@@ -1,48 +1,13 @@
-"""Shared 38-option routing menu (37 tasks + none_of_these) and 34-question
-synthetic test set, used by both the Kev and Jev routing-scale checks."""
+"""The 68-question synthetic routing test set and the near-miss set (legal
+questions just off the menu, which must route to none_of_these), used by both
+the Kev and Jev routing-scale checks. The 38-option menu itself (37 tasks +
+none_of_these) lives in router/menu.py, shared with the harness."""
+import sys
+from pathlib import Path
 
-CRITERIA = {
-    "cuad_anti-assignment": "Does the clause require consent or notice of a party if the contract is assigned to a third party?",
-    "cuad_audit_rights": "Does the clause give a party the right to audit the books, records, or physical locations of the counterparty to ensure compliance with the contract?",
-    "cuad_cap_on_liability": "Does the clause specify a cap on liability upon the breach of a party's obligation? This includes time limitation for the counterparty to bring claims or maximum amount for recovery.",
-    "cuad_change_of_control": "Does the clause give one party the right to terminate or is consent or notice required of the counterparty if such party undergoes a change of control, such as a merger, stock sale, transfer of all or substantially all of its assets or business, or assignment by operation of law?",
-    "cuad_covenant_not_to_sue": "Is a party restricted from contesting the validity of the counterparty's ownership of intellectual property or otherwise bringing a claim against the counterparty for matters unrelated to the contract?",
-    "cuad_exclusivity": "Does the clause specify an exclusive dealing commitment with the counterparty, such as requiring all purchases from one party, or prohibiting selling to or working with third parties?",
-    "cuad_expiration_date": "Does the clause specify the date upon which the initial term expires?",
-    "diversity_1": "Given a lawsuit's fact pattern (which parties are plaintiffs/defendants, their states of citizenship, and the amount(s) in controversy), determine whether the case satisfies federal diversity jurisdiction (complete diversity between all plaintiffs and defendants, and amount in controversy over $75,000).",
-    "diversity_2": "Given a lawsuit's fact pattern (which parties are plaintiffs/defendants, their states of citizenship, and the amount(s) in controversy), determine whether the case satisfies federal diversity jurisdiction (complete diversity between all plaintiffs and defendants, and amount in controversy over $75,000).",
-    "diversity_3": "Given a lawsuit's fact pattern (which parties are plaintiffs/defendants, their states of citizenship, and the amount(s) in controversy), determine whether the case satisfies federal diversity jurisdiction (complete diversity between all plaintiffs and defendants, and amount in controversy over $75,000).",
-    "diversity_4": "Given a lawsuit's fact pattern (which parties are plaintiffs/defendants, their states of citizenship, and the amount(s) in controversy), determine whether the case satisfies federal diversity jurisdiction (complete diversity between all plaintiffs and defendants, and amount in controversy over $75,000).",
-    "diversity_5": "Given a lawsuit's fact pattern (which parties are plaintiffs/defendants, their states of citizenship, and the amount(s) in controversy), determine whether the case satisfies federal diversity jurisdiction (complete diversity between all plaintiffs and defendants, and amount in controversy over $75,000).",
-    "diversity_6": "Given a lawsuit's fact pattern (which parties are plaintiffs/defendants, their states of citizenship, and the amount(s) in controversy), determine whether the case satisfies federal diversity jurisdiction (complete diversity between all plaintiffs and defendants, and amount in controversy over $75,000).",
-    "hearsay": "Given a description of testimony or evidence, determine whether it counts as hearsay (an out-of-court statement offered to prove the truth of what it asserts).",
-    "learned_hands_consumer": "Does the post discuss issues people face regarding money, insurance, consumer goods and contracts, taxes, and small claims about quality of service?",
-    "learned_hands_crime": "Does the post discuss issues in the criminal system including when people are charged with crimes, go to a criminal trial, go to prison, or are a victim of a crime?",
-    "learned_hands_employment": "Does the post discuss issues related to working at a job, including discrimination and harassment, worker's compensation, workers rights, unions, getting paid, pensions, being fired, and more?",
-    "learned_hands_family": "Does the post discuss issues that arise within a family, like divorce, adoption, name change, guardianship, domestic violence, child custody, and other issues?",
-    "learned_hands_housing": "Does the post discuss issues with paying your rent or mortgage, landlord-tenant issues, housing subsidies and public housing, eviction, and other problems with your apartment, mobile home, or house?",
-    "learned_hands_torts": "Does the post discuss problems that one person has with another person (or animal), like a car accident, a dog bite, bullying or possible harassment, or neighbors treating each other badly?",
-    "opp115_data_retention": "Does the clause describe how long user information is stored?",
-    "opp115_data_security": "Does the clause describe how user information is protected?",
-    "opp115_first_party_collection_use": "Does the clause describe how and why a service provider collects user information?",
-    "opp115_international_and_specific_audiences": "Does the clause describe practices that pertain only to a specific group of users (e.g., children, Europeans, or California residents)?",
-    "opp115_policy_change": "Does the clause describe if and how users will be informed about changes to the privacy policy?",
-    "opp115_third_party_sharing_collection": "Does the clause describe how user information may be shared with or collected by third parties?",
-    "opp115_user_access,_edit_and_deletion": "Does the clause describe if and how users may access, edit, or delete their information?",
-    "overruling": "Does the sentence contain language overruling a previous case?",
-    "personal_jurisdiction": "Given a fact pattern about a defendant's contacts with a state and where a lawsuit is filed, determine whether that state's court has personal jurisdiction over the defendant.",
-    "supply_chain_disclosure_best_practice_accountability": "Does the statement disclose whether the retailer/manufacturer maintains internal compliance procedures on human trafficking and slavery standards (an actual internal accountability mechanism, not just requiring suppliers to comply with the law)?",
-    "supply_chain_disclosure_best_practice_audits": "Does the statement disclose whether the retailer/manufacturer performs any type of audit, or reserves the right to audit, its suppliers?",
-    "supply_chain_disclosure_best_practice_certification": "Does the statement disclose whether the retailer/manufacturer requires direct suppliers to certify compliance with labor and anti-trafficking laws?",
-    "supply_chain_disclosure_best_practice_training": "Does the statement disclose whether the retailer/manufacturer provides training to employees on human trafficking and slavery risks?",
-    "supply_chain_disclosure_best_practice_verification": "Does the statement disclose whether the retailer/manufacturer engages in supplier verification/auditing, or assesses supplier risk via the US Dept. of Labor's list?",
-    "supply_chain_disclosure_disclosed_accountability": "Does the statement disclose to what extent, if any, the retailer/manufacturer maintains internal accountability standards for employees/contractors who fail to meet anti-trafficking standards?",
-    "unfair_tos": "Given a clause from a Terms of Service agreement, classify it into one of: Arbitration, Unilateral change, Content removal, Jurisdiction, Choice of law, Limitation of liability, Unilateral termination, Contract by using, or Other.",
-    "abercrombie": "Given a trademark/brand name and the product or service it names, classify its trademark distinctiveness category: generic, descriptive, suggestive, arbitrary, or fanciful.",
-}
-CRITERIA["none_of_these"] = "The request does not match any of the other listed questions."
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from router.menu import CRITERIA, DIVERSITY_FAMILY, INSTRUCTIONS  # noqa: E402,F401
 
-DIVERSITY_FAMILY = {"diversity_1", "diversity_2", "diversity_3", "diversity_4", "diversity_5", "diversity_6"}
 
 # (expected_task_or_family, paraphrase text)
 TEST_CASES = [
@@ -106,7 +71,10 @@ TEST_CASES = [
     ("opp115_user_access,_edit_and_deletion", "How do I request a copy of all the data this company has stored about me, or get it removed?"),
     ("overruling", "The appellate court's opinion explicitly states that the precedent set in Smith v. Jones is no longer good law -- does that count as overruling it?"),
     ("personal_jurisdiction", "A company based entirely in California shipped a defective product to me in Ohio and it hurt me here -- can I sue them in an Ohio court?"),
-    ("supply_chain_disclosure_best_practice_accountability", "Does the company's statement mention any real consequences or internal process for employees who violate their anti-slavery policy?"),
+    # Relabeled from ..._best_practice_accountability: "process for employees who violate" is
+    # LegalBench's disclosed_accountability wording ("procedures for employees or contractors
+    # failing to meet company standards"); the best-practice criteria never mention employees.
+    ("supply_chain_disclosure_disclosed_accountability", "Does the company's statement mention any real consequences or internal process for employees who violate their anti-slavery policy?"),
     ("supply_chain_disclosure_best_practice_audits", "Does the disclosure mention conducting site visits or inspections of supplier factories?"),
     ("supply_chain_disclosure_best_practice_certification", "Do their suppliers have to sign paperwork attesting they don't use forced labor?"),
     ("supply_chain_disclosure_best_practice_training", "Does the company teach its purchasing managers how to spot trafficking red flags in the supply chain?"),
@@ -118,11 +86,43 @@ TEST_CASES = [
     ("none_of_these", "What's the capital of France?"),
 ]
 
-INSTRUCTIONS = (
-    "A user submitted a free-text request. Which ONE of the following predefined "
-    "legal classification questions does the user's request match? If none of them "
-    "match, choose none_of_these."
-)
+# Near misses: each question belongs to a real LegalBench task (or a legal question outside
+# LegalBench) that has no classifier on the menu, and is worded to sit next to one menu task.
+# Routing it to that neighbor would return a confident answer to a different question.
+# Comments: true task -> tempting menu neighbor.
+NEAR_MISS_CASES = [
+    ("none_of_these", "After this agreement ends, are we barred from opening a competing business in the same region for two years?"),  # cuad_non-compete -> cuad_exclusivity
+    ("none_of_these", "Can either side walk away from this contract at any time, for no reason, just by giving 30 days' notice?"),  # cuad_termination_for_convenience -> cuad_change_of_control
+    ("none_of_these", "Does this agreement renew automatically once the first term is over, and for how long?"),  # cuad_renewal_term -> cuad_expiration_date
+    ("none_of_these", "On what date does this agreement actually take effect?"),  # cuad_effective_date -> cuad_expiration_date
+    ("none_of_these", "If we cancel early, does the contract make us pay a set termination fee?"),  # cuad_liquidated_damages -> cuad_cap_on_liability
+    ("none_of_these", "Does the contract require the vendor to carry liability insurance that covers us?"),  # cuad_insurance -> cuad_cap_on_liability
+    ("none_of_these", "Who will own the code the contractor writes for us under this agreement, us or them?"),  # cuad_ip_ownership_assignment -> cuad_covenant_not_to_sue
+    ("none_of_these", "Are we allowed to hire any of their engineers after the project ends, or does the contract forbid it?"),  # cuad_no-solicit_of_employees -> cuad_exclusivity
+    ("none_of_these", "If they decide to sell this product line, do we get the first chance to buy it before any outsider?"),  # cuad_rofr-rofo-rofn -> cuad_change_of_control
+    ("none_of_these", "Do we have to buy a minimum number of units every year under this supply deal?"),  # cuad_minimum_commitment -> cuad_exclusivity
+    ("none_of_these", "Which state's law governs this contract if we end up in a dispute?"),  # cuad_governing_law -> personal_jurisdiction / unfair_tos
+    ("none_of_these", "Does this website respect my browser's Do Not Track setting?"),  # opp115_do_not_track -> opp115_first_party_collection_use
+    ("none_of_these", "Can I opt out of getting their marketing emails?"),  # opp115_user_choice_control -> opp115_user_access,_edit_and_deletion
+    ("none_of_these", "Under this NDA, can we share their confidential information with our outside consultants?"),  # contract_nli_sharing_with_third-parties -> opp115_third_party_sharing_collection
+    ("none_of_these", "When this NDA ends, do we have to return or destroy the documents they gave us?"),  # contract_nli_return_of_confidential_information -> opp115_data_retention
+    ("none_of_these", "Do we still have to keep their secrets after this NDA expires?"),  # contract_nli_survival_of_obligations -> cuad_expiration_date
+    ("none_of_these", "I got a notice to appear in immigration court about my green card, what should I do?"),  # learned_hands_immigration -> learned_hands_crime
+    ("none_of_these", "I got a speeding ticket last week and want to fight it, is it worth going to court?"),  # learned_hands_traffic -> learned_hands_crime
+    ("none_of_these", "I want to write a will leaving my savings to my niece, do I need a lawyer to make it valid?"),  # learned_hands_estates -> learned_hands_family
+    ("none_of_these", "My food stamps were cut off after I missed a phone interview, how do I get them back?"),  # learned_hands_benefits -> learned_hands_consumer
+    ("none_of_these", "My son's school suspended him for two weeks without any hearing, are they allowed to do that?"),  # learned_hands_education -> learned_hands_family
+    ("none_of_these", "What licenses do I need to open a small bakery, and should I register it as an LLC?"),  # learned_hands_business -> learned_hands_consumer
+    ("none_of_these", "We're suing under a federal civil-rights statute -- does that alone let us file in federal court?"),  # federal-question jurisdiction -> diversity_*
+    # A question about the asker's own criminal trial is also a fair learned_hands_crime match,
+    # the way the 68-question set scores similar help requests.
+    ({"none_of_these", "learned_hands_crime"}, "Can the prosecutor bring up my 2015 fraud conviction to make the jury doubt my testimony?"),  # impeachment by prior conviction -> hearsay
+    ("none_of_these", "Is our brand name 'Zapple' too close to Apple's trademark, could they sue us for infringement?"),  # likelihood of confusion -> abercrombie
+    ("none_of_these", "Which earlier cases does this court opinion rely on as precedent?"),  # citation extraction -> overruling
+    ("none_of_these", "Translate this privacy policy into Spanish."),  # not a classification question -> opp115_*
+    ("none_of_these", "Summarize the main terms of this supply agreement in three bullet points."),  # not a classification question -> cuad_*
+]
+
 
 
 def is_correct(expected, choice: str) -> bool:
