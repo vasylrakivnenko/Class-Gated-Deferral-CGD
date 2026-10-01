@@ -279,7 +279,7 @@ span tier defers. A key-term check on the cited clause (`bakeoff.about_the_quest
 - Ideas: redo cuad scoring by hand for textual answers vs dates; ENTITY/LOCATION facts through Tier 2 (not measured);
   Tier 2 for deferred choice questions; the next fresh set is cuad_blind4 (228 unused contracts left).
 
-**PRE-TIER 0 + TIER 2 FIXES (2026-10-01 ~07:00 UTC; live, NOT committed)**
+**PRE-TIER 0 + TIER 2 FIXES (2026-10-01 ~07:00 UTC; live; commits 5bf9078 + cb6c5b3)**
 - Tier 2 reads every fact question the local tiers leave (any answer type; `reader.fits` checks only the measured
   types) and every why / what-if / how / unclassified question (`harness._answer_kind`); Jev's check still guards.
   Trigger: "what can the licensee do not more than once per calendar year?" was typed DATE ("calendar year") and
