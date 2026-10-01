@@ -46,6 +46,3 @@ legalbench_map/results_gate/paper/*.pdf
 
 # router's fitted classifiers: regenerable with legalbench_map/build_router_bank.py
 legalbench_map/router/bank/
-
-# written by deploy/router/deploy.sh when a commit fails its health check
-.deploy-failed

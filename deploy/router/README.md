@@ -13,42 +13,6 @@ browser ─https─▶ Caddy :443 ─▶ oauth2-proxy 127.0.0.1:4180 ─▶ ask_
 | `oauth2-proxy.service` | `/etc/systemd/system/` (binary: `/usr/local/bin/oauth2-proxy`) |
 | `zadum-router.service` | `/etc/systemd/system/` |
 | `kev.service` | `/etc/systemd/system/` (Kev checkout: `/root/projects/kev`, `uv sync --extra serve`) |
-| `zadum-deploy.service` + `.timer` | `/etc/systemd/system/` (see Auto-deploy) |
-
-## Auto-deploy
-
-A push to `main` reaches the box within a minute. Turn it on once:
-
-```
-cd /root/projects/zadumai && git pull --ff-only && bash deploy/router/install-autodeploy.sh
-```
-
-`zadum-deploy.timer` runs `deploy.sh` every minute. It exits immediately when the checkout already
-matches `origin/main`, so it is cheap. When something new is there it fast-forwards, syncs
-dependencies if `pyproject.toml` changed, restarts `zadum-router`, and waits up to two minutes for
-`http://127.0.0.1:8765/` to answer 200 (Tier 0 loads spaCy and the NLI model at startup, so a cold
-restart is slow).
-
-If the restarted service never answers, it **rolls the checkout back** to the commit it started from,
-restarts again, and records the bad commit in `.deploy-failed` so the timer does not roll the service
-forward and back every minute. Pushing anything new clears it.
-
-```
-systemctl list-timers zadum-deploy      # when it next runs
-journalctl -u zadum-deploy -f           # what it did
-systemctl start zadum-deploy            # deploy now, don't wait for the tick
-systemctl disable --now zadum-deploy.timer
-```
-
-It refuses to run while `/root/projects/zadumai` has uncommitted changes to tracked files, so
-debugging live on the box is never clobbered — commit or stash there before expecting a deploy.
-
-`.github/workflows/deploy-router.yml` does the same thing instantly on push instead of polling; it
-needs the repository secrets `ROUTER_SSH_KEY` and `ROUTER_HOST`. Both can run together.
-
-Note: the `zadum-router.service` in this repo does not carry the `--tier2 priority` the live unit has.
-Auto-deploy never touches unit files, only the checkout, so that difference is harmless — but do not
-copy this one over the live one without re-adding the flag.
 
 Secrets are not in this repo:
 
