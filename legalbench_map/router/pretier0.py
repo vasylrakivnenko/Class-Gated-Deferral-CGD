@@ -20,6 +20,10 @@ question goes on to Tier 0; on the way Pre-Tier 0
     service), turns the reader's question to the document's voice: the
     reader's "they" is the document's "we", their "my" its "your"
     ("Do they sell my data?" -> "Do we sell your data?").
+When the frames defer, a few hand-checked legal formulas may still settle it
+(router/equivalences.py: "does not include information independently
+developed" answers "Can the receiving party independently develop similar
+information?"), "yes" only.
 """
 from __future__ import annotations
 
@@ -27,7 +31,7 @@ import re
 import time
 from dataclasses import asdict, dataclass, field
 
-from router import frames
+from router import equivalences, frames
 
 # Role words a contract capitalizes as defined parties. Two-word roles come
 # first so "Receiving Party" wins over a shorter match.
@@ -59,6 +63,20 @@ TOPIC_QUESTION = re.compile(
     re.I,
 )
 _TOPIC_NEGATION = re.compile(r"\b(not|no|never|without)\b|n't\b", re.I)
+# "Can the Employee discuss the Agreement with ...?" asks what someone may say, not what the text covers: only the text
+# itself (or a passive: "Is X discussed?") makes a topic question.
+_SOMEONE_DISCUSSES = re.compile(r"^(?:can|may|must|should|could|will|would|shall|do|does|did|is|are|am)\s+(?!(?:the |this |"
+                                r"that |your |our )?(?:agreement|contract|clause|document|text|section|provision|policy|"
+                                r"lease|terms|nda|passage|excerpt|paragraph|it|there)\b)(?:[\w'-]+\s+){1,4}?(?:discuss|"
+                                r"mention|refer|talk|deal|say|tell)\b", re.I)
+# "Is there a non-compete clause restricting the Executive?" asks what the clause does to someone, not only whether
+# one is there (2026-10-01: answered from "she is not subject to any non-competition ... restrictions").
+# "Is there an accelerated vesting provision ...?" asks whether the contract provides it: a sentence denying it ("are
+# not subject to accelerated vesting") doesn't make it a "yes" (2026-10-01, v6). "Is X discussed?" still asks only
+# whether the text covers X.
+_ASKS_PROVISION = re.compile(r"^\s*(?:is|are) there\b", re.I)
+_RELATIONAL_TOPIC = re.compile(r"\b(?:clause|provision|section|term|paragraph|language)s?\s+(?:that\s+\w+|which\s+\w+|"
+                               r"\w+ing)\s+(?:the|a|an|any|its|their|his|her|my|our|your|either|each)\b", re.I)
 # Words of a topic question that aren't the topic: function words, the topic
 # verbs, and the words for the text itself.
 _NOT_TOPIC = frozenset(
@@ -185,6 +203,10 @@ def check(question: str, document: str) -> PreTier0Result:
             result.reason = "one clause settles it" + (' (the text permits it: "may", not "must")' if qualifier.startswith("may") else "")
             if frames.CONDITIONAL in qualifier:
                 result.reason += f', {frames.CONDITIONAL}' + (f': "{fr.condition}"' if fr.condition else "")
+        elif (eq := equivalences.answer(result.rewritten or question, document)) is not None:
+            # a fixed legal formula the frames don't read ("does not include information independently developed")
+            result.fired, result.answer, result.evidence = True, eq["answer"], eq["evidence"]
+            result.reason = f"a legal formula settles it: {eq['reason']} ({eq['rule']}, router/equivalences.py)"
     result.ms = round((time.perf_counter() - start) * 1000, 2)
     return result
 
@@ -276,7 +298,8 @@ def _finder(word: str) -> re.Pattern:
 
 def _topic(question: str, document: str) -> PreTier0Result | None:
     """"yes" if one sentence holds every topic word (as above); None to defer."""
-    if not TOPIC_QUESTION.search(question) or _TOPIC_NEGATION.search(question):
+    if not TOPIC_QUESTION.search(question) or _TOPIC_NEGATION.search(question) or _RELATIONAL_TOPIC.search(question) \
+            or _SOMEONE_DISCUSSES.search(question):
         return None
     terms, words = topic_words(question)
     if not terms and not words:
@@ -297,7 +320,8 @@ def _topic(question: str, document: str) -> PreTier0Result | None:
         if start in seen:
             continue
         seen.add(start)
-        if _discusses(sentence, terms, words):
+        if _discusses(sentence, terms, words) and not (_ASKS_PROVISION.search(question) and frames._negated_sentence(
+                frames._raw_tokens(sentence), frames.tag(frames.tokens(sentence), frames._BASE_TRIE))):
             named = [t.search(sentence).group(0) for t in terms] + words
             return PreTier0Result(True, "yes", reason=f"one sentence has every topic word ({', '.join(named)})",
                                   evidence=[{"text": sentence, "label": "yes", "p": 1.0}])
@@ -305,7 +329,7 @@ def _topic(question: str, document: str) -> PreTier0Result | None:
 
 
 def _check(question: str, document: str) -> PreTier0Result:
-    if (topic := _topic(question, document)) is not None:
+    if (topic := _topic(frames.qshapes.canonical(question), document)) is not None:  # "Is the clause about X?" too
         return topic
     parties = find_parties(document[:PARTY_SCAN_CHARS])
     if not frames.occurs_any(("we", "us", "our", "you", "your"), document):

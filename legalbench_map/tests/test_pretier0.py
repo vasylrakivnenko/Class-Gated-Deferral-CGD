@@ -67,8 +67,7 @@ NO_AUDIT = ("Licensee shall have no right to audit the books and records of Lice
             "no more than once per calendar year.")
 
 
-@pytest.mark.parametrize("question", ["Is the right to audit books discussed here?", "Does the clause mention auditing of records?",
-                                      "Is there an audit clause?"])
+@pytest.mark.parametrize("question", ["Is the right to audit books discussed here?", "Does the clause mention auditing of records?"])
 def test_topic_is_discussed_when_one_sentence_has_every_word(question):
     r = check(question, "Rent is due monthly.\n\n" + NO_AUDIT)
     assert (r.fired, r.answer) == (True, "yes") and r.evidence[0]["text"] == NO_AUDIT
@@ -139,3 +138,9 @@ def test_topic_words_keep_roles_apart_and_terms_whole(question, fires):
 ])
 def test_topic_words_match_their_family(question, doc):
     assert check(question, doc).fired
+
+
+def test_is_there_a_provision_isnt_answered_by_a_denial():
+    # "Is there an audit clause?" asks whether the contract provides audits; NO_AUDIT denies them (2026-10-01, v6)
+    assert not check("Is there an audit clause?", "Rent is due monthly.\n\n" + NO_AUDIT).fired
+    assert check("Is there an audit clause?", "Licensee may audit the books and records of Licensor once a year.").answer == "yes"

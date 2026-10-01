@@ -46,6 +46,250 @@ Lexicon: 94 concepts / 767 phrases. The LLM-proposed ones are in `lexicon_extra.
 `kimi-k3` verifies, via Fireworks, key `FIREWORKS_API_KEY` in `/root/.env`; 202 requests used. Work files are in
 `/root/zadumai_nli_proto/extensive/v3/`.
 
+## ACTIVE WORK: Pre-Tier 0 "next level" (started 2026-10-01 ~20:15 UTC; user: "go build it to the next level")
+DEPLOYED 2026-10-01 23:13 UTC (c4, the user's OK): checked on :8777 (Pre-Tier 0 on the new shapes in 2-9 ms, defers
+where it should) and in-process with the live stages (Pre-Tier 0 -> reader network -> Jev; NLI Tier 0 off), then
+zadum-router restarted. Committed after the restart (see `git log`). Pre-restart diff:
+/root/backups/live-tree-before-restart-2026-10-01-c4.patch (+ -new-files.tgz).
+Note: ask_ui on :8777 without --require-user has no usage DB, so it runs the default stages (NLI Tier 0 on, reader
+network off), not the saved live ones; check the live combination in-process (App + Stages).
+Workspace: `/root/zadumai_nli_proto/extensive/v4/` (not in git). Tools there:
+- `pt0eval.py [SETS] [--save NAME] [--diff NAME] [--groups]`: Pre-Tier 0 on every open set (dev, heldout, freshA,
+  freshB, genval, conval, adv, prior, v4open) with a diff against a saved run (`runs/NAME.json`); `errs.py RUN SET`
+  lists wrong answers; `bykind.py` = precision per frame kind. v4sealed only with `--final` (logged in sealed_runs.log).
+- Scoring: "yes" right only on gold yes; on gold not_stated (genval, conval, v4 gen) any answer is wrong.
+**Step 0, new sealed set (in progress):** `build_v4.py` -> `v4_rows.json`. Text no earlier eval or training used
+(no 10-word run shared, `shingles.py`): LEGALBENCH unfair_tos sentences with 8 consumer questions written up front
+(578 rows, dataset gold), and user-style questions in 6 shapes (direct, condition-first, passive, two actions, noun,
+plain) written by gpt-oss-120b over 450 LEDGAR **test** provisions (no script had used that split) and 150 ToS
+passages, kept only where the writer, gpt-oss-120b (blind) and deepseek-v4-pro (blind) agree. Split by passage:
+1/3 "open" (tune on it), 2/3 "sealed" (run once at the end).
+**Finding that changed the order:** on generated user-style questions (genval) Pre-Tier 0 was only 78.8% right
+(25 wrong of 118) and gave 27 false yeses on near-misses (conval), vs 99.6% on LegalBench. So precision first:
+- `router/qshapes.py` (new): rewrites user shapes to the frame's "Aux Subject Verb Object [condition]" ("Does the
+  agreement require X to Y" -> "Must X Y", "If C, can X Y" -> "Can X Y if C", passives with/without "by X",
+  "Is reverse engineering prohibited?"), and finds the question's named subject ("Must the Agent pay ...?").
+- frames.py: a named subject the document uses as a party becomes an actor (the Agent must be the one paying); no
+  content may come before the actor ("Is there a limit on the number of subsidiaries to which the Company can
+  assign" isn't "Can the Company assign"); condition cues must be the same kind (after ~ upon ~ if; not before,
+  during, except, without; "after July 31" vs "through July 31"); presence frames get relation guards (identity
+  "Is X a Y?", before/after, "without", "owed by X", "limited to", a specific rate/amount/date needs one, "required
+  to" needs an obligation word, words only named to be excluded); two modalities at once defer.
+| set | baseline | checkpoint s3 |
+|---|---|---|
+| LegalBench dev | 896 = 12.0%, 99.6% | 896 = 12.0%, 99.6% |
+| held-out (report only) | 1,087 = 8.7%, 99.8% | 1,084 = 8.7%, 99.8% |
+| fresh A / B | 185, 99.5% / 191, 97.4% | same |
+| genval (generated) | 118, **78.8%** | 67, **100%** |
+| conval (near-misses, none yes) | **27 false yes** | **6 false yes** |
+Tests: 638 pass (the 4 failing in test_determinism / test_per_item_dump fail on 4ef0122 too).
+**v4 set built** (20:59 UTC): open 1,126 scored rows (661 LEDGAR-generated, 276 ToS-generated, 189 ToS category; 10
+disputed ToS rows left out), sealed 2,204. On v4open (never used for the fixes above): baseline 52 answers 86.5% ->
+s6 49 answers 98.0%: the precision fix holds out of sample. Coverage of user-style questions stays ~4%.
+**Coverage, checkpoint s8 (21:45 UTC):**
+- open-vocabulary actions (frames.OPEN "V:"): the question's own verb after its subject when the lexicon lacks it
+  ("Must the Holder surrender the Note"), matched literally with the same actor/modal/negation/condition checks;
+  "the shares" after a determiner is a noun, not "share"; passive sentences without "by X" answer any-party questions
+  ("The Source Code shall be deposited"), "yes" only; a "must" question isn't answered by a bare "is identified"
+  (a description); "am" is an auxiliary; a "not" inside the question's condition doesn't negate the question;
+  topic questions skip negated sentences.
+- `router/equivalences.py` (new, item 3): hand-checked formulas, only "yes", only when the frames defer, each with a
+  veto: independent development carve-out, information received from a third party, existence/terms kept
+  confidential, survival after termination (the question's own verb, no durations, same owner), no license granted.
+  THING:ORAL concept (oral/verbal/spoken) in the lexicon.
+| set | baseline | s8 |
+|---|---|---|
+| LegalBench dev | 896 = 12.0%, 99.6% | 968 = 13.0%, 99.6% |
+| held-out (report only) | 1,087 = 8.7%, 99.8% | 1,176 = 9.4%, 99.7% |
+| fresh A | 185 = 7.7%, 99.5% | **520 = 21.7%, 99.8%** |
+| fresh B (open now) | 191 = 7.9%, 97.4% | **491 = 20.4%, 99.6%** |
+| genval / v4open (user-style) | 118, 78.8% / 52, 86.5% | 74, 100% / 47, 100% |
+| conval false yes | 27 | 5 |
+**Final code = checkpoint s14 (2026-10-01 ~21:40 UTC)**, after s8: NOTIFY action + NOTICE thing ("provide ... with
+prompt written notice"), "its" no longer required in the sentence, "the disclosing party" binds to the other party in
+documents that never say "disclosing party", the document's own names for its confidential information
+(`frames.info_aliases`: '"Information" means ... confidential', '(collectively, the "Evaluation Material")'; checked
+first so "the Information" isn't just any information), wider no-license formulas, a payee isn't the actor
+("compensation to such Grantor) to use"), a "no" whose thing has a restrictive clause defers ("employees who do not
+have a need to know"), verbs after "from" ("prohibited from reverse engineering"), "reserve the right", fillers
+("just", "actually") ignored, topic questions with a relational qualifier ("clause restricting the Executive") aren't
+topic questions. Tried and dropped: requiring a passive's subject to be the question's object (lost 7 held-out audit
+answers for 1 fresh error); LLM-mined lexicon from misses (`v4/mine_lexicon.py`: 782 single-slot misses, 36 phrases
+in 2+ rows, the blind verifier kept 2; the misses are document binding and nominal forms, not synonyms).
+Latency (300 KB worst case, `v4/latency_v4.py`): 9.2 ms vs 9.0 ms for 4ef0122 measured the same way (the formulas use
+an Aho-Corasick cue scan before their patterns; without it they cost up to +10 ms). Tests: 685 pass (new:
+tests/test_pretier0_v4.py, 47 cases); the 1 failure (test_determinism) fails on 4ef0122 too.
+| set | 4ef0122 | s14 |
+|---|---|---|
+| LegalBench dev | 896 = 12.0%, 99.6% | 971 = 13.0%, 99.6% |
+| held-out (report only) | 1,087 = 8.7%, 99.8% | 1,189 = 9.6%, 99.7% |
+| fresh A | 185 = 7.7%, 99.5% | 602 = 25.2%, 99.7% |
+| fresh B | 191 = 7.9%, 97.4% | 559 = 23.2%, 99.6% |
+| genval (generated) | 118, 78.8% | 79, 100% |
+| v4open (generated + ToS, never tuned on before s6) | 52, 86.5% | 48, 100% |
+| conval false yes | 27 | 5 |
+System (Pre-Tier 0, then the reader network as live; `v4/system_eval.py`, s10): fresh A 708 = 29.6% at 99.7%
+(the network's own report had 403 = 16.8%), fresh B 634 = 26.3% at 99.7%, v4open 186 = 16.5% at 99.5%.
+**Sealed run, pre-registered (written before running it):** v4sealed (2,204 rows; 10+20 disputed ToS rows left out),
+once, totals only, by part: Pre-Tier 0 alone (`pt0eval.py v4sealed --final`) for 4ef0122 and s14, and the system
+(`system_eval.py v4sealed --final`) for both. Scoring as above ("yes" right only on gold yes; any answer on
+not_stated wrong). Every sealed run is logged in v4/sealed_runs.log.
+**Sealed v4 result (run once, 21:35 UTC; 2,184 rows):**
+| | Pre-Tier 0 alone | network on the rest | both |
+|---|---|---|---|
+| 4ef0122 | 112 = 5.1%, **81.2%** | 229 = 10.5%, 99.6% | 341 = 15.6%, 93.5% |
+| s14 | 95 = 4.3%, **88.4%** | 233 = 10.7%, 99.6% | 328 = 15.0%, 96.3% |
+By shape (s14, Pre-Tier 0): direct 60 answers 98.3%; noun 8 answers 25%; two actions 3, all wrong; ToS category 1.
+So the precision fix generalized only partly: the open half's 48/48 was a small sample. On user-style questions the
+network (99.6%) is now more precise than the rules. v4sealed is open since this run (`pt0eval.py v4all`).
+**s15 (from v4's 11 sealed errors, now open; general causes only):** "its rights" after the verb is the object (not
+"may"); "Can the Employee discuss X" isn't a topic question (only the text, or a passive, "discusses"); "including,
+but not limited to" isn't a limit (stripped for word matching only); "limit on the amount" needs an amount; a value
+the question puts on one side ("more than $175,000,000") needs that side next to it ("up to" doesn't); a presence
+question asking permission isn't answered by a sentence that prohibits (and the reverse); "we"/"the company" and
+"you" stay required in presence questions ("Is the company responsible ...?" vs "you are responsible"); an
+unresolved "I" needs "I/me/my"; "Is there any right for me to own X" isn't a presence question. Tried and dropped:
+blocking every presence question with a pronoun subject (lost 6 right for 1 error); the network as a veto on
+Pre-Tier 0's answers (`v4/veto_study.py`: removes 3-8% of right answers for 1-2 errors per set).
+s15 vs s14: v4all 131 answers 98.5% (s14: 143, 92.3%), dev/fresh/held-out unchanged, genval -2 right "no"s.
+Tests 693 pass; latency 9.1 ms worst (300 KB).
+**v5, a new sealed set for s15** (`build_v5.py`, generated questions only, over 600 LEDGAR test provisions and ~100
+ToS passages v4 didn't use, same prompts and three-way agreement; all sealed; built 22:40 UTC: 3,208 rows): run once
+with --final, Pre-Tier 0 alone and the system, for 4ef0122, s15 and **c2** (the second cycle below, also written
+without seeing v5; frozen copies in the session scratchpad). Totals by part and shape only.
+**v5 result (run once, ~22:20 UTC; 3,208 rows), Pre-Tier 0 alone:** 4ef0122 191 = 6.0% at **84.8%**; s15 156 = 4.9% at
+**92.3%**; c2 154 = 4.8% at 92.2%. "direct" questions 93/93 right; errors in passive (5), condition-first, two
+actions, noun, plain. System (4ef0122): network 438 = 13.7% at 99.3%, both 629 = 19.6% at 94.9%.
+**Self-critique checks added (all open sets):**
+- whole contracts (`v4/docs_pt0.py`, 102 CUAD test contracts x 38 questions, + `docs_judge_v4.py`: the teacher's
+  literal verdict on changed answers): s15 answered 337 (4ef0122: 290); of its 51 new answers CUAD agreed with 23,
+  the teacher with 48 (26 are "obligations that survive termination", which CUAD files only under post-termination
+  services). 3 literal errors -> fixed in c2/c3.
+- rewording (`v4/paraphrase_eval.py`: 4 user rewordings per benchmark question by gpt-oss-120b; 1-2 tuned on, 3-4
+  held out): fresh A coverage original / held-out wordings: 4ef0122 7.7% / 2.4%, s15 25.2% / 8.8%, c3 26.2% / 11.5%
+  (precision 99.6-100%); no row flips yes/no between wordings in c3.
+- the network as a veto on Pre-Tier 0 (`v4/veto_study.py`): not worth it (3-8% of right answers for 1-2 errors).
+**Cycle 2 (c2, from the critique checks):** questions about the text ("Is X specified in the agreement?", "Is the
+clause about X?", "Does this provision cover X?", "Is X considered confidential information?"), "limit the use of X
+to the purposes" = "use X only for the purposes", "once the agreement ends", "create copies", "that the agreement
+exists", "if required by law" in its wordings (THING:LAW_REQUIRED), formulas with more verbs (create/produce/come up
+with; given/conferred), "A, or is it B?" defers, mutual termination isn't without cause, a passive inside an
+"if"-clause isn't a fact, "notify" composite needs "notice" right after the verb, a compatible cue covering the
+question's condition excuses another cue on the same words, "not prohibited" = may.
+**Cycle 3 (c3, from v5's 12 c2 errors, v5 open since):** an actor after "to/for/with/from/without" isn't the subject
+("consent to Guarantor, assign"); "shall not be construed to require CBS to establish" asserts nothing; "from any
+insurer" needs any/all in the text; "all X" isn't "some X"; a concept the question names twice needs two mentions
+("Does the termination cancel ...?" vs "shall survive the termination"), not across a condition or for plain words;
+"after fifteen days" vs "no later than fifteen days"; the consent reading of "require" only for consent questions;
+"required/mandatory" presence questions need an obligation word; "can it be released?" (pronoun, no agent) defers.
+Tried and dropped in c3: "waiver of" as a negation (broke questions about waivers), "must" presence questions need
+an obligation word (lost "Must the free trial be free of charge?"), excluding "either party" from bare passives
+(lost "may be executed in counterparts"), "once" as a contract condition word ("once per calendar year").
+| set | 4ef0122 | s15 | c3 |
+|---|---|---|---|
+| dev | 896, 99.6% | 971, 99.6% | 969, 99.6% |
+| held-out | 1,087, 99.8% | 1,189, 99.7% | 1,196, 99.7% |
+| fresh A | 185, 99.5% | 602, 99.7% | 628 = 26.2%, 99.7% |
+| fresh B | 191, 97.4% | 559, 99.6% | 570 = 23.6%, 99.6% |
+| v4 all (open) | 164, 82.9% | 131, 98.5% | 130, 98.5% |
+| v5 (open since its run; c3 tuned on its errors) | 191, 84.8% | 156, 92.3% | 145, 97.9% |
+| conval false yes | 27 | 5 | 3 |
+| whole contracts (CUAD gold) | 290, 86.9% | 337, 81.0% | 332, 81.6% |
+Tests 693 pass; latency 9.2 ms worst (300 KB). **v6** (`build_v6.py`, new sealed set from LEDGAR test provisions and
+ToS passages v4/v5 didn't use) is the blind check for c3: run once, 4ef0122 / s15 / c3. **OpenRouter credits ran out
+during its build (HTTP 402, ~22:35 UTC; this session spent ~$4.03, 7,335 calls)**, so v6 kept only the passages both
+blind checks finished: 698 rows (LEDGAR only; 284 yes, 130 no, 284 not_stated). Live router unaffected (Tier 2 =
+fireworks-priority). Bulk LLM work needs the OpenRouter balance topped up.
+**v6 result (run once, 22:53 UTC; 698 rows), Pre-Tier 0 alone:** 4ef0122 46 at 76.1%; s15 43 at 95.3%; c3 43 at 95.3%.
+System (Pre-Tier 0 then the network): 4ef0122 171 = 24.5% at 93.6%; c3 162 = 23.2% at **98.8%** (network 119 at 100%).
+Across v5+v6 (blind for s15), "direct" questions were 125/125 right; the errors are in rewritten shapes (passive,
+noun/gerund, two actions) and on rows the network can't answer either.
+**Tier order (`v4/policy_study.py`, open sets + v6):** where the network also answers Pre-Tier 0's rows, the two agree
+(network 100% there), so "network first for risky paths" changes nothing, and "network only for risky paths" trades
+~1 point of coverage for <=0.3 point of precision. Kept: Pre-Tier 0 first.
+**Cycle 4 (c4 = FINAL, from v6's 2 errors; not blind-validated: no credits for a v7):** "no Corporation match ... can
+be made" (a "no" right before the actor negates); "Is there an X provision ...?" isn't answered by a sentence that
+denies X (topic "Is X discussed?" unchanged; test_pretier0's "Is there an audit clause?" over a denial now defers,
+intentionally). Every open set unchanged otherwise; v6 now 42/42.
+**FINAL (c4) vs 4ef0122:** dev 896 -> 969 (99.6%); held-out 1,087 -> 1,196 (99.7%); fresh A 7.7% -> 26.2% (99.7%);
+fresh B 7.9% -> 23.6% (97.4% -> 99.6%); rewordings held out 2.4% -> 11.5%; user-style blind: 84.8% -> 92.3% (v5,
+s15), 76.1% -> 95.3% (v6, c3); system on v6 93.6% -> 98.8%; whole contracts 290 -> 332 answers (teacher-literal right
+on 48/51 of s15's new ones); latency 9.1 ms worst (300 KB) vs 9.0; tests 693 pass.
+**Not done / needs the user:** restart zadum-router to deploy (test on :8777 first), commit (new files:
+router/qshapes.py, router/equivalences.py, tests/test_pretier0_v4.py), top up OpenRouter for more eval sets.
+**Next levers (ranked):** (1) consumer/ToS documents: both tiers are weak there (Pre-Tier 0 ~1% on ToS category
+questions; network 88% precise on ToS-generated questions vs 99.8% on LEDGAR) -> a network round with ToS data;
+(2) rewording robustness of the NDA formulas (26% -> 11.5% on unseen wordings); (3) a literal-labeled whole-contract
+set (CUAD's category gold understates literal yeses); (4) passive / noun / two-action question shapes.
+
+## NEXT STEPS: Pre-Tier 0 coverage (review of 2026-10-01 evening; nothing built yet)
+The user asked how much further Pre-Tier 0 can go, and whether it can be a highly accurate mechanical QA engine.
+**Answer:** it's already highly accurate (99.6–99.8% on what it answers). It can be broad only for a fixed list of
+questions about clauses that contracts word in standard ways (a checklist), not for any question. Speed isn't the
+limit (~0.2 ms per question, ≤8 ms on 300 KB, so 10× more rules fit). The limit is how fast rules can be written
+and each one proven to keep precision at ~99.5%.
+
+**Ceiling** (the teacher LLM's quoted sentence = the deciding sentence; dev + fresh A only, held-out not touched;
+script: `/root/zadumai_nli_proto/extensive/v3/ceiling_gap.py`):
+| | LegalBench dev (41 questions, tuned on) | fresh A (246 questions) |
+|---|---|---|
+| text says "yes" outright | 33.7% | 69.7% |
+| text says "no" outright | 1.7% | 18.2% |
+| "no" only because nothing mentions it | 48.3% | 3.2% |
+| Pre-Tier 0 answers today | 12.0% (34% of the "yes" rows) | 7.7% (10%) |
+- Half of LegalBench is "no, this clause isn't about that". No sentence states it, so no reading engine answers it.
+- Fixed wording does well: governing law reaches 82% of its ceiling, anti-assignment 81%, expiration date 67%.
+  Ideas written many ways do badly: cap on liability 14%, revenue sharing 7%, exclusivity 2%, IP assignment 0%.
+
+**Why it misses "yes" rows it could answer** (share of all rows, dev / fresh A):
+- the deciding sentence lacks a word or concept from the question: 16.0% / 41.0%
+- it can't parse the question's shape: 0.3% / 13.2%
+- every word is there, but the structure check rejects it: 4.2% / 5.4%
+Typical misses: "keep the existence of this agreement confidential" isn't matched to "prohibited from disclosing
+the existence"; in "Borrower shall use the Information solely…" neither the receiving party ("Borrower") nor the
+confidential information ("the Information") is found; "Confidential Information does not include information
+lawfully obtained from a third party" isn't read as permission to obtain it.
+
+**Plan, in order** (tune on v2 dev only; report held-out; keep each change only if precision holds at ~99.5%):
+0. **Build a new sealed yes/no test set first.** None is left: fresh B was read after the final run. Without a new
+   one, 99.5% becomes a number we tuned toward.
+1. **Parse the question with qtree.** `_action_frame` (`frames.py:412`) needs the question to start with
+   "does/can/must…" and name the actor before the verb. qtree already strips leading conditions ("If I cancel
+   today, will I…") and finds subject, verb and object. Four question shapes are 13% of fresh A and get 0% today:
+   notify-if-required-by-law, passive "Must CI be identified…", two verbs ("retain copies after returning or
+   destroying") and "reverse engineering". The consumer contracts questions also get 0%, and they're the closest to
+   how real users write. Low risk.
+2. **Work out who and what the document's names refer to:** the receiving party ("Borrower", "VENDOR", we/you),
+   what "the Information" or "the Material" means, and what "it" or "such party" points to. About 30% of the missing
+   concepts on fresh A. Helps every question, most of all on whole contracts.
+3. **A small, hand-checked set of legal equivalences:** "keep X confidential" = "not disclose X"; "nothing herein
+   shall be construed as granting any licence" = no licence; "CI does not include information obtained from a third
+   party or developed independently" = the receiving party may do that. The two "similar information" question
+   types are at 0–1% today, though the text answers 95–98% of them outright.
+4. **Grow the word list from the misses.** The teacher's quote shows the sentence and the missing phrase; keep a
+   phrase only if dev precision holds. Upper bound: matching the 25 most often missing concepts gets 11% of dev rows
+   and 37% of fresh A rows past word matching, before the structure checks. That curve is steep only because
+   benchmarks repeat a few questions thousands of times; real users ask thousands of questions once each.
+5. **Read sentence structure with the grammar parser** (passives, "undertakes: (a)… (b)…" lists, "Not disclose…").
+   Covers the structure-rejected rows, ~4–5%. The biggest change: a rewrite of `_judge` (`frames.py:706`); spaCy is
+   already loaded.
+- Don't add more "no" answers beyond explicit bans: with the condition check lifted, its "no" answers were right
+  only 40–55% of the time.
+
+**Expected gains** (rough estimate, not measured): items 1–4 might take fresh A from 7.7% to ~15–25% and dev into
+the high teens at the same precision, much of it from working through the 17 NDA questions one by one. Question
+types nobody tuned for stay low (today's unseen LegalBench tasks: 3.8%). For scale: ~2 days of rule work took
+held-out coverage from 5.8% to 8.7%; one overnight run of the reader network added 4.8% on held-out and 7.9% on fresh
+B, at 99% or better. Item 5 and beyond turn it into a hand-built parser and reasoner. Approaches like that have
+historically stalled, because every new idea needs someone to write its rule.
+
+**Design that scales:** learned parts find the passage and match paraphrases. Pre-Tier 0's rules check party,
+may/must, negation and conditions, and explain the answer (the Pre-Tier 0 + reader network setup that's live now).
+Knowledge that proves stable gets turned back into rules (items 3–4). If Zadum offers fixed checklists per document
+type (the 17 NDA questions, CUAD's 41 categories), the mechanical engine can cover a lot of them. Free-form questions
+stay mostly with the network and Tier 2.
+**Recommended start:** step 0 (new sealed set), then item 1. Waiting for the user's go.
+
 ## ACTIVE WORK: the question tree (M0–M5), started 2026-09-30 18:00 UTC — M0–M4 DONE (see WHERE THINGS STAND)
 The user asked for M0 → M1 → M2 → M3 → M4 to be built one by one, each with evals, fixing and re-running until its
 gates pass, updating this file after every task, without stopping. **A new session: read "WHERE THINGS STAND" at
@@ -547,6 +791,7 @@ the laptop's commit bc11055 (tier switches, made without this box's uncommitted 
 - The pod bills by the hour whether used or not; stopping it makes the GPU option fail its test read (the switch refuses).
 
 ## Next steps (from before the question tree)
+The current plan is NEXT STEPS: Pre-Tier 0 coverage, near the top. The items below are older.
 1. ~~Commit the B + D edits~~ done in the commit "Classify questions first, then answer facts and choices from the text" (`git log`).
 2. Improve **unseen-task coverage** (only 1.6–2.2%): generalize the question phrasings rather than matching per task.
    Known errors: loose date/duration pattern ("one year before"), and a successor term read as the initial term.
