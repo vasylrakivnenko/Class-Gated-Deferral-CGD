@@ -17,10 +17,25 @@ browser ─https─▶ Caddy :443 ─▶ oauth2-proxy 127.0.0.1:4180 ─▶ ask_
 Secrets are not in this repo:
 
 - `/etc/oauth2-proxy/env` (mode 600): `OAUTH2_PROXY_CLIENT_ID`, `OAUTH2_PROXY_CLIENT_SECRET` (Google OAuth web client, redirect URI `https://router.zadum.ai/oauth2/callback`) and `OAUTH2_PROXY_COOKIE_SECRET` (`openssl rand -base64 32 | tr -- '+/' '-_'`).
-- `.env` at the repo root (mode 600): `JEV_API=...`.
+- `.env` at the repo root (mode 600): `JEV_API=...`, `FIREWORKS_API_KEY=...` (Tier 2's gpt-oss-120b) and,
+  only if Tier 2 is set to Gemma, `OPENROUTER_API_KEY=...`. A Tier 2 option whose key is missing fails the
+  save in /admin rather than every later question.
 
 Tier 0 needs the `encoders` and `tier0` extras in the repo's `.venv`; on first start it downloads `cross-encoder/nli-deberta-v3-xsmall` (~280 MB) to the Hugging Face cache.
 
 The classifier bank (`legalbench_map/router/bank/`) is gitignored; rebuild it with `legalbench_map/build_router_bank.py` or copy it from a machine that has it. Load it with the scikit-learn version that fit it.
 
 Users, limits and the request log are in `/var/lib/zadum-router/usage.db`. Admins (`--admin` in `zadum-router.service`) see them at `/admin`.
+
+Which tiers answer (Pre-Tier 0, Tier 0, Tier 1 = Jev, Tier 2) is set in /admin's **Routing Pipeline** tab, not on
+the playground page, and is stored in the same `usage.db`, so it survives a restart. The `--classifiers` and
+`--tier2` flags in `zadum-router.service` are only the startup default, used until an admin saves something; after
+that, changing a flag has no effect until the saved row is removed:
+
+```
+sqlite3 /var/lib/zadum-router/usage.db "DELETE FROM settings WHERE key = 'stages';"   # back to the flags
+sqlite3 /var/lib/zadum-router/usage.db "SELECT value, updated_at, updated_by FROM settings WHERE key = 'stages';"
+```
+
+Each request logs which tiers were on, as `requests.stages` (`p1 t1 j1 c0 r:gpt-oss-120b-priority`), so a day's
+accuracy, latency and free-classifier share can be read against the configuration that produced them.

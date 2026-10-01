@@ -34,6 +34,10 @@ CREATE TABLE IF NOT EXISTS requests (
 CREATE INDEX IF NOT EXISTS requests_day ON requests (day);
 CREATE INDEX IF NOT EXISTS requests_email ON requests (email);
 CREATE TABLE IF NOT EXISTS documents (id TEXT PRIMARY KEY, text TEXT NOT NULL, first_seen TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS settings (
+    key TEXT PRIMARY KEY, value TEXT NOT NULL,  -- value is JSON
+    updated_at TEXT, updated_by TEXT            -- which admin last changed it
+);
 """
 # Added to `requests` later, so also to a database made before them. Rows
 # logged earlier keep NULL here.
@@ -50,6 +54,9 @@ REQUEST_CONTENT = (
     ("tier2_server_ms", "REAL"),  # Fireworks' own processing time (queue + compute), from its reply headers
     ("tier2_result", "TEXT"),  # what came of it: answered and checked, not stated, dropped, unavailable
     ("tier2_usage", "TEXT"),  # JSON: tokens, time to first token, attempts
+    # Which tiers were on (router/stages.py `mask`), so "free classifier share" and the
+    # latency numbers can be read against the configuration that produced them.
+    ("stages", "TEXT"),
 )
 
 
@@ -115,7 +122,8 @@ class Usage:
         return {"user": email, "daily_limit": limit, "remaining": max(0, limit - used)}
 
     def log(self, email: str, status: str, reader: str | None = None, answer: dict | None = None, *,
-            request_id: str | None = None, question: str | None = None, document: str | None = None) -> None:
+            request_id: str | None = None, question: str | None = None, document: str | None = None,
+            stages: str | None = None) -> None:
         now = _now()
         ts = now.isoformat(timespec="seconds")
         a = answer or {}
@@ -129,15 +137,16 @@ class Usage:
             self._db.execute(
                 "INSERT INTO requests (ts, day, email, status, reader, path, answered_by, ms, llm_calls, "
                 "id, question, document_id, answer, confidence, evidence, "
-                "tier2, tier2_ms, tier2_server_ms, tier2_result, tier2_usage) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", (
+                "tier2, tier2_ms, tier2_server_ms, tier2_result, tier2_usage, stages) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", (
                     ts, now.date().isoformat(), email, status, reader,
                     a.get("path"), a.get("answered_by"), a.get("ms"), a.get("llm_calls"),
                     request_id, question, doc_id, a.get("answer"), a.get("confidence"), evidence,
                     t2_usage.get("service_tier") if t2 else None, round(t2["ms"], 1) if t2.get("ms") else None,
                     round(t2_usage["server_s"] * 1000, 1) if "server_s" in t2_usage else None,
                     t2.get("reason") or None,
-                    json.dumps({k: v for k, v in t2_usage.items() if k != "service_tier"}) if t2_usage else None))
+                    json.dumps({k: v for k, v in t2_usage.items() if k != "service_tier"}) if t2_usage else None,
+                    stages))
 
     def set_limit(self, email: str, daily_limit: int | None) -> None:
         """A per-user limit (0 blocks the user); None goes back to the default."""
@@ -147,6 +156,29 @@ class Usage:
             else:
                 self._db.execute("INSERT INTO limits VALUES (?, ?) ON CONFLICT(email) DO UPDATE SET daily_limit = excluded.daily_limit",
                                  (email, daily_limit))
+
+    def get_setting(self, key: str, default=None):
+        """A stored JSON setting, `default` if it was never set or can't be read."""
+        with self._lock:
+            row = self._db.execute("SELECT value FROM settings WHERE key = ?", (key,)).fetchone()
+        if not row:
+            return default
+        try:
+            return json.loads(row[0])
+        except json.JSONDecodeError:
+            return default
+
+    def set_setting(self, key: str, value, by: str = "") -> None:
+        with self._lock, self._db:
+            self._db.execute(
+                "INSERT INTO settings VALUES (?, ?, ?, ?) ON CONFLICT(key) DO UPDATE SET "
+                "value = excluded.value, updated_at = excluded.updated_at, updated_by = excluded.updated_by",
+                (key, json.dumps(value), _now().isoformat(timespec="seconds"), by))
+
+    def setting_meta(self, key: str) -> dict:
+        with self._lock:
+            row = self._db.execute("SELECT updated_at, updated_by FROM settings WHERE key = ?", (key,)).fetchone()
+        return {"updated_at": row[0], "updated_by": row[1]} if row else {"updated_at": None, "updated_by": None}
 
     def stats(self, days: int = 30) -> dict:
         """Everything the admin dashboard shows."""
@@ -177,8 +209,9 @@ class Usage:
                           (SELECT COUNT(*) FROM requests WHERE email = u.email AND status = 'error')
                    FROM users u LEFT JOIN limits l ON l.email = u.email
                    ORDER BY u.last_seen DESC""", today, self.daily_limit, week)]
-            recent = [dict(zip(("ts", "email", "status", "reader", "path", "answered_by", "ms", "llm_calls"), r)) for r in q(
-                "SELECT ts, email, status, reader, path, answered_by, ms, llm_calls FROM requests ORDER BY ts DESC, rowid DESC LIMIT 25")]
+            recent = [dict(zip(("ts", "email", "status", "reader", "path", "answered_by", "ms", "llm_calls", "stages"), r)) for r in q(
+                "SELECT ts, email, status, reader, path, answered_by, ms, llm_calls, stages "
+                "FROM requests ORDER BY ts DESC, rowid DESC LIMIT 25")]
         daily = []
         for i in range(days):
             d = (_now().date() - dt.timedelta(days=days - 1 - i)).isoformat()

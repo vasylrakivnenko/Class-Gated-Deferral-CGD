@@ -85,3 +85,29 @@ def test_an_older_database_gains_the_new_columns_and_keeps_its_rows(tmp_path):
         (None, None, "tier0", 900), ("req_2", "Q?", "pretier0", 1)]
     assert u.stats()["tiles"]["questions_total"] == 2
     Usage(db, daily_limit=5)  # opening it again changes nothing
+
+
+def test_settings_round_trip(tmp_path):
+    """What /admin saves in the Routing Pipeline tab has to survive a restart."""
+    u = Usage(tmp_path / "u.db", 50)
+    assert u.get_setting("stages") is None
+    assert u.get_setting("stages", {"tier1": True}) == {"tier1": True}
+    u.set_setting("stages", {"pretier0": False, "tier2": "gemma-4-26b"}, "admin@example.com")
+    assert u.get_setting("stages") == {"pretier0": False, "tier2": "gemma-4-26b"}
+    meta = u.setting_meta("stages")
+    assert meta["updated_by"] == "admin@example.com" and meta["updated_at"]
+
+    u.set_setting("stages", {"pretier0": True}, "other@example.com")  # overwrite, not append
+    assert u.get_setting("stages") == {"pretier0": True}
+    assert u.setting_meta("stages")["updated_by"] == "other@example.com"
+
+    reopened = Usage(tmp_path / "u.db", 50)
+    assert reopened.get_setting("stages") == {"pretier0": True}
+
+
+def test_log_records_which_tiers_were_on(tmp_path):
+    u = Usage(tmp_path / "u.db", 50)
+    u.log("a@example.com", "ok", "jev", {"path": "pretier0", "ms": 3}, stages="p1 t1 j1 c0 r:off")
+    row, = u._db.execute("SELECT stages FROM requests").fetchall()
+    assert row[0] == "p1 t1 j1 c0 r:off"
+    assert u.stats()["recent"][0]["stages"] == "p1 t1 j1 c0 r:off"

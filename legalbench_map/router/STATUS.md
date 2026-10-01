@@ -31,7 +31,8 @@ Pipeline for each question (`router/harness.py`):
    Since 2026-09-30 17:30 a "yes" also needs the deciding sentence to name the question's object, itself or by a
    lexicon synonym (`_unnamed_object`; it caught "Can we audit their tits?", said yes at 0.93). Eval: blocks 3 of 9
    wrong yeses and at most 27 of 364 correct ones (`extensive/results/*_v3obj.jsonl`; adv cases 81-84 added).
-3. **Jev**: one call with the user's question. Free classifiers are on standby (`--classifiers` turns them back on) and routing is skipped.
+3. **Jev** ("Tier 1" in /admin): one call with the user's question. Free classifiers are on standby (/admin's
+   Routing Pipeline tab, or `--classifiers` at startup, turns them back on) and routing is skipped.
 4. **Facts** (`router/spans.py`): a rule copies the one typed value attached to what the question names, else Jev
    picks among the text's candidates (≥ 0.9). What they defer goes to **Tier 2** (`router/reader.py`): gpt-oss-120b
    on Fireworks copies the answer from a clause, and it counts only if it's verbatim, fits the question
@@ -228,14 +229,20 @@ span tier defers. A key-term check on the cited clause (`bakeoff.about_the_quest
 - OpenRouter `:nitro` for Gemma: all 286 calls went to Makora; p50 0.32 s but p99 2.7 s (NextBit 1.15 s); same quality.
 
 **TIER 2 LIVE (since 2026-09-30 23:16 UTC)** — gpt-oss-120b on Fireworks, the user's pick.
-- Switch: `ask_ui.py --tier2 priority|standard` in /etc/systemd/system/zadum-router.service; `priority` since 23:40 UTC
-  (`standard` 23:16–23:40). Remove the flag, `systemctl daemon-reload`, restart to turn Tier 2 off.
+- Switch: **/admin → Routing Pipeline** (no restart; stored in usage.db `settings`, key `stages`). The flag
+  `ask_ui.py --tier2 priority|standard` in /etc/systemd/system/zadum-router.service is now only the startup
+  default, used until an admin saves something; `priority` since 23:40 UTC (`standard` 23:16–23:40).
+  Tier 2's options there are gpt-oss-120b (Fireworks, standard or priority) and Gemma 4 26B-A4B (OpenRouter,
+  `OPENROUTER_API_KEY`, check floor 0.8 instead of 0.7) — the bake-off's two finalists. See router/stages.py.
 - What runs: harness `_span` → `_read` when the span tier defers a fact of a type in `spans.ANSWERED_TYPES` (the
   types the bake-off measured), Jev reader only (Kev keeps documents local). Reader copies from ≤ 8 clauses
   (`select_clauses`) → verbatim check (`grounded`) → `fits` → Jev noul ≥ `CHECK_MIN` 0.7 (`CHECK` wording, shared with
   qtree/verify.py). Path `reader`; confidence = Jev's check; `Answer.reader` holds the attempt. A Fireworks outage or
   Jev error → the question defers (never a 502). Key: FIREWORKS_API_KEY from env / repo .env / ~/.env.
-  UI: head "Tier 2 reader", cost line "+ 1 Tier 2 read (ms)".
+  UI: head "Tier 2 reader", cost line "+ 1 Tier 2 read (ms)". With Tier 1 (Jev) off in /admin, Tier 2 also
+  decides the yes/no questions Jev would have answered (`reader.decide`, path `llm_decide`, head "Tier 2,
+  unchecked") and reads facts without Jev's check — neither path was measured by the bake-off, which scored
+  fact reading with the check on.
 - **Service-tier A/B (the user's plan):** priority first, later standard for a week, then compare on live traffic.
   Requests where Tier 2 ran log in /var/lib/zadum-router/usage.db: `tier2` (standard|priority, as requested:
   Fireworks doesn't echo it), `tier2_ms` (round trip from this server), `tier2_server_ms` (Fireworks' own queue +

@@ -86,7 +86,7 @@ class Answer:
     question: str
     answer: str  # "yes" / "no", or a category label
     confidence: float  # probability of `answer` from whoever answered
-    path: str  # "pretier0" | "tier0" | "classifier" | "llm_task" | "llm_fallback" | "llm_judgment" | "span" | "llm_span" | "reader" | "choice" | "llm_choice" | "deferred" | "declined"
+    path: str  # "pretier0" | "tier0" | "classifier" | "llm_task" | "llm_fallback" | "llm_judgment" | "span" | "llm_span" | "reader" | "llm_decide" | "choice" | "llm_choice" | "deferred" | "declined"
     reason: str
     asked: str = ""  # the question actually answered: the task's criteria, or the user's own question
     task: str | None = None
@@ -183,7 +183,7 @@ def aggregate(units: list, proba, classes: list) -> tuple[str, float, list, dict
 
 class Harness:
     def __init__(self, router: SystemOne, llm: SystemOne, bank: Bank, tier0=None, pretier0: bool = False,
-                 classifiers: bool = True, reader=None):
+                 classifiers: bool = True, reader=None, jev: bool = True, check_min: float | None = None):
         self.router = router
         self.llm = llm
         self.bank = bank
@@ -191,6 +191,17 @@ class Harness:
         self.pretier0 = pretier0  # run router/pretier0.py's checks first
         self.classifiers = classifiers  # False: free classifiers on standby, their tasks go to the fallback
         self.reader = reader  # Tier 2 for deferred facts: an LLM call (router/reader.py), checked by `llm`; None to skip
+        # Tier 1 in /admin (router/stages.py). False: Jev neither answers nor checks anything --
+        # the span and choice rules run without its pick, Tier 2 reads unchecked, and the yes/no
+        # questions it would have answered go to Tier 2's `decide`. Routing needs it, so it's off too.
+        self.jev = jev
+        self.check_min = check_min  # the Tier 2 reader's own floor for Jev's check; None uses reader.CHECK_MIN
+
+    @property
+    def _pick(self) -> SystemOne | None:
+        """Jev where it picks a fact or a choice the rules missed; None when Tier 1 is off,
+        which leaves `spans` and `choice` to answer by rule or defer."""
+        return self.llm if self.jev else None
 
     def route(self, question: str) -> Route:
         out = self.router.choice(question, INSTRUCTIONS, CRITERIA)
@@ -218,7 +229,8 @@ class Harness:
             result = self._fallback(question, document, None,
                                     f'asks for advice or a legal conclusion ("{frame.cue}"), which the text alone '
                                     f"can't settle, so the lookup tiers don't answer it")
-            result.path = "llm_judgment"
+            if result.path == "llm_fallback":  # Jev gave the reading; with Tier 1 off it keeps
+                result.path = "llm_judgment"   # whatever `_decide` returned (llm_decide or deferred)
             result.llm_calls = self._calls() - before
             return result
         if frame.leaf == "request":
@@ -249,7 +261,7 @@ class Harness:
         """A fact question: a span copied from the document (router/spans.py), by rule or
         picked by the LLM among the document's candidates; otherwise deferred."""
         before = self._calls()
-        r = spans.answer(frame, document, llm=self.llm)
+        r = spans.answer(frame, document, llm=self._pick)
         calls = self._calls() - before
         if not r.fired:
             if self.reader is not None and frame.answer_type in spans.ANSWERED_TYPES:
@@ -271,8 +283,9 @@ class Harness:
         states it. Only for the fact types the bake-off measured (spans.ANSWERED_TYPES)."""
         asked = frame.lookup or question
         try:
-            t2 = reader.read(asked, reader.select_clauses(asked, document), self.reader, check=self.llm.noul,
-                             answer_type=frame.answer_type, document=document)
+            t2 = reader.read(asked, reader.select_clauses(asked, document), self.reader,
+                             check=self.llm.noul if self.jev else None, answer_type=frame.answer_type,
+                             document=document, check_min=self.check_min)
         except (reader.ReaderError, SystemOneError) as e:
             t2 = reader.ReaderResult(False, reason=f"the reader was unavailable ({str(e)[:120]})",
                                      usage={"service_tier": getattr(self.reader, "service_tier", None)})
@@ -293,7 +306,7 @@ class Harness:
         """A choice question: the one alternative the text states (router/choice.py), by rule
         or picked by the LLM; otherwise deferred."""
         before = self._calls()
-        r = choice.answer(frame, document, llm=self.llm)
+        r = choice.answer(frame, document, llm=self._pick)
         calls = self._calls() - before
         if not r.fired:
             a = self._not_answered(question, frame, "deferred",
@@ -337,6 +350,9 @@ class Harness:
         return result
 
     def _answer(self, question: str, document: str) -> Answer:
+        if not self.jev:
+            # Routing is a Jev call, and so is the document-type check before a classifier runs.
+            return self._fallback(question, document, None, "Tier 1 (Jev) is off, so no routing")
         if not self.classifiers:
             # Routing only picks a classifier or the task's own question; with the
             # classifiers on standby it would cost an LLM call to reach another one.
@@ -385,7 +401,35 @@ class Harness:
                       answered_by=self.llm.model_version or self.llm.model, route=route, probabilities=probs)
 
     def _fallback(self, question: str, document: str, route: Route | None, reason: str) -> Answer:
+        if not self.jev:
+            return self._decide(question, document, route, reason)
         answer, conf, probs = _yes_no(self.llm.noul(document, question))
         return Answer(question=question, answer=answer, confidence=round(conf, 3), path="llm_fallback",
                       reason=reason, asked=question, answered_by=self.llm.model_version or self.llm.model,
                       route=route, probabilities=probs)
+
+    def _decide(self, question: str, document: str, route: Route | None, reason: str) -> Answer:
+        """Tier 1 off: the hosted reader decides the yes/no from the clauses it is shown
+        (router/reader.py `decide`). Nothing checks it -- the verbatim-copy check that guards
+        Tier 2's fact reading can't apply to a yes/no, and Jev is the thing that was turned
+        off -- so the confidence is the model's own and the answer says it is unchecked. The
+        bake-off never measured this path; it only scored fact reading."""
+        if self.reader is None:
+            return Answer(question=question, answer="not answered", confidence=0.0, path="deferred",
+                          reason=f"{reason}, and Tier 2 is off too, so nothing is left to answer it",
+                          asked=question, answered_by="the tiers /admin has on", route=route)
+        try:
+            d = reader.decide(question, reader.select_clauses(question, document), self.reader)
+        except (reader.ReaderError, SystemOneError) as e:
+            d = reader.ReaderResult(False, reason=f"the reader was unavailable ({str(e)[:120]})")
+        name = getattr(self.reader, "name", "LLM reader")
+        if not d.fired:
+            return Answer(question=question, answer="not answered", confidence=0.0, path="deferred",
+                          reason=f"{reason}; Tier 2: {d.reason}", asked=question,
+                          answered_by=f"Tier 2: {name}", route=route, reader=d.to_dict())
+        conf = round(d.self_p, 3) if d.self_p is not None else 0.0
+        return Answer(question=question, answer=d.answer, confidence=conf, path="llm_decide",
+                      reason=f"{reason}; {d.reason}", asked=question,
+                      answered_by=f"Tier 2: {name}, unchecked (Tier 1 off)",
+                      evidence=[{"text": d.clause, "label": d.answer, "p": conf}] if d.clause else [],
+                      probabilities={d.answer: conf} if d.answer else {}, route=route, reader=d.to_dict())

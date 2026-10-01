@@ -202,8 +202,6 @@
   </div>
   <div class="bottom">
     <div class="tools">
-      <label class="toggle" title="Regex preparation (~1 ms): finds the parties and rewords we/you questions for Tier 0"><input type="checkbox" id="pretier0" checked> Pre-Tier 0</label>
-      <label class="toggle" title="Try a local NLI model first; it answers only when one sentence settles a yes/no question, with no LLM call"><input type="checkbox" id="tier0" checked> Tier 0</label>
       <span id="left"></span>
     </div>
     <button class="run" id="run">Run</button>
@@ -269,6 +267,7 @@ const PATHS = {
   span: "copied from the text: one clause names what you asked about, with one value in it",
   llm_span: "Jev picked it among the values the text states",
   reader: "copied word for word from a clause, and Jev checked the clause states it",
+  llm_decide: "the hosted reader decided it from the clauses; Tier 1 is off in /admin, so nothing checked it",
   choice: "the text states this alternative, not the other",
   llm_choice: "Jev picked it among the alternatives",
 };
@@ -400,7 +399,7 @@ function render(a) {
   const fact = ["span", "llm_span", "reader", "choice", "llm_choice"].includes(a.path);
   $("model-head").textContent = { classifier: "free classifier", tier0: "Tier 0", pretier0: "Pre-Tier 0",
     deferred: "not answered", declined: "not answered", span: "Pre-Tier 0 facts", choice: "Pre-Tier 0 choice",
-    reader: "Tier 2 reader" }[a.path] || a.answered_by;
+    reader: "Tier 2 reader", llm_decide: "Tier 2, unchecked" }[a.path] || a.answered_by;
   const opts = notAnswered ? `<span class="opt dim">not answered</span>` : Object.entries(a.probabilities).sort((x, y) => y[1] - x[1]).map(([label, p]) => {
     const dim = label === a.answer ? "" : " dim";
     return `<span class="opt${dim}">${esc(label)}</span><span class="pct${dim}">${pct(p)}</span>${ring(p)}`;
@@ -478,7 +477,7 @@ async function run() {
   try {
     const resp = await fetch("/api/ask", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ question, document: text, reader: "jev", tier0: $("tier0").checked, pretier0: $("pretier0").checked }),
+      body: JSON.stringify({ question, document: text, reader: "jev" }),
     });
     if (resp.status === 401) { location.reload(); return; }  // sign-in expired: the proxy sends the page to Google
     // A crash upstream comes back as the proxy's HTML error page, not JSON.
@@ -496,10 +495,9 @@ async function run() {
   }
 }
 
-for (const id of ["pretier0", "tier0"]) {
-  try { if (localStorage.getItem(id) === "off") $(id).checked = false; } catch (e) {}
-  $(id).onchange = () => { try { localStorage.setItem(id, $(id).checked ? "on" : "off"); } catch (e) {} };
-}
+// The tiers are set in /admin (router/stages.py), not here: a reader's switch would
+// change what every other reader's question costs. Old per-browser settings go.
+for (const id of ["pretier0", "tier0"]) { try { localStorage.removeItem(id); } catch (e) {} }
 $("run").onclick = run;
 $("clear").onclick = () => { $("document").value = ""; $("question").value = ""; $("out").innerHTML = EMPTY; $("when").textContent = ""; };
 $("example").onclick = () => { const e = EXAMPLES[nextExample++ % EXAMPLES.length]; $("document").value = e.doc; $("question").value = e.q; };

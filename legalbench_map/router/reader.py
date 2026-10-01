@@ -73,6 +73,7 @@ class ReaderResult:
     ms: float = 0.0
     usage: dict = field(default_factory=dict)
     check: float | None = None  # Jev's probability that the clause states the answer, when checked
+    self_p: float | None = None  # the model's own confidence on a yes/no `decide` call: uncalibrated, not a check
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -173,10 +174,12 @@ def _parse(text: str) -> dict | None:
 
 
 def read(question: str, clauses: list, complete, check=None, answer_type: str | None = None,
-         document: str = "") -> ReaderResult:
+         document: str = "", check_min: float | None = None) -> ReaderResult:
     """`check(state, instructions) -> p` is Jev's noul; None skips the check (the bake-off
-    scores it separately). With `answer_type`, an answer that doesn't fit the question is
-    dropped before the check (`fits`)."""
+    scores it separately, and /admin's Tier 1 switch turns it off). With `answer_type`, an
+    answer that doesn't fit the question is dropped before the check (`fits`). `check_min`
+    is the reader's own floor from the bake-off (READERS); None uses CHECK_MIN."""
+    floor = CHECK_MIN if check_min is None else check_min
     if not clauses:
         return ReaderResult(False, reason="no clause mentions what the question asks about")
     prompt = PROMPT.format(clauses="\n".join(f"[{i + 1}] {c}" for i, c in enumerate(clauses)), question=question)
@@ -199,16 +202,60 @@ def read(question: str, clauses: list, complete, check=None, answer_type: str | 
                                           + (" of the document itself" if answer_type == "DATE" else "") + "); dropped",
                             clause=clause, raw=text[:500], ms=ms, usage=usage)
     if check is None:
-        return ReaderResult(True, answer, clause, reason="copied from the clause it cites", raw=text[:500], ms=ms,
-                            usage=usage)
+        return ReaderResult(True, answer, clause, reason="copied from the clause it cites, unchecked (Tier 1 off)",
+                            raw=text[:500], ms=ms, usage=usage)
     p = round(float(check(clause, CHECK.format(q=question, a=answer))), 3)
-    if p < CHECK_MIN:
+    if p < floor:
         return ReaderResult(False, reason=f'Jev doubts the clause states "{answer}" as the answer ({p:.2f} < '
-                                          f'{CHECK_MIN}); dropped', clause=clause, raw=text[:500], ms=ms,
+                                          f'{floor}); dropped', clause=clause, raw=text[:500], ms=ms,
                             usage=usage, check=p)
     return ReaderResult(True, answer, clause, reason=f"copied word for word from a clause; Jev checked the clause "
                                                      f"states it ({p:.2f})", raw=text[:500], ms=ms, usage=usage,
                         check=p)
+
+
+DECIDE = """You answer a yes/no question about a document, using only the numbered clauses from it below.
+Decide only from what the clauses say, not from general knowledge or what is usual in such documents.
+If the clauses do not settle the question, the answer is null.
+
+CLAUSES:
+{clauses}
+
+QUESTION: {question}
+
+Reply with JSON only: {{"answer": "yes" or "no" or null, "clause": <the clause number that settles it> or null, \
+"p": <how sure you are, 0 to 1>}}"""
+
+
+def decide(question: str, clauses: list, complete) -> ReaderResult:
+    """Tier 2 on a yes/no question: only used when /admin turns Tier 1 (Jev) off, because
+    Jev normally answers these (harness `_fallback`). Nothing checks the answer here --
+    `read`'s verbatim-copy check cannot apply to yes/no -- so `self_p` is the model's own
+    uncalibrated number and the answer is reported as unchecked. Not measured by the
+    bake-off, which only scored fact reading."""
+    if not clauses:
+        return ReaderResult(False, reason="no clause mentions what the question asks about")
+    prompt = DECIDE.format(clauses="\n".join(f"[{i + 1}] {c}" for i, c in enumerate(clauses)), question=question)
+    t = time.perf_counter()
+    out = complete(prompt)
+    ms = (time.perf_counter() - t) * 1000
+    text, usage = (out if isinstance(out, tuple) else (out, {}))
+    d = _parse(text)
+    if d is None:
+        return ReaderResult(False, reason="the reply wasn't the JSON asked for", raw=text[:500], ms=ms, usage=usage)
+    answer = str(d.get("answer") or "").strip().lower()
+    if answer not in ("yes", "no"):
+        return ReaderResult(False, reason="the reader found the clauses don't settle it", raw=text[:500], ms=ms,
+                            usage=usage)
+    n = d.get("clause")
+    clause = clauses[n - 1] if isinstance(n, int) and 1 <= n <= len(clauses) else None
+    try:
+        self_p = min(1.0, max(0.0, float(d.get("p"))))
+    except (TypeError, ValueError):
+        self_p = None
+    return ReaderResult(True, answer, clause, reason="the reader decided it from the clauses; nothing checked it "
+                                                     "(Tier 1 off, so Jev didn't answer or verify)",
+                        raw=text[:500], ms=ms, usage=usage, self_p=self_p)
 
 
 def api_key(name: str) -> str:
@@ -289,3 +336,66 @@ class LocalLLM:
         d = r.json()
         msg = d["choices"][0]["message"]
         return (msg.get("content") or ""), {**d.get("usage", {}), **d.get("timings", {})}
+
+
+class OpenRouterLLM:
+    """Gemma 4 26B-A4B through OpenRouter, pinned to one provider. The bake-off
+    (STATUS.md "TIER 2 BAKE-OFF") measured it at 199/202 = 98.5% and 90% coverage with
+    Jev's check at >= 0.8, 0.52 / 1.15 s p50/p99, and $0.46 per 10k questions against
+    $1.42 for gpt-oss-120b on Fireworks Priority -- cheaper and slightly less precise.
+    Pinning matters: `:nitro` routed every call to Makora at p99 2.7 s.
+
+    MODEL and PROVIDER must match what qtree/bakeoff.py used, which lives outside this
+    repo (/root/zadumai_nli_proto/); set OPENROUTER_MODEL / OPENROUTER_PROVIDER to
+    override either without a redeploy.
+    """
+    MODEL = "google/gemma-4-26b-a4b"
+    PROVIDER = "NextBit"
+
+    def __init__(self, timeout: float = 20, max_tokens: int = 1200):
+        import requests
+        self.session, self.timeout, self.max_tokens = requests.Session(), timeout, max_tokens
+        self.key = api_key("OPENROUTER_API_KEY")
+        self.model = os.environ.get("OPENROUTER_MODEL") or self.MODEL
+        self.provider = os.environ.get("OPENROUTER_PROVIDER") or self.PROVIDER
+        self.service_tier = None  # NextBit has no priority/fast tier
+        self.name = f"{self.model.split('/')[-1]} (OpenRouter -> {self.provider})"
+
+    def __call__(self, prompt: str):
+        import requests
+        body = {"model": self.model, "messages": [{"role": "user", "content": prompt}], "temperature": 0,
+                "max_tokens": self.max_tokens,
+                # one provider, no silent fallback: the bake-off's latency only holds for this one
+                "provider": {"order": [self.provider], "allow_fallbacks": False}}
+        last = ""
+        for attempt in range(2):
+            try:
+                r = self.session.post("https://openrouter.ai/api/v1/chat/completions", json=body,
+                                      timeout=self.timeout, headers={"Authorization": f"Bearer {self.key}"})
+            except requests.RequestException as e:
+                last = str(e)
+            else:
+                if r.status_code == 200:
+                    d = r.json()
+                    return d["choices"][0]["message"].get("content") or "", {
+                        **d.get("usage", {}), "service_tier": self.provider, "attempts": attempt + 1}
+                last = f"HTTP {r.status_code}: {r.text[:200]}"
+                if r.status_code not in (429, 500, 502, 503, 504):
+                    break
+            time.sleep(1 + attempt)
+        raise ReaderError(f"OpenRouter failed: {last}")
+
+
+# How to build each Tier 2 option /admin offers. Its label and the Jev check floor the
+# bake-off set for it live in router/stages.py TIER2, which the ids come from.
+READERS = {
+    "gpt-oss-120b": lambda: FireworksLLM(),
+    "gpt-oss-120b-priority": lambda: FireworksLLM(tier="priority"),
+    "gemma-4-26b": lambda: OpenRouterLLM(),
+}
+
+
+def build_reader(reader_id: str):
+    """The Tier 2 client for a /admin option, and the check floor it was measured with."""
+    from router import stages
+    return READERS[reader_id](), stages.TIER2[reader_id][1]
