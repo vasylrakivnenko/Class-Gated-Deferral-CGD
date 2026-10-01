@@ -46,3 +46,6 @@ legalbench_map/results_gate/paper/*.pdf
 
 # router's fitted classifiers: regenerable with legalbench_map/build_router_bank.py
 legalbench_map/router/bank/
+
+# Tier 0 reader network (router/netreader.py): trained weights, copied in from /root/zadumai_nli_proto/reader_net
+legalbench_map/models/

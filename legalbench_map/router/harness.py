@@ -86,7 +86,7 @@ class Answer:
     question: str
     answer: str  # "yes" / "no", or a category label
     confidence: float  # probability of `answer` from whoever answered
-    path: str  # "pretier0" | "tier0" | "classifier" | "llm_task" | "llm_fallback" | "llm_judgment" | "span" | "llm_span" | "reader" | "llm_decide" | "choice" | "llm_choice" | "deferred" | "declined"
+    path: str  # "pretier0" | "tier0" | "tier0net" | "classifier" | "llm_task" | "llm_fallback" | "llm_judgment" | "span" | "llm_span" | "reader" | "llm_decide" | "choice" | "llm_choice" | "deferred" | "declined"
     reason: str
     asked: str = ""  # the question actually answered: the task's criteria, or the user's own question
     task: str | None = None
@@ -101,6 +101,7 @@ class Answer:
     qtree: dict | None = None  # the question's kind (router/qtree.py), decided before anything else
     span: dict | None = None  # a fact question's search (router/spans.py), None for other kinds
     reader: dict | None = None  # Tier 2's read of a deferred fact (router/reader.py), None if it didn't run
+    netreader: dict | None = None  # the reader network's attempt (router/netreader.py), None if it wasn't run
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -183,7 +184,7 @@ def aggregate(units: list, proba, classes: list) -> tuple[str, float, list, dict
 
 class Harness:
     def __init__(self, router: SystemOne, llm: SystemOne, bank: Bank, tier0=None, pretier0: bool = False,
-                 classifiers: bool = True, reader=None, jev: bool = True):
+                 classifiers: bool = True, reader=None, jev: bool = True, netreader=None):
         self.router = router
         self.llm = llm
         self.bank = bank
@@ -195,6 +196,7 @@ class Harness:
         # the span and choice rules run without its pick, Tier 2 reads unchecked, and the yes/no
         # questions it would have answered go to Tier 2's `decide`. Routing needs it, so it's off too.
         self.jev = jev
+        self.netreader = netreader  # a router.netreader.NetReader, tried after Tier 0; None to skip
 
     @property
     def _pick(self) -> SystemOne | None:
@@ -352,8 +354,17 @@ class Harness:
                 probabilities={t0.answer: t0.confidence}, tier0=t0.to_dict(),
                 pretier0=p0.to_dict() if p0 is not None else None,
             )
+        nr = self.netreader.answer(t0_question, document) if self.netreader is not None else None
+        if nr is not None and nr.fired:
+            return Answer(
+                question=question, answer=nr.answer, confidence=nr.confidence, path="tier0net", reason=nr.reason,
+                asked=t0_question, answered_by=self.netreader.name, n_units=nr.n_units, evidence=nr.evidence,
+                probabilities={nr.answer: nr.confidence}, tier0=t0.to_dict() if t0 is not None else None,
+                pretier0=p0.to_dict() if p0 is not None else None, netreader=nr.to_dict(),
+            )
         result = self._answer(question, document)
         result.tier0 = t0.to_dict() if t0 is not None else None
+        result.netreader = nr.to_dict() if nr is not None else None
         result.pretier0 = p0.to_dict() if p0 is not None else None
         result.llm_calls = self._calls() - calls_before
         return result

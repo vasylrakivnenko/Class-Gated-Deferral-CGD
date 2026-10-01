@@ -350,11 +350,12 @@ class Frame:
 @dataclass
 class FrameResult:
     answer: str | None = None  # "yes" | "no" | None (defer)
-    qualifier: str | None = None  # "may" when the text only permits it
+    qualifier: str | None = None  # "may" when the text only permits it; CONDITIONAL in it when the "yes" has one
     reason: str = ""
     frame: dict | None = None
     evidence: list = field(default_factory=list)
     ms: float = 0.0
+    condition: str = ""  # the condition a "yes, with a condition" quotes ("unless the Licensor consents in writing")
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -667,6 +668,33 @@ def _blocked(tags: list) -> bool:
     return any(t.kind == "BLOCK" and not _upon_notice(t, tags) for t in tags)
 
 
+def condition_text(sentence: str, frame: "Frame | None" = None, max_chars: int = 160) -> str:
+    """The sentence's first condition or exception, from its cue to the end of its clause ("unless the Licensor
+    consents in writing"), for a "yes, with a condition" to quote. Not "upon ... notice", nor the cue that brings
+    in the question's own condition."""
+    raw = _raw_tokens(sentence)
+    tags = tag([normalize(w) for w in raw], _BASE_TRIE)
+    norm = " " + " ".join(normalize(w) for w in raw) + " "
+    for t in tags:
+        if t.kind != "BLOCK" or _upon_notice(t, tags):
+            continue
+        if frame is not None and frame.conds and any(_item_present(it, raw, norm, t.start, t.start + 16)
+                                                     for it in frame.conds):
+            continue
+        cue = re.search(r"(?<!\w)" + r"\W+".join(map(re.escape, raw[t.start:t.end])) + r"(?!\w)", sentence, re.I)
+        if not cue:
+            continue
+        # to the first break that leaves the condition a few words ("unless, in its judgment, ..." reads on)
+        rest, text = sentence[cue.start():], ""
+        for end in re.finditer(r"[;.,]\s|[;.]$", rest):
+            text = rest[:end.start()]
+            if len(text.split()) >= 3:
+                break
+        text = text if len(text.split()) >= 3 else rest.rstrip(" .;")
+        return text if len(text) <= max_chars else text[:max_chars].rsplit(" ", 1)[0] + " …"
+    return ""
+
+
 def _actor_matches(asked: str, actor: str) -> bool:
     if actor in ("ALL", "NONE"):
         return True
@@ -789,18 +817,58 @@ def _permitted_by_exception(frame, toks, clause, actor) -> bool:
 _COMPARATIVE = re.compile(r"\b(?:more|fewer|less|greater|longer)\b(?:\s+\w+){0,6}?\s+than\b")
 
 
+CONDITIONAL = "with a condition"  # the qualifier of a "yes" the sentence attaches a condition to
+
+
+def _conditional(verdict, condition: str | None):
+    """A sentence with a condition or exception ("unless", "subject to", "except"...): its "yes" becomes "yes, with
+    a condition", anything else defers with the condition as the reason. On LegalBench dev + held-out + fresh half A,
+    the "yes" answers this veto held back were right 540 times out of 541, its "no" answers wrong 31 times out of 42
+    ("shall not disclose ... except to its directors" asked about employees). (2026-10-01,
+    /root/zadumai_nli_proto/extensive/v3/size_vetoes.py)"""
+    if condition is None:
+        return verdict
+    if isinstance(verdict, tuple) and verdict[0] == "yes":
+        return ("yes", f"{verdict[1]}, {CONDITIONAL}" if verdict[1] else CONDITIONAL)
+    return condition
+
+
+def _base_qualifier(qualifier: str | None) -> str | None:
+    """The qualifier without the condition: "yes" and "yes, with a condition" agree, "yes" and "yes, may" don't."""
+    return (qualifier or "").replace(CONDITIONAL, "").strip(", ") or None
+
+
 def _verdict(frame, sentence, toks, tags, clause, actor, modals, prev):
     """The answer once actor, action and things are in place: conditions, then modality."""
+    condition = None
     if frame.conds or frame.only:
         met = _conditions_met(frame, toks, tags, _raw_tokens(sentence), clause)
         if met is False:
             return None
         if isinstance(met, str):
-            return met
+            condition = met
     elif _blocked(tags):
         if ("NOT" in modals or "BAN" in modals) and _permitted_by_exception(frame, toks, clause, actor):
             return ("yes", "may" if frame.asks == "DOES" else None)
-        return "the sentence has a condition or exception"
+        condition = "the sentence has a condition or exception"
+        if ("THING", "WITHOUT_CAUSE") in frame.things and not _EXPLICIT_WITHOUT_CAUSE.search(sentence):
+            # "Can a party terminate without cause?" from "Either party may terminate at any time if the other
+            # fails materially to comply": the condition is the cause, so this is no "yes, with a condition"
+            # (unless the sentence itself says "without cause", "for convenience", ...)
+            return condition
+    if ("THING", "WITHOUT_CAUSE") in frame.things and _MUTUAL.search(sentence):
+        return "the parties end it together, not one party alone"  # "may terminate at any time by mutual consent"
+    return _conditional(_modality(frame, sentence, toks, clause, actor, modals, prev), condition)
+
+
+_EXPLICIT_WITHOUT_CAUSE = re.compile(r"\b(?:without cause|for (?:its |their )?convenience|for any (?:or no )?reason|"
+                                     r"for no reason|at will)\b", re.I)
+_MUTUAL = re.compile(r"\bmutual(?:ly)?\b|\bby (?:the )?(?:written )?agreement of\b|\bby (?:mutual )?written agreement\b",
+                     re.I)
+
+
+def _modality(frame, sentence, toks, clause, actor, modals, prev):
+    """The answer from the actor's modals and negation."""
     if frame.only and ("NOT" in modals or "BAN" in modals) and any(t.kind == "BLOCK" for t in clause) \
             and _EXCEPT_ONLY.search(sentence):
         modals = modals - {"NOT", "BAN"}  # "agrees not to use ... other than for the purposes": only for them
@@ -953,8 +1021,15 @@ def _judge_presence(frame: Frame, sentence: str, trie: dict):
     if frame.values and not set(frame.values) <= values(sentence):
         return None
     stags = tag([normalize(w) for w in raw], trie)
-    if frame.strict and _blocked(stags):
-        return "the sentence has a condition or exception"
+    condition = "the sentence has a condition or exception" if frame.strict and _blocked(stags) else None
+    if condition and any(t.kind == "BLOCK" and "discretion" in raw[t.start:t.end] for t in stags):
+        # "The Company may, in its sole discretion, pay an annual bonus to the Employee": a presence frame doesn't
+        # know whose discretion it is, and asked "Is the employee entitled to a bonus?" the answer is no (adv-38).
+        return condition
+    return _conditional(_presence_polarity(frame, raw, stags), condition)
+
+
+def _presence_polarity(frame: Frame, raw: list, stags: list):
     negated = _negated_sentence(raw, stags)
     if frame.negative:
         return ("yes", None) if negated else "the question asks for a negation the sentence doesn't have"
@@ -1213,13 +1288,15 @@ def _answer_presence(frame: Frame, fd: dict, document: str, trie: dict) -> Frame
         if isinstance(verdict, str):
             blocked = blocked or (verdict, sentence)
         elif verdict:
-            hits.append(sentence)
+            hits.append((sentence, verdict))
     if blocked:
         return FrameResult(reason=blocked[0], frame=fd, evidence=[{"text": blocked[1], "label": "blocked", "p": 0.0}])
     if not hits:
         return FrameResult(reason="no sentence has everything the question names", frame=fd)
-    return FrameResult("yes", None, reason="one sentence has everything the question names", frame=fd,
-                       evidence=[{"text": hits[0], "label": "yes", "p": 1.0}])
+    sentence, (_, qualifier) = next((h for h in hits if h[1][1]), hits[0])  # a condition is reported
+    return FrameResult("yes", qualifier, reason="one sentence has everything the question names", frame=fd,
+                       evidence=[{"text": sentence, "label": f"yes, {qualifier}" if qualifier else "yes", "p": 1.0}],
+                       condition=condition_text(sentence, frame) if qualifier else "")
 
 
 def _jsonable(o):
@@ -1285,10 +1362,10 @@ def _answer(question: str, document: str, parties) -> FrameResult:
         return FrameResult(reason=blocked[0], frame=fd, evidence=[{"text": blocked[1], "label": "blocked", "p": 0.0}])
     if not hits:
         return FrameResult(reason="no sentence has the whole frame", frame=fd)
-    if len({v for _, v in hits}) > 1:
+    if len({(v[0], _base_qualifier(v[1])) for _, v in hits}) > 1:
         return FrameResult(reason="sentences disagree", frame=fd,
                            evidence=[{"text": s, "label": v[0], "p": 1.0} for s, v in hits[:3]])
-    sentence, (ans, qualifier) = hits[0]
+    sentence, (ans, qualifier) = next((h for h in hits if CONDITIONAL in (h[1][1] or "")), hits[0])
     if frame.asks != "PROPERTY":
         # A sentence where the same actor does the same action the other way, even
         # to something else, makes it depend: "shall not disclose to any third
@@ -1309,4 +1386,5 @@ def _answer(question: str, document: str, parties) -> FrameResult:
                                              {"text": sentences.text(i), "label": other[0], "p": 1.0}])
     label = f"{ans}, {qualifier}" if qualifier else ans
     return FrameResult(ans, qualifier, reason="one sentence has the whole frame", frame=fd,
-                       evidence=[{"text": sentence, "label": label, "p": 1.0}])
+                       evidence=[{"text": sentence, "label": label, "p": 1.0}],
+                       condition=condition_text(sentence, frame) if CONDITIONAL in (qualifier or "") else "")

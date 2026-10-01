@@ -1,6 +1,7 @@
 """Which tiers may answer a question: the switches /admin sets, kept in usage.db.
 
-Order: Pre-Tier 0 (regex) -> Tier 0 (local NLI) -> Tier 1 (Jev) -> Tier 2 (hosted LLM).
+Order: Pre-Tier 0 (regex) -> Tier 0 (local NLI) -> Tier 0 reader network -> Tier 1 (Jev) -> Tier 2 (hosted LLM).
+The reader network (router/netreader.py, 2026-10-01) is off by default: it answers what Tier 0 leaves.
 The numbering is /admin's. In the code Jev has no tier number (router/harness.py calls it
 `llm`) and "Tier 0" is router/tier0.py's NLI model, so Tier 1 == Jev here. Tier 2 is not
 switched here: router/tier2.py picks its reader (or off), with a test read first, and keeps
@@ -18,15 +19,16 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, replace
 
 SETTING = "stages"  # its key in usage.db `settings`
-SWITCHES = ("pretier0", "tier0", "tier1", "classifiers")
-LABELS = {"pretier0": "Pre-Tier 0 (regex)", "tier0": "Tier 0 (local NLI)", "tier1": "Tier 1 (Jev)",
-          "classifiers": "Free classifiers"}
+SWITCHES = ("pretier0", "tier0", "tier0net", "tier1", "classifiers")
+LABELS = {"pretier0": "Pre-Tier 0 (regex)", "tier0": "Tier 0 (local NLI)", "tier0net": "Tier 0 (reader network)",
+          "tier1": "Tier 1 (Jev)", "classifiers": "Free classifiers"}
 
 
 @dataclass(frozen=True)
 class Stages:
     pretier0: bool = True
     tier0: bool = True
+    tier0net: bool = False  # the reader network (router/netreader.py), after Tier 0
     tier1: bool = True  # Jev
     classifiers: bool = False  # the task classifiers in the bank; on standby by default
 
@@ -58,6 +60,8 @@ class Stages:
     def mask(self, tier2: str) -> str:
         """A short, stable string for usage.db, so a day's numbers can be read back
         against the configuration that produced them: "p1 t0 j1 c0 r:fireworks-priority".
-        `tier2` is router/tier2.py's option id, or "off"."""
-        return (f"p{int(self.pretier0)} t{int(self.tier0)} j{int(self.tier1)} "
+        `tier2` is router/tier2.py's option id, or "off". The reader network shows only when on ("n1"),
+        so masks from before it are unchanged."""
+        net = " n1" if self.tier0net else ""
+        return (f"p{int(self.pretier0)} t{int(self.tier0)}{net} j{int(self.tier1)} "
                 f"c{int(self.classifiers)} r:{tier2}")

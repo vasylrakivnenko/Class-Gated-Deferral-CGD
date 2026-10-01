@@ -279,6 +279,202 @@ span tier defers. A key-term check on the cited clause (`bakeoff.about_the_quest
 - Ideas: redo cuad scoring by hand for textual answers vs dates; ENTITY/LOCATION facts through Tier 2 (not measured);
   Tier 2 for deferred choice questions; the next fresh set is cuad_blind4 (228 unused contracts left).
 
+**TIER 0 READER NETWORK (started 2026-10-01 ~06:45 UTC; LIVE since 15:51 UTC, committed)**
+DEPLOYED 2026-10-01 15:51 UTC: zadum-router restarted with the user's OK, so Pre-Tier 0 step 1, the WITHOUT_CAUSE
+fix and the reader network are live. The `tier0net` switch in /admin was off at restart, for the user to turn on.
+Before the restart the switch snapped back to off: /admin re-reads admin.html from disk on every request, so a new
+switch shows before the running server knows it. Saved stages at restart: Tier 0 (local NLI) off; the network
+doesn't need it (Pre-Tier 0 -> network is the measured configuration). The weights (`legalbench_map/models/`,
+279 MB) are gitignored and NOT pushed: copy them from /root/zadumai_nli_proto/reader_net/models/gpu/ (run xv4).
+The user asked for the best possible version of "step 3": a small network finds and reads the passage, Pre-Tier 0's
+tagger checks what it read (party, may/must/not, conditions), any failed check defers. Step 2's audit (what each
+check blocks, right vs wrong) is folded in as its calibration. Workspace: `/root/zadumai_nli_proto/reader_net/`.
+
+FINAL STATUS (2026-10-01 11:35 UTC) — read this first
+DONE overnight, nothing deployed or committed (needs the user: restart zadum-router, turn on `tier0net` in /admin,
+commit). GPU pod STOPPED at 11:20 (from inside, pod-scoped key; still listed in the Runpod account: terminate it
+there if not needed; nothing on it is needed, everything was copied back and checksummed).
+- INSTALLED (working tree): the reader network `legalbench_map/models/reader_net/` (run xv4: DeBERTa-v3-xsmall
+  distilled from a DeBERTa-v3-large teacher on data v4; PROVENANCE.txt; gitignored) and router/netreader.py set to
+  T_YES 0.935 (one-unit texts), T_YES_DOC 0.94 (documents read whole, <=12 units ~ 7 KB), T_YES_LONG off (longer
+  documents return at once, ~2 ms, instead of embedding the contract), "no" off. The /admin switch `tier0net`
+  stays off until an admin turns it on; ask_ui loads the network at startup. Latency per question (4 threads):
+  44 ms clause, 71 ms lease, 343 ms 5 KB text. In-process router check (Tier 1/2 off): answers a fresh A clause
+  via path tier0net in 114 ms, defers adv-38 (discretion), a scope near-miss, and a 145 KB contract (644 ms).
+- RESULTS of the pre-registered configuration (Pre-Tier 0 first, then the network on what it leaves):
+  | set | Pre-Tier 0 | network (xv4) | both |
+  |---|---|---|---|
+  | **fresh half B (sealed, run once)** | 191 = 7.9%, 97.4% | **191 = 7.9%, 100.0%** | 382 = 15.8%, 98.7% |
+  | fresh half A (calibration) | 185 = 7.7%, 99.5% | 218 = 9.1%, 100.0% | 403 = 16.8%, 99.8% |
+  | devx (dev rows not trained on) | 700 = 12.8%, 99.4% | 285 = 5.2%, 99.3% | 985 = 18.0%, 99.4% |
+  | held-out (report-only) | 1,087 = 8.7%, 99.8% | 596 = 4.8%, 98.8% | 1,683 = 13.5%, 99.5% |
+  | held-out seen / unseen tasks | 12.2%, 100% / 3.8%, 99.0% | 5.9%, 98.4% / 3.3%, 100% | 18.1%, 99.5% / 7.0%, 99.4% |
+  | adversarial (84) | 11, 100% | 9, 100% | 20 = 23.8%, 100% |
+  | genval (generated, held-out provisions) | 118, 78.8% | 449 = 18.5%, 100% | 567 = 23.3%, 95.6% |
+  | conval (near-misses, none "yes") | 27 fire (all wrong) | 2 false yes (0.2%) | |
+  **sealed cuad_blind3 (60 contracts, 2,280 questions), network at T_YES_DOC 0.94 if long documents were on:** 56
+  "yes" (2.5%), 67.9% right by CUAD, 89.3% yes by the teacher reading the passage, 3.6% wrong by both (Pre-Tier 0:
+  168, 87.5% by CUAD). Hence T_YES_LONG off. Base option bv3e (~3x slower: ~130 ms clause, ~1.2 s 5 KB) at
+  0.94/0.945: fresh B 236 = 9.8% 100%, held-out network 8.3% 99.1% (both 17.0% 99.5%), cuad_blind3 96 yes 76.0% by
+  CUAD, 3.1% wrong by both. Weights for both and the teacher (lv3c): /root/zadumai_nli_proto/reader_net/models/gpu/.
+- Pre-Tier 0 changes waiting for the restart: step 1 ("yes, with a condition") + the WITHOUT_CAUSE fix (below). On
+  fresh B step 1 added 85 answers at 97.6% (Pre-Tier 0 before step 1: 97.2% there); 2 of Pre-Tier 0's 5 fresh B
+  errors are step-1 conditionals ("including ... the following:" quoted as a condition; "may only make such copies
+  as are expressly authorised" read as a conditional yes, arguable). Pre-Tier 0 misfires on generated questions
+  about other contract types (genval 78.8%, conval 27 wrong) before and after step 1: worth a look.
+- Known cosmetic issue: condition_text counts "after" as a condition cue, so "Do the confidentiality obligations
+  survive termination?" gets "yes, with a condition: after the termination of this Agreement ..." (answer right).
+- Suggested next steps for the user: (1) restart zadum-router (test on :8777 first) to ship Pre-Tier 0 step 1 +
+  fix and load the network; (2) turn on `tier0net` in /admin; (3) decide xsmall (installed) vs base (more coverage,
+  ~3x slower); (4) commit. Not done: Kev path untested with the network on; ONNX speed-up; "no" answers.
+
+HISTORY OF THE OVERNIGHT RUN (newest results above). The user went to bed at ~08:30 asking: keep going through every step (evals, fixes, new evals, more cycles),
+checkpoint and update this file after each step, stop the GPU pod when done. Nothing deployed or committed; ask
+before restarting zadum-router, turning on `tier0net`, or committing.
+- GPU pod (Runpod RTX 4090, 24 GB; user's account; BILLS WHILE RUNNING, no volume, so Stop wipes it):
+  `ssh -i ~/.ssh/runpod_ed25519 -o IdentitiesOnly=yes -p 40041 root@213.192.2.102` (direct TCP; the pod's
+  authorized_keys was "null", fixed through the ssh.runpod.io proxy). Work dir /workspace/rn, venv /workspace/venv
+  (system torch 2.8+cu128, transformers 5.17.0 as here). `job.sh NAME DATA [train.py args]` trains models/NAME and
+  scores pairs/*.jsonl into probs/NAME; logs logs_NAME.txt; queue2.sh starts lv2 after bv2. To stop the pod from
+  itself: the pod-scoped key is in /proc/1/environ (RUNPOD_API_KEY); `runpodctl stop pod 3bpkzc4u7w36u4`.
+- train.py runs on GPU too (bf16 autocast, `--train-emb`, `--soft-alpha` distillation, `.tmp` checkpoints ignored
+  on resume); xsmall 0.06 s/step there vs 1.31 s here. The CPU run (models/v1) was stopped at 08:21 (step-1000/1500
+  checkpoints kept); the GPU's x1 is the same recipe.
+- Tools: `score.py dump SETS` -> pairs/, pod `infer.py` -> probs/NAME, `pull.sh NAME` -> scores/NAME;
+  `compare.py M...` (per model: lowest yes threshold reaching 99.5% on fresh A after Pre-Tier 0 + checks, "no"
+  off; every set at it; cells = network's answers on rows Pre-Tier 0 leaves as share of all rows, precision);
+  `docs.sh M` = CUAD whole-contract test in rounds (eval_docs.py); `docs_judge.py M` = teacher's verdict on M's
+  contract-level "yes" answers (CUAD gold says "a clause of this category was annotated", the teacher reads the
+  passage literally); conval = contrast questions of the val split (none is "yes": any "yes" is wrong).
+- Data: v1 (86k pairs); v2 = v1 + 26.6k contrast pairs (gen_contrast.py: 8,000 "yes" questions rewritten to
+  change party/scope/detail/force, blind-checked; 117k pairs).
+- Results (clause level; label smoothing caps p at ~0.967):
+  | model | t_yes | fresh A | held-out | adv | genval | conval false yes | contracts (CUAD gold) |
+  |---|---|---|---|---|---|---|---|
+  | x1 xsmall v1 1 ep | 0.962 | 21.5% 99.6% | 10.4% 98.5% | 2 wrong /12 | 22.9% 99.8% | 9.1% | 61.8% right @0.96 |
+  | x3 xsmall v1 3 ep | none | max 99.3%: more epochs = confident errors | | | | | |
+  | b2 base v1 2 ep | 0.97 | 26.9% 99.7% | 12.1% 99.3% | 10/10 | 23.6% 100% | 7.6% | 62.8% @0.96 |
+  | l2 large v1 1 ep | (99.4% max) | 27.2% 99.4% @0.968; 37.3% 99.2% @0.96 | | | | | |
+  | xv2 xsmall v2 1 ep | 0.955 | 18.6% 99.8% | 9.3% 98.2% | 9/10 | 20.2% 99.6% | 0.4% | 72.7% @0.96, 85% @0.97 |
+  CPU latency per question (4 threads): xsmall 45 ms clause / 345 ms 5 KB / 963 ms 15 KB contract; base ~3x.
+- PROBLEM FOUND: whole contracts. On CUAD test contracts the network's "yes" is far below the clause-level
+  precision. Teacher check of xv2's 216 contract "yes" (t 0.96): 124 right by both, 26 literally right but not
+  annotated by CUAD, 33 (15%) wrong by both (passages near the question that don't answer it: "terminate upon
+  material breach" for "without cause", "shall not use the Marks" for "disparaging", exceptions to non-compete).
+  Pre-Tier 0 itself is 85.6% right vs CUAD gold on these contracts.
+- Fix in progress: `docs_mine.py`: passages retrieved from the 228 CUAD contracts no eval uses (CUADv1 minus
+  test.json minus cuad_blind/2/3), for the 38 CUAD questions reworded by the teacher; xv2 scores them on the pod;
+  the teacher labels those xv2 finds convincing (+ the top one and a random one per contract-question; "yes"
+  confirmed blind); passages sharing text with any eval set dropped -> v3 data. Then large on v3 as the teacher,
+  distill into xsmall.
+- 09:45 mined data done: docs_mine.py retrieved 99,786 passages (8,664 contract-questions; bge-small vectors
+  computed on the pod's GPU in 36 s, identical to CPU), xv2 scored them, the teacher labeled 21,909 (those xv2
+  found convincing + top + random; 80 calls/s with 160 workers), "yes" and "no" re-checked blind. 8,734 passages
+  share 10 words in a row with an eval text (LegalBench's CUAD rows and the fresh sets quote CUAD contracts) and
+  were dropped: 12,957 kept (yes 708, no 694, doesn't settle 11,555) -> mine_train.json.
+- LEAK FOUND AND CLOSED (09:48): 17,401 of v3's 130k training pairs (13%; also in v1/v2) share 10 words in a row
+  with an eval text: LEDGAR and CUAD are both SEC filings, LegalBench's CNLI rows reuse each NDA across many
+  hypotheses (most dev rows), its CUAD rows quote contracts; ~7,900 touch sealed fresh B. Part is boilerplate.
+  `build_train.py --clean` drops them: v3c = 112,640 pairs (dev rows 6,245 -> 1,973). Models x1/b2/l2/xv2/bv2
+  trained with the overlap, so their held-out/fresh A numbers may be a bit flattering; the final model is
+  trained on clean data only.
+- GPU now (09:50): lv2 (large v2) finishing; xv3c (xsmall v3c) training; queue3.sh then: lv3c (large v3c,
+  teacher) -> soften.py (its probabilities on v3c train -> data/v3cd) -> xv3cd (xsmall distilled, --soft-alpha
+  0.5). ETA ~10:45.
+- bv2 (base v2 2 ep): fresh A 35.4% @99.5% (t 0.96), held-out 16.8% @97.8%, adv 1 wrong/12, conval 1.1%.
+- 09:33 the pod's 30 GB disk filled (lv2 crashed saving a checkpoint; abandoned): finished runs' checkpoints
+  deleted (final weights kept on the pod; copies of x1/x3/b2/xv2/bv2/l2 in reader_net/models/gpu/).
+- STEP 1 REGRESSION FOUND AND FIXED (frames.py, not deployed): on whole CUAD contracts the teacher found Pre-Tier
+  0's "yes" wrong by both CUAD and the teacher in 10.7% (pt0_docs_judge.py), 9 of 24 on "Can a party terminate
+  the agreement without cause?": step 1's "yes, with a condition" made "Either party may terminate at any time
+  ... if the other party fails materially to comply" a yes, but there the condition is the cause. Now a
+  WITHOUT_CAUSE question defers on a condition unless the sentence itself says "without cause", "for
+  convenience", "for any reason", "at will" (`_EXPLICIT_WITHOUT_CAUSE`), and "by mutual consent / written
+  agreement" (the parties together) defers (`_MUTUAL`). Tests 136 pass (3 new). Pre-Tier 0 (with step 1):
+  dev 905 -> 896 answers, 99.6% both; held-out 1,097 -> 1,087, 99.8%; fresh A unchanged; contracts 300 at
+  85.3% -> 290 at 86.9% right vs CUAD. (pt0_<set>.json and docs_pt0.json re-dumped; the old ones are in
+  pt0_before_without_cause/.) Also seen: Pre-Tier 0 is 78.8% right on genval (generated questions) and fires on
+  27 conval near-misses (all wrong), mostly "yes, with a condition" from sentences about something else; noted
+  for later, Pre-Tier 0's own eval sets are unaffected.
+- 10:00-10:45 clean-data models (all trained on v3c or later; numbers comparable):
+  | model | how | fresh A @99.5% | devx | held-out | adv | genval | conval | contracts (yes, wrong by both) |
+  |---|---|---|---|---|---|---|---|---|
+  | xv3c | xsmall v3c | t .95: 13.9% 99.7% | 99.3% | 6.5% 98.4% | 1/11 wrong | 99.2% | 0.3% | t .96: 82, 4.9% |
+  | lv3c | large v3c (teacher) | t .95: 23.7% 99.6% | 98.0% | 12.2% 97.8% | 2/11 | 99.8% | 0.2% | t .96: 214, 5.1% |
+  | xv3cd | xsmall distilled from lv3c (alpha .5) | t .91: 18.3% 99.5% | 97.4% | 9.3% 97.5% | 1/10 | 99.6% | 0.8% | t .94: 49, 2.0% |
+  | xv3e | xv3cd + 51k contract passages labeled by lv3c | t .92: 15.5% 99.7% | 98.0% | 9.7% 97.8% | 1/11 | 99.6% | 0.5% | t .94: 78, 1.3% |
+  devx = the 5,486 dev rows v3c doesn't train on (score.py devx): LegalBench-like, allowed for calibration and
+  error reading; it tracks held-out closely. Distillation lowers the probabilities, so thresholds differ by model.
+  Contracts need a stricter threshold than clauses: NetReader now has `t_yes_doc` (multi-unit documents; test).
+  `docs_sweep.py M` = contract-level threshold table with the teacher's verdicts (cached in llm/docs_judge.jsonl).
+- Lead candidate: xv3e, t_yes 0.92 (one-unit texts), t_yes_doc 0.94 (contracts). devx errors (13 of ~660, all
+  CUAD tasks): half scope near-misses ("insurance limits" for a liability cap, license grants for "exceptions to
+  non-compete", "exclusive right to use" for exclusive dealing), half CUAD-category gold vs a literal reading.
+- NEXT (10:50): one more data round aimed at those near-misses: LEDGAR clauses nearest each CUAD question
+  (embeddings), the ones the network finds convincing labeled by the teacher LLM -> v4; bv3e (base, v3e) is
+  training on the pod for the speed/accuracy option.
+- 10:40-11:00 last data round: ledgar_mine.py (LEDGAR clauses nearest each CUAD question; 2,549 LLM-labeled:
+  yes 556, no 138, doesn't settle 1,855; xv3e's "yes" at 0.92 agreed with the LLM on 95.3% of these) -> v4 =
+  v3e + those x3, teacher soft labels -> xv4. Also bv3e = base on v3e (distilled).
+- Thresholds now must reach 99.5% on fresh A AND 99% on devx (compare.py --also devx:0.99); contracts use
+  t_yes_doc picked on the CUAD test contracts for ~0-2% wrong by both (docs_sweep.py). "No" stays off: on devx
+  the network's "no" is 0-11% right (LegalBench CUAD semantics), fresh A 80-91%.
+  | model | t_yes | fresh A | devx | held-out (report) | adv | genval | conval | contracts t_yes_doc: yes, wrong by both |
+  |---|---|---|---|---|---|---|---|---|
+  | xv4 (xsmall) | 0.935 | 9.9% 100% | 5.3% 99.3% | 4.9% 98.7% | 9/9 | 18.5% 100% | 0.2% | 0.94: 75 (1.9%), 0.0% |
+  | bv3e (base, ~3x slower) | 0.94 | 11.7% 99.6% | 9.1% 99.4% | 8.4% 99.1% | 9/9 | 20.2% 100% | 0.5% | 0.945: 143 (3.7%), 1.4% |
+  (cells: network's answers on the rows Pre-Tier 0 leaves, share of all rows and precision)
+- PRE-REGISTERED FINAL (11:05, before any sealed set is scored): primary = xv4 with t_yes 0.935 (one-unit
+  texts), t_yes_doc 0.94 (several units), "no" off, conflict 0.5, k_lex 6 + k_emb 6, checks as now (incl.
+  discretion), Pre-Tier 0 as now (step 1 + without-cause fix). Option = bv3e with t_yes 0.94, t_yes_doc 0.945.
+  Sealed sets run once each for both: fresh half B (clause level) and cuad_blind3 (60 contracts). The choice
+  between them is the user's (speed vs coverage), not made on the sealed numbers.
+- Fix: netreader.check() "discretion" (adv-38), tests 22 pass. PROTOCOL SLIP: at 08:45 13 of b2's held-out errors
+  were printed by mistake; nothing changed because of them. Held-out stays report-only.
+- Weights copied back here: models/gpu/{x1,x3,b2} (the pod's models/ has all; copy before stopping it).
+- **Step 1 done (not deployed: needs a zadum-router restart, ask first):** Pre-Tier 0's condition veto now turns a
+  "yes" into "yes, with a condition" quoting it (`frames._conditional`, `condition_text`, `FrameResult.condition`);
+  a "no" with a condition still defers. Not for property frames (a condition before the property can undo it),
+  and not "discretion" in a presence frame (adv-38: "The Company may, in its sole discretion, pay a bonus" is not
+  an entitlement). Answers stay "yes"; the reason and the evidence label carry the condition. Tests 111 pass.
+  | set | before | after |
+  |---|---|---|
+  | LegalBench dev | 729 = 9.8%, 99.6% | 905 = 12.1%, 99.6% (1 new error of 176: a frame match) |
+  | held-out | 811 = 6.5%, 99.8% (unseen tasks 1.6%) | 1097 = 8.8%, 99.8% (unseen 3.8%, 99.0%) |
+  | fresh half A | 104 = 4.3%, 99.0% | 185 = 7.7%, 99.5% |
+- Teacher: gpt-oss-120b. Bulk calls go through OpenRouter pinned to bf16 providers (DeepInfra first; `llm.py`),
+  NOT Fireworks: Fireworks' 45k generated tokens/min limit is per account and the live Tier 2 shares it (a run
+  there hit 429s at 06:56). On 100 dev rows its "yes" was right 41/41; generated "no"s are often silence read as
+  "no", so every generated question is re-answered blind (`prompts.VERIFY`) and kept only if both agree.
+- Data: `llm/dev_label.jsonl` (all 7,459 dev rows labeled; LegalBench CUAD gold means "the clause is about X",
+  e.g. "Revenue shall not be shared" is gold yes for "Must a party share revenue?", so its "no"s are scored
+  pessimistically); `gen_ledgar.py` → `gen_train.json`: 12,000 LEDGAR provisions (no eval set uses LEDGAR) × 6
+  generated questions, + blind check. `build_train.py` assembles the pairs (labels 0 no, 1 yes, 2 doesn't settle).
+- Code: `train.py` (CPU, ~1.5-2 s/step at batch 16), `score.py` (scores eval sets once), `analyze.py`
+  (thresholds, checks audit, combined with Pre-Tier 0 from `pt0_<set>.json`), `retrieve.py` (recall on CUAD
+  contracts: ~83% at ~12 units with lexical + bge-small; first question on a 50 KB contract embeds every unit,
+  3.9 s; then 29 ms). Router module: `router/netreader.py` (NetReader, check(); model dir `legalbench_map/models/reader_net`).
+- Fresh half B is SEALED for this project: score it only in the final run (`score.py ... freshB --final`).
+- Eval protocol, fixed before any result (07:50): thresholds and error reading only on fresh half A, dev, adv,
+  prior, the generated val split and CUAD's test-split contracts (whole-contract dev). LegalBench held-out is
+  report-only (its errors are not read before the final run). Final, once: fresh half B and the 60 cuad_blind3
+  contracts (whole-contract). Target: ≥99% right on the network's answers, threshold set for ≥99.5% on fresh A.
+- 07:42 data: 71,988 generated questions over 12,000 provisions, writer and blind check agree on 59,126 (yes 23,194,
+  no 12,773, not settled 23,159); OpenRouter cost $2.25 for ~21.8k calls. `build_train.py data/v1 --dev`: 86,473
+  training pairs (gen 55k, the deciding sentence alone 8k, another provision type's text as "doesn't settle" 17k,
+  dev rows where gold and teacher agree 6.2k; long provisions cut to ≤600-char windows around the quote, as the
+  network reads documents), 101 tokens on average. Training `models/v1` started 07:43 (1 epoch, lr 4e-5, batch 16,
+  8 threads at nice 10, 1.7 s/step, ~2.5 h). Calibration set: fresh half A (its questions are unseen in training
+  except the 43 LegalBench ones); held-out's 11 unseen tasks are the generalization test.
+- Router wiring (not live: the switch is off by default and the service hasn't restarted): /admin switch
+  `tier0net` "Tier 0 (reader network)" (router/stages.py; mask gains " n1" only when on), Harness(netreader=...)
+  runs it after Tier 0 (path "tier0net", Answer.netreader), ask_ui loads `NetReader()` at startup (logs and skips
+  it if `legalbench_map/models/reader_net` is missing), ui.html shows it. Tests: tests/test_netreader.py (18).
+  The full suite's 9 failures + 3 errors (test_phase2_runner, test_per_item_dump, test_determinism) and the 4
+  phase2 collection errors (no module `downshift`) fail the same without these changes.
+- Measured: int8 dynamic quantization is 30% faster but flips 8% of argmaxes: not used. bge-small embeds ~22-30
+  ms per 600-char unit on this CPU (a 50 KB contract's first question ~2-3 s, then cached).
+
 **PRE-TIER 0 + TIER 2 FIXES (2026-10-01 ~07:00 UTC; live; commits 5bf9078 + cb6c5b3)**
 - Tier 2 reads every fact question the local tiers leave (any answer type; `reader.fits` checks only the measured
   types) and every why / what-if / how / unclassified question (`harness._answer_kind`); Jev's check still guards.

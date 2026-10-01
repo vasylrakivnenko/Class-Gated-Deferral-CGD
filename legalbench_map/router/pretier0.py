@@ -181,7 +181,10 @@ def check(question: str, document: str) -> PreTier0Result:
         result.frames = fr.to_dict()
         if fr.answer:
             result.fired, result.answer, result.evidence = True, fr.answer, fr.evidence
-            result.reason = "one clause settles it" + (' (the text permits it: "may", not "must")' if fr.qualifier == "may" else "")
+            qualifier = fr.qualifier or ""
+            result.reason = "one clause settles it" + (' (the text permits it: "may", not "must")' if qualifier.startswith("may") else "")
+            if frames.CONDITIONAL in qualifier:
+                result.reason += f', {frames.CONDITIONAL}' + (f': "{fr.condition}"' if fr.condition else "")
     result.ms = round((time.perf_counter() - start) * 1000, 2)
     return result
 

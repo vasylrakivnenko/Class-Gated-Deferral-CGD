@@ -65,11 +65,26 @@ def test_a_settled_frame_answers():
     assert (r.fired, r.answer) == (True, "no") and r.frames["ms"] < 10 and "sell" in r.evidence[0]["text"]
 
 
-@pytest.mark.parametrize("sentence", ["Tenant may sublet the premises only with approval.",
-                                      "During the first year, Tenant may sublet the premises.",
-                                      "Upon a change of control, Tenant may sublet the premises."])
-def test_scope_limits_block(sentence):
+@pytest.mark.parametrize("sentence, condition", [
+    ("Tenant may sublet the premises only with approval.", "only with approval"),
+    ("During the first year, Tenant may sublet the premises.", "During the first year"),
+    ("Upon a change of control, Tenant may sublet the premises.", "Upon a change of control")])
+def test_scope_limits_make_a_yes_conditional(sentence, condition):
+    r = check("Can the tenant sublet the premises?", sentence)
+    assert (r.answer, r.frames["qualifier"], r.frames["condition"]) == ("yes", "with a condition", condition)
+    assert r.reason == f'one clause settles it, with a condition: "{condition}"'
+
+
+@pytest.mark.parametrize("sentence", ["Tenant shall not sublet the premises without Landlord's consent.",
+                                      "Except as set forth in Section 4, Tenant shall not sublet the premises."])
+def test_a_no_with_a_condition_still_defers(sentence):
+    # "shall not ... except": the exception is often the very case asked about (2026-10-01: 31 of 42 wrong)
     assert run("Can the tenant sublet the premises?", sentence) == (None, None)
+
+
+def test_a_conditional_yes_agrees_with_a_plain_one():
+    doc = "Tenant may sublet the premises. Unless the Lease is in default, Tenant may sublet the premises."
+    assert run("Can the tenant sublet the premises?", doc) == ("yes", "with a condition")
 
 
 def test_another_sentence_about_the_same_action_defers():
@@ -185,9 +200,11 @@ def test_catch_all_presence_leaves_questions_about_a_named_party_alone():
     assert run("Must the employee reimburse the employer for travel expenses?", doc) == (None, None)
 
 
-def test_catch_all_presence_defers_on_conditions():
+def test_catch_all_presence_makes_conditions_a_conditional_yes():
     doc = "Employee shall receive severance equal to six months' salary if terminated without Cause."
-    assert run("Is a party entitled to severance?", doc) == (None, None)
+    r = check("Is a party entitled to severance?", doc)
+    assert (r.answer, r.frames["qualifier"], r.frames["condition"]) == ("yes", "with a condition",
+                                                                          "if terminated without Cause")
 
 
 # --- values: numbers, amounts and dates must match
@@ -208,7 +225,9 @@ def test_question_condition_matches_the_clause_condition():
     q = "Can a party terminate the agreement if the other party undergoes a change of control?"
     assert run(q, "Licensor may terminate this Agreement upon a change of control of Licensee.") == ("yes", None)
     assert run(q, "Licensor may terminate this Agreement for convenience.") == (None, None)
-    assert run(q, "Licensor may terminate this Agreement upon a change of control of Licensee, unless Licensee cures.") == (None, None)
+    # another condition makes the "yes" conditional, and that one is quoted, not the question's own
+    r = check(q, "Licensor may terminate this Agreement upon a change of control of Licensee, unless Licensee cures.")
+    assert (r.answer, r.frames["qualifier"], r.frames["condition"]) == ("yes", "with a condition", "unless Licensee cures")
 
 
 def test_only_question_accepts_not_except():
@@ -310,3 +329,27 @@ def test_a_real_ban_on_copies_is_still_a_no():
     r = check("Can the receiving party make copies of the confidential information?",
               "The Receiving Party shall not make any copies of the Confidential Information.")
     assert (r.fired, r.answer) == (True, "no")
+
+
+def test_discretion_keeps_a_presence_question_deferred():
+    # whose discretion it is a presence frame can't tell: the Employee isn't entitled to what the Company may pay
+    doc = "The Company may, in its sole discretion, pay an annual bonus to the Employee."
+    assert run("Is the employee entitled to an annual bonus?", doc) == (None, None)
+
+
+def test_a_condition_is_the_cause_for_a_without_cause_question():
+    # 2026-10-01, CUAD test contracts: the condition veto's "yes, with a condition" mustn't answer "without cause"
+    doc = ("Either party may terminate this Agreement at any time during the term of this Agreement if either party "
+           "fails materially to comply with any covenant, term, or provision of this Agreement.")
+    assert answer("Can a party terminate the agreement without cause?", doc).answer is None
+
+
+def test_an_explicit_without_cause_keeps_its_conditional_yes():
+    doc = ("Notwithstanding the provisions of Section 3 above, either party shall have the right to terminate this "
+           "Agreement, without cause, upon no less than ninety (90) days' prior written notice to the other party.")
+    assert answer("Can a party terminate the agreement without cause?", doc).answer == "yes"
+
+
+def test_termination_by_mutual_consent_is_not_one_party_without_cause():
+    doc = "The parties may terminate this Agreement at any time by mutual consent."
+    assert answer("Can a party terminate the agreement without cause?", doc).answer is None

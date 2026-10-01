@@ -261,6 +261,7 @@ const EXAMPLES = [
 const PATHS = {
   pretier0: "the text alone settles it",
   tier0: "one sentence of the document settles it",
+  tier0net: "a small network read the passage, and Pre-Tier 0's rules checked the party, may/must/not and conditions in it",
   llm_task: "asked the task's own question, since our classifier is weak on this task",
   llm_fallback: "fallback, asked your question",
   llm_judgment: "advice or a legal conclusion: the text alone can't settle it, so Jev answered",
@@ -397,7 +398,7 @@ function renderJson(value) {
 function render(a) {
   const notAnswered = a.path === "deferred" || a.path === "declined";
   const fact = ["span", "llm_span", "reader", "choice", "llm_choice"].includes(a.path);
-  $("model-head").textContent = { classifier: "free classifier", tier0: "Tier 0", pretier0: "Pre-Tier 0",
+  $("model-head").textContent = { classifier: "free classifier", tier0: "Tier 0", tier0net: "Tier 0 network", pretier0: "Pre-Tier 0",
     deferred: "not answered", declined: "not answered", span: "Pre-Tier 0 facts", choice: "Pre-Tier 0 choice",
     reader: "Tier 2 reader", llm_decide: "Tier 2, unchecked" }[a.path] || a.answered_by;
   const opts = notAnswered ? `<span class="opt dim">not answered</span>` : Object.entries(a.probabilities).sort((x, y) => y[1] - x[1]).map(([label, p]) => {
@@ -408,7 +409,7 @@ function render(a) {
   const judged = a.path === "llm_judgment";
   const skip = notAnswered || fact ? (a.path === "declined" ? "skipped: a request" : "skipped: not a yes/no question") : "skipped: not a lookup";
   const router = !r ? (a.path === "llm_fallback" ? "skipped: the free classifiers are on standby" : judged || notAnswered || fact ? skip :
-    `not needed: ${a.path === "pretier0" ? "Pre-Tier 0" : "Tier 0"} answered`) :
+    `not needed: ${a.path === "pretier0" ? "Pre-Tier 0" : a.path === "tier0net" ? "the Tier 0 network" : "Tier 0"} answered`) :
     `picked <span class="key" style="font-size:13px">${esc(r.choice)}</span> · p(none) ${r.p_none} · margin ${r.margin}` +
     (r.accepted ? "" : " · not trusted, so the LLM answered");
   const clauses = (ev) => ev.map((e) => `<div class="clause"><b>${pct(e.p)} ${esc(e.label)}</b>${esc(e.text)}</div>`).join("");
@@ -432,6 +433,12 @@ function render(a) {
       (t.hypothesis ? `<div class="dim" style="margin:6px 0">Tested: ${esc(t.hypothesis)}</div>` : "") +
       clauses(t.evidence || []) + "</dd>";
   }
+  const nr = a.netreader;
+  if (a.path === "tier0net") {
+    evidence = `<dt>Deciding sentence</dt><dd><div class="dim" style="margin-bottom:6px">Read ${nr.n_scored} of ${nr.n_units} passages with the reader network:</div>${clauses(a.evidence)}</dd>`;
+  } else if (nr) {
+    tier0 += `<dt>Tier 0 network</dt><dd>deferred: ${esc(nr.reason)}` + clauses(nr.evidence || []) + "</dd>";
+  }
   if (a.path === "classifier" && a.n_units > 1) {
     evidence = `<dt>Closest parts</dt><dd><div class="dim" style="margin-bottom:6px">The document was checked in ${a.n_units} parts; top ${a.evidence.length}:</div>` +
       a.evidence.map((e) => `<div class="clause"><b>${pct(e.p)} ${esc(e.label)}</b>${esc(e.text)}</div>`).join("") + "</dd>";
@@ -439,7 +446,7 @@ function render(a) {
   const how = a.path === "reader" && a.confidence == null ? "copied word for word from a clause; Tier 1 is off in /admin, so Jev didn't check it"
     : PATHS[a.path] || a.path;
   const by = a.path === "classifier" || notAnswered ? a.answered_by : `${a.answered_by} (${how})`;
-  const key = a.path === "tier0" || a.path === "pretier0" ? a.path : judged ? "judgment"
+  const key = a.path === "tier0" || a.path === "tier0net" || a.path === "pretier0" ? a.path : judged ? "judgment"
     : (notAnswered || fact) && a.qtree ? a.qtree.leaf + (a.qtree.answer_type ? " · " + a.qtree.answer_type : "") : a.task || "fallback";
   const q = a.qtree;
   const kind = q ? `<dt>Question type</dt><dd>${esc(KINDS[q.leaf] || q.leaf)}${q.cue ? ` <span class="dim">("${esc(q.cue)}")</span>` : ""}</dd>` : "";

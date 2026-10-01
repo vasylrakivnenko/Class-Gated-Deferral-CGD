@@ -337,6 +337,8 @@ const SWITCHES = [
     note: "Regex and a phrase automaton, ~0.2 ms, no model. Answers topic, frame and presence questions, and facts and choices by rule; finds the parties and rewords we/you questions for Tier 0. Off: Jev picks facts and choices, and Tier 2 reads the rest." },
   { key: "tier0", name: "Tier 0 (local NLI)",
     note: "cross-encoder/nli-deberta-v3-xsmall on this machine. Answers \u201cyes\u201d only, when one sentence settles it, with no hosted call." },
+  { key: "tier0net", name: "Tier 0 (reader network)",
+    note: "A small network on this machine (DeBERTa-v3-xsmall, ~45 ms a clause, ~0.35 s a 5 KB text) reads the passage and answers “yes”; Pre-Tier 0's rules then check the party, may/must/not, discretion and conditions in that sentence, and any failed check defers. Runs after Tier 0, on what it leaves. Measured on a sealed set: 7.9% more of the questions answered, all right. Clauses and texts up to ~7 KB only: on whole contracts it defers." },
   { key: "tier1", name: "Tier 1 (Jev)",
     note: "Jev answers every yes/no the first two tiers defer, gives the reading on advice questions, picks the facts and choices the rules miss, and checks what Tier 2 reads." },
   { key: "classifiers", name: "Free classifiers",
