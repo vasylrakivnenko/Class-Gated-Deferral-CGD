@@ -320,11 +320,11 @@ applyTheme(document.documentElement.dataset.theme);
 let nextExample = 0;
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-const pct = (p) => Math.round(p * 100) + "%";
+const pct = (p) => p == null ? "unchecked" : Math.round(p * 100) + "%";  // null: Tier 2 read with Tier 1 (Jev) off
 function ring(p) {
   const r = 6, c = 2 * Math.PI * r;
   return `<svg width="18" height="18" viewBox="0 0 18 18"><circle cx="9" cy="9" r="${r}" fill="none" stroke="var(--ring-track)" stroke-width="3"/>` +
-    `<circle cx="9" cy="9" r="${r}" fill="none" stroke="var(--ring)" stroke-width="3" stroke-dasharray="${(p * c).toFixed(2)} ${c.toFixed(2)}" transform="rotate(-90 9 9)"/></svg>`;
+    `<circle cx="9" cy="9" r="${r}" fill="none" stroke="var(--ring)" stroke-width="3" stroke-dasharray="${((p ?? 0) * c).toFixed(2)} ${c.toFixed(2)}" transform="rotate(-90 9 9)"/></svg>`;
 }
 const latency = (ms) => `${ms.toLocaleString()} ms (${(ms / 1000).toFixed(2)} s)`;
 
@@ -436,7 +436,9 @@ function render(a) {
     evidence = `<dt>Closest parts</dt><dd><div class="dim" style="margin-bottom:6px">The document was checked in ${a.n_units} parts; top ${a.evidence.length}:</div>` +
       a.evidence.map((e) => `<div class="clause"><b>${pct(e.p)} ${esc(e.label)}</b>${esc(e.text)}</div>`).join("") + "</dd>";
   }
-  const by = a.path === "classifier" || notAnswered ? a.answered_by : `${a.answered_by} (${PATHS[a.path] || a.path})`;
+  const how = a.path === "reader" && a.confidence == null ? "copied word for word from a clause; Tier 1 is off in /admin, so Jev didn't check it"
+    : PATHS[a.path] || a.path;
+  const by = a.path === "classifier" || notAnswered ? a.answered_by : `${a.answered_by} (${how})`;
   const key = a.path === "tier0" || a.path === "pretier0" ? a.path : judged ? "judgment"
     : (notAnswered || fact) && a.qtree ? a.qtree.leaf + (a.qtree.answer_type ? " · " + a.qtree.answer_type : "") : a.task || "fallback";
   const q = a.qtree;

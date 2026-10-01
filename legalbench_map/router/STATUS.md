@@ -9,6 +9,9 @@
   19:35 UTC) and "Answer questions locally with Pre-Tier 0 and Tier 0 before calling Jev" (the B + D edits:
   `router/frames.py`, `router/pretier0.py`, `router/lexicon_extra.json`, `tests/test_frames.py`).
 - Tier 2 (hosted LLM reader) is ON: `--tier2 priority` in /etc/systemd/system/zadum-router.service (see TIER 2 LIVE).
+  Since 2026-10-01 02:10 UTC the reader is switched on /admin instead, between 4 readers incl. our own GPU (see TIER 2
+  SWITCH). Until an admin picks one, the flag decides. 2026-10-01 ~04:45 UTC: that tab became "Routing Pipeline",
+  which also switches Pre-Tier 0 / Tier 0 / Tier 1 (see ROUTING PIPELINE); tested on :8777, not yet live.
 - Since 2026-09-30 ~17:00 UTC every `/api/ask` call is saved in `/var/lib/zadum-router/usage.db` (`router/usage.py`):
   `requests` has the question, answer, confidence, evidence (JSON) and `id` (= the reply's `request_id`, `req_…`);
   `documents` stores each document once under `document_id` (`doc_` + sha256 of the text). Older rows have NULLs.
@@ -229,11 +232,9 @@ span tier defers. A key-term check on the cited clause (`bakeoff.about_the_quest
 - OpenRouter `:nitro` for Gemma: all 286 calls went to Makora; p50 0.32 s but p99 2.7 s (NextBit 1.15 s); same quality.
 
 **TIER 2 LIVE (since 2026-09-30 23:16 UTC)** — gpt-oss-120b on Fireworks, the user's pick.
-- Switch: **/admin → Routing Pipeline** (no restart; stored in usage.db `settings`, key `stages`). The flag
-  `ask_ui.py --tier2 priority|standard` in /etc/systemd/system/zadum-router.service is now only the startup
-  default, used until an admin saves something; `priority` since 23:40 UTC (`standard` 23:16–23:40).
-  Tier 2's options there are gpt-oss-120b (Fireworks, standard or priority) and Gemma 4 26B-A4B (OpenRouter,
-  `OPENROUTER_API_KEY`, check floor 0.8 instead of 0.7) — the bake-off's two finalists. See router/stages.py.
+- Switch: **/admin → Routing Pipeline → Tier 2 reader** (no restart; see TIER 2 SWITCH and ROUTING PIPELINE). The
+  flag `ask_ui.py --tier2 priority|standard` in /etc/systemd/system/zadum-router.service is now only the startup
+  default, used until an admin picks a reader; `priority` since 23:40 UTC (`standard` 23:16–23:40).
 - What runs: harness `_span` → `_read` when the span tier defers a fact of a type in `spans.ANSWERED_TYPES` (the
   types the bake-off measured), Jev reader only (Kev keeps documents local). Reader copies from ≤ 8 clauses
   (`select_clauses`) → verbatim check (`grounded`) → `fits` → Jev noul ≥ `CHECK_MIN` 0.7 (`CHECK` wording, shared with
@@ -267,8 +268,53 @@ span tier defers. A key-term check on the cited clause (`bakeoff.about_the_quest
   Latency: reader call p50 ~0.29 s, Jev check ~65 ms. Today's own misses on cuad_blind3: 4 (3 false fires).
 - Dec 31 fix (spans `_preamble_dates`): a date after "terminate/renew/assign... this Agreement, effective as of" is
   that event's date, not the start. cuad 167/171 → 167/170; other sets unchanged. Reason text "effectiv date" fixed.
+- 2026-10-01 DEPLOYED (not committed): "who can review/audit the books?" over "Licensee shall have the right to
+  audit the books" went to Jev (req_6071448f…). spans `_doer`: a verb without a subject of its own → "the right to
+  X" (owner / the verb's subject; for grant/give/provide only a cleanly parsed recipient, else defer), "entitled to
+  X", "permit Licensee to X" (the object); any "not" on the way → defer. SPAN_SYNONYMS: asked review/check →
+  audit/inspect/examine (one way); audit = inspect = examine as in the lexicon. All eval sets unchanged (none had
+  this pattern); 302 tests. Still open: Pre-Tier 0 yes/no "Can the licensee review the books?" doesn't fire
+  (lexicon has no review≈audit; changing it needs the LegalBench A/B).
 - Ideas: redo cuad scoring by hand for textual answers vs dates; ENTITY/LOCATION facts through Tier 2 (not measured);
   Tier 2 for deferred choice questions; the next fresh set is cuad_blind4 (228 unused contracts left).
+
+**ROUTING PIPELINE (2026-10-01)** — /admin's second tab (was "Tier 2 reader"; `#tier2` links still open it). Merges
+the laptop's commit bc11055 (tier switches, made without this box's uncommitted Tier 2 switch) with the Tier 2 switch.
+- Tiers card: on/off switches for Pre-Tier 0, Tier 0 (NLI), Tier 1 (Jev) and the free classifiers, server-wide; the
+  playground's Pre-Tier 0 / Tier 0 checkboxes are gone. `router/stages.py`; saved in usage.db `settings` key `stages`
+  (with `updated_at`/`updated_by`, columns added to the old 2-column table on start); `POST /api/admin/stages`.
+  Refused: Tier 1 and Tier 2 both off (nothing answers what the rules miss), classifiers without Tier 1.
+- With Tier 1 off, Tier 2 reads facts unchecked (confidence null, "unchecked (Tier 1 off)") and decides yes/no
+  itself (`reader.decide`, path `llm_decide`). Neither path was measured by the bake-off. Tested on :8777: all
+  three local tiers off + gpt-oss-120b answered "$500 per animal" (reader) and "no" (llm_decide) in ~0.36 s.
+- Each request logs the tiers that were on in `requests.stages`, e.g. `p1 t1 j1 c0 r:fireworks-priority`.
+- `GET /api/admin/pipeline` returns both cards; `POST /api/admin/tier2` switches the reader (as below).
+
+**TIER 2 SWITCH (2026-10-01)**
+- /admin's Routing Pipeline tab has a "Tier 2 reader" card: Fireworks standard, Fireworks priority (both gpt-oss-120b, Jev check ≥ 0.7),
+  Gemma 4 26B-A4B on our own GPU and Gemma 4 26B-A4B on OpenRouter pinned to NextBit (both ≥ 0.8, from the bake-off),
+  or Off. A switch sends one test read first (`tier2.PROBE_*`) and keeps the old reader if it fails (409). The choice is
+  saved in usage.db `settings` (key `tier2`) and beats `--tier2` after a restart. Each card shows its last 7 days of
+  reads from usage.db (`Usage.tier2_stats`). Code: `router/tier2.py` (options, `Tier2`), `ask_ui.py`
+  (`POST /api/admin/tier2`), `router/admin.html`. `--tier2` takes the option ids (old standard/priority still work).
+- usage.db `tier2` now logs the option id (fireworks-standard, fireworks-priority, gpu-gemma, openrouter-gemma). Older
+  rows say standard/priority; `usage.LEGACY_TIER2` maps them. For our GPU, `tier2_server_ms` is the gateway's time.
+- **Our own GPU's API, zadum-gpu/1** (spec in the `router/gpu.py` docstring): `GET /v1/health`, `POST /v1/generate`
+  (messages, max_tokens, temperature, json_schema, thinking → text, usage, timing), Bearer token. The router talks only to
+  it (`gpu.OwnGPU`, wrapped by `reader.OwnGPULLM`). On the GPU box, `gpu/gpu_gateway.py` (stdlib only) serves it in front of
+  the engine: adapters `llama.cpp` and `openai` (vLLM, SGLang, TGI). **A new deployment = a new Engine subclass in
+  gpu/gpu_gateway.py; nothing in the router changes.** Setting a GPU up from scratch: `gpu/SETUP.md`.
+- Today's deployment: Runpod RTX 4090 pod (`ssh -i ~/.ssh/runpod_ed25519 -p 12930 root@47.47.180.54`), llama.cpp
+  serving Google's Gemma 4 26B-A4B Q4_0 QAT. Fix that made it batch: llama-server's host-RAM prompt cache stalled
+  every request, so it runs with `--kv-unified --cache-ram 0 --ctx-checkpoints 0` (prefill went from 1.7k to 10.7k tok/s
+  at 16 parallel). **Setting up a GPU from scratch, restarting one, and every flag: `gpu/SETUP.md`**: one command,
+  `gpu/deploy.sh IP PORT [all|start]` (pod: `gpu/setup_pod.sh`; router-side check: `gpu/check_gpu.py`). Here:
+  `zadum-gpu-tunnel.service` (SSH tunnel, 127.0.0.1:18000 → pod 127.0.0.1:8000, written by deploy.sh from
+  `gpu/zadum-gpu-tunnel.service`; the pod's SSH port changes on a pod restart) and ZADUM_GPU_TOKEN in /root/.env.
+- Measured from this server, 286 real reader prompts one at a time: 0.29 s p50, 0.36 s p90, 0.63 s p99 (GPU 0.25 s;
+  the rest is the 33 ms network round trip); bad JSON 0. The same Q4_0 file gave NextBit's answer on 151/160 bake-off
+  questions. An outage (tunnel down) defers the question in 0.2 s and the card shows the GPU as down.
+- The pod bills by the hour whether used or not; stopping it makes the GPU option fail its test read (the switch refuses).
 
 ## Next steps (from before the question tree)
 1. ~~Commit the B + D edits~~ done in the commit "Classify questions first, then answer facts and choices from the text" (`git log`).
@@ -281,7 +327,7 @@ span tier defers. A key-term check on the cited clause (`bakeoff.about_the_quest
    - index documents at upload (option C)
 
 ## How to check things
-- Tests: `cd legalbench_map && ../.venv/bin/python -m pytest -q tests/test_frames.py tests/test_pretier0.py tests/test_tier0.py tests/test_router.py tests/test_usage.py tests/test_qtree.py`
+- Tests: `cd legalbench_map && ../.venv/bin/python -m pytest -q tests/test_frames.py tests/test_pretier0.py tests/test_tier0.py tests/test_router.py tests/test_usage.py tests/test_qtree.py tests/test_tier2.py` (313 on 2026-10-01)
 - Question-tree evals: `/root/zadumai_nli_proto/qtree/` — `eval_classify.py dev|test|test2|test3`, `eval_spans.py spans_dev|spans_test|spans_test2|cuad|cuad_blind|cuad_blind2|cuad_blind3 [--llm]`, `eval_choice.py dev|test|test2 [--llm]`, `m4_privacyqa.py [--llm]` (Jev calls are cached under `qtree/llm/`)
 - Tier 2 evals (same folder): `eval_tier2.py bakeoff|spans_test2|cuad_blind2|cuad_blind3 [--tier priority]
   [--no-typecheck]` (today's system + Tier 2 exactly as live; reader replies cached in `results/tier2/`),
@@ -298,6 +344,8 @@ span tier defers. A key-term check on the cited clause (`bakeoff.about_the_quest
 - Check pytest's own exit code before a deploy (`pytest ... ; echo $?`): `pytest | tail` always exits 0.
 - Live API checks count against your 50/day quota (it's per account, and the `/admin` page changes it).
 - Port 8766 has an old test server from an earlier session; leave it alone.
+- `pkill -f <pattern>` over SSH or in a Bash call also matches the shell running it if the pattern is in the command
+  line: kill by PID, or anchor the pattern (`pkill -f "^python3 /workspace/gpu_gateway.py"`).
 - Stop the 8777 test server in its own Bash call, with a command line that doesn't contain its own pattern
   (`pkill -f "ask_ui.py --port 877[7]"` alone): if the same command line holds "--port 8777", pkill kills the shell.
 - Git has no identity on this machine; commits use `-c user.name=... -c user.email=...` from earlier commits.

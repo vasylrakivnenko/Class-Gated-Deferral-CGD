@@ -13,8 +13,10 @@ Contract
     out: JSON {"answer": "<words copied exactly from one clause>" | null,
                "clause": <that clause's number> | null}
 
-`complete(prompt) -> str | (str, usage)` is any LLM call: FireworksLLM (the
-live reader, gpt-oss-120b) or LocalLLM (llama.cpp's OpenAI-compatible server).
+`complete(prompt) -> str | (str, usage)` is any LLM call: FireworksLLM (gpt-oss-120b),
+OpenRouterLLM (Gemma 4 26B-A4B, pinned to one provider), OwnGPULLM (whatever our own GPU
+serves, through its gateway: router/gpu.py) or LocalLLM (llama.cpp's server, for evals).
+Which one is live is switched on /admin (router/tier2.py).
 
 Bake-off (2026-09-30, 320 questions, half real CUAD contracts; qtree/bakeoff.py,
 qtree/verify.py): with today's system first and this reader on its deferrals,
@@ -174,12 +176,11 @@ def _parse(text: str) -> dict | None:
 
 
 def read(question: str, clauses: list, complete, check=None, answer_type: str | None = None,
-         document: str = "", check_min: float | None = None) -> ReaderResult:
+         document: str = "", check_min: float = CHECK_MIN) -> ReaderResult:
     """`check(state, instructions) -> p` is Jev's noul; None skips the check (the bake-off
     scores it separately, and /admin's Tier 1 switch turns it off). With `answer_type`, an
     answer that doesn't fit the question is dropped before the check (`fits`). `check_min`
-    is the reader's own floor from the bake-off (READERS); None uses CHECK_MIN."""
-    floor = CHECK_MIN if check_min is None else check_min
+    depends on the model (router/tier2.py)."""
     if not clauses:
         return ReaderResult(False, reason="no clause mentions what the question asks about")
     prompt = PROMPT.format(clauses="\n".join(f"[{i + 1}] {c}" for i, c in enumerate(clauses)), question=question)
@@ -205,9 +206,9 @@ def read(question: str, clauses: list, complete, check=None, answer_type: str | 
         return ReaderResult(True, answer, clause, reason="copied from the clause it cites, unchecked (Tier 1 off)",
                             raw=text[:500], ms=ms, usage=usage)
     p = round(float(check(clause, CHECK.format(q=question, a=answer))), 3)
-    if p < floor:
+    if p < check_min:
         return ReaderResult(False, reason=f'Jev doubts the clause states "{answer}" as the answer ({p:.2f} < '
-                                          f'{floor}); dropped', clause=clause, raw=text[:500], ms=ms,
+                                          f'{check_min}); dropped', clause=clause, raw=text[:500], ms=ms,
                             usage=usage, check=p)
     return ReaderResult(True, answer, clause, reason=f"copied word for word from a clause; Jev checked the clause "
                                                      f"states it ({p:.2f})", raw=text[:500], ms=ms, usage=usage,
@@ -315,6 +316,79 @@ class FireworksLLM:
         raise ReaderError(f"Fireworks failed: {last}")
 
 
+class OpenRouterLLM:
+    """A model on OpenRouter, pinned to one provider with no fallbacks (the bake-off measured
+    each provider apart: Gemma 4 26B-A4B on NextBit, 0.52 s p50, 1.15 s p99)."""
+
+    def __init__(self, model: str = "google/gemma-4-26b-a4b-it", provider: str | None = "NextBit",
+                 timeout: float = 20, max_tokens: int = 300):
+        import requests
+        self.session, self.model, self.provider = requests.Session(), model, provider
+        self.timeout, self.max_tokens = timeout, max_tokens
+        self.key = api_key("OPENROUTER_API_KEY")
+
+    def __call__(self, prompt: str):
+        import requests
+        body = {"model": self.model, "messages": [{"role": "user", "content": prompt}], "temperature": 0,
+                "max_tokens": self.max_tokens}
+        if self.provider:
+            body["provider"] = {"order": [self.provider], "allow_fallbacks": False}
+        last = ""
+        for attempt in range(2):
+            try:
+                r = self.session.post("https://openrouter.ai/api/v1/chat/completions", json=body, timeout=self.timeout,
+                                      headers={"Authorization": f"Bearer {self.key}"})
+            except requests.RequestException as e:
+                last = str(e)
+            else:
+                if r.status_code == 200:
+                    d = r.json()
+                    if "choices" not in d:  # OpenRouter reports a provider's failure inside a 200
+                        last = f"no choices: {str(d.get('error'))[:200]}"
+                    else:
+                        return d["choices"][0]["message"].get("content") or "", {**d.get("usage", {}),
+                                                                                 "served_by": d.get("provider"),
+                                                                                 "attempts": attempt + 1}
+                else:
+                    last = f"HTTP {r.status_code}: {r.text[:200]}"
+                    if r.status_code not in (408, 429, 500, 502, 503, 504):
+                        break
+            time.sleep(1 + attempt)
+        raise ReaderError(f"OpenRouter failed: {last}")
+
+
+class OwnGPULLM:
+    """Whatever our own GPU serves, through its gateway (router/gpu.py: the reader never
+    knows which engine runs there). JSON-constrained, reasoning off, deterministic."""
+
+    def __init__(self, gpu=None, max_tokens: int = 200):
+        from router.gpu import GPUError, OwnGPU
+        try:
+            self.gpu = gpu or OwnGPU()
+        except GPUError as e:
+            raise ReaderError(f"own GPU: {e}") from e
+        self.max_tokens = max_tokens
+
+    def health(self) -> dict:
+        from router.gpu import GPUError
+        try:
+            return self.gpu.health()
+        except GPUError as e:
+            raise ReaderError(f"own GPU: {e}") from e
+
+    def __call__(self, prompt: str):
+        from router.gpu import GPUError
+        try:
+            d = self.gpu.generate([{"role": "user", "content": prompt}], max_tokens=self.max_tokens, json_schema=SCHEMA)
+        except GPUError as e:
+            raise ReaderError(f"own GPU failed: {e}") from e
+        timing = d.get("timing") or {}
+        usage = {**(d.get("usage") or {}), "model": d.get("model"), "engine": d.get("engine"), "attempts": d["attempts"],
+                 **({"server_s": timing["server_ms"] / 1000} if timing.get("server_ms") is not None else {}),
+                 **{k: timing[k] for k in ("prefill_ms", "decode_ms") if timing.get(k) is not None}}
+        return d.get("text") or "", usage
+
+
 class LocalLLM:
     """llama.cpp's OpenAI-compatible server, deterministic, JSON-constrained."""
 
@@ -336,66 +410,3 @@ class LocalLLM:
         d = r.json()
         msg = d["choices"][0]["message"]
         return (msg.get("content") or ""), {**d.get("usage", {}), **d.get("timings", {})}
-
-
-class OpenRouterLLM:
-    """Gemma 4 26B-A4B through OpenRouter, pinned to one provider. The bake-off
-    (STATUS.md "TIER 2 BAKE-OFF") measured it at 199/202 = 98.5% and 90% coverage with
-    Jev's check at >= 0.8, 0.52 / 1.15 s p50/p99, and $0.46 per 10k questions against
-    $1.42 for gpt-oss-120b on Fireworks Priority -- cheaper and slightly less precise.
-    Pinning matters: `:nitro` routed every call to Makora at p99 2.7 s.
-
-    MODEL and PROVIDER must match what qtree/bakeoff.py used, which lives outside this
-    repo (/root/zadumai_nli_proto/); set OPENROUTER_MODEL / OPENROUTER_PROVIDER to
-    override either without a redeploy.
-    """
-    MODEL = "google/gemma-4-26b-a4b"
-    PROVIDER = "NextBit"
-
-    def __init__(self, timeout: float = 20, max_tokens: int = 1200):
-        import requests
-        self.session, self.timeout, self.max_tokens = requests.Session(), timeout, max_tokens
-        self.key = api_key("OPENROUTER_API_KEY")
-        self.model = os.environ.get("OPENROUTER_MODEL") or self.MODEL
-        self.provider = os.environ.get("OPENROUTER_PROVIDER") or self.PROVIDER
-        self.service_tier = None  # NextBit has no priority/fast tier
-        self.name = f"{self.model.split('/')[-1]} (OpenRouter -> {self.provider})"
-
-    def __call__(self, prompt: str):
-        import requests
-        body = {"model": self.model, "messages": [{"role": "user", "content": prompt}], "temperature": 0,
-                "max_tokens": self.max_tokens,
-                # one provider, no silent fallback: the bake-off's latency only holds for this one
-                "provider": {"order": [self.provider], "allow_fallbacks": False}}
-        last = ""
-        for attempt in range(2):
-            try:
-                r = self.session.post("https://openrouter.ai/api/v1/chat/completions", json=body,
-                                      timeout=self.timeout, headers={"Authorization": f"Bearer {self.key}"})
-            except requests.RequestException as e:
-                last = str(e)
-            else:
-                if r.status_code == 200:
-                    d = r.json()
-                    return d["choices"][0]["message"].get("content") or "", {
-                        **d.get("usage", {}), "service_tier": self.provider, "attempts": attempt + 1}
-                last = f"HTTP {r.status_code}: {r.text[:200]}"
-                if r.status_code not in (429, 500, 502, 503, 504):
-                    break
-            time.sleep(1 + attempt)
-        raise ReaderError(f"OpenRouter failed: {last}")
-
-
-# How to build each Tier 2 option /admin offers. Its label and the Jev check floor the
-# bake-off set for it live in router/stages.py TIER2, which the ids come from.
-READERS = {
-    "gpt-oss-120b": lambda: FireworksLLM(),
-    "gpt-oss-120b-priority": lambda: FireworksLLM(tier="priority"),
-    "gemma-4-26b": lambda: OpenRouterLLM(),
-}
-
-
-def build_reader(reader_id: str):
-    """The Tier 2 client for a /admin option, and the check floor it was measured with."""
-    from router import stages
-    return READERS[reader_id](), stages.TIER2[reader_id][1]

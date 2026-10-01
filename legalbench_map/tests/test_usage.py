@@ -111,3 +111,19 @@ def test_log_records_which_tiers_were_on(tmp_path):
     row, = u._db.execute("SELECT stages FROM requests").fetchall()
     assert row[0] == "p1 t1 j1 c0 r:off"
     assert u.stats()["recent"][0]["stages"] == "p1 t1 j1 c0 r:off"
+
+
+def test_settings_made_with_two_columns_gain_who_changed_it(tmp_path):
+    """The Tier 2 switch (2026-10-01) made `settings` with only key and value, and saved its choice there."""
+    db = tmp_path / "u.db"
+    con = sqlite3.connect(db)
+    con.execute("CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT NOT NULL)")
+    con.execute("""INSERT INTO settings VALUES ('tier2', '{"option": "fireworks-priority"}')""")
+    con.commit()
+    con.close()
+    u = Usage(db, 50)
+    assert u.get_setting("tier2") == {"option": "fireworks-priority"}
+    assert u.setting_meta("tier2") == {"updated_at": None, "updated_by": None}
+    u.set_setting("stages", {"tier0": False}, "admin@example.com")
+    assert u.get_setting("stages") == {"tier0": False}
+    assert u.setting_meta("stages")["updated_by"] == "admin@example.com"

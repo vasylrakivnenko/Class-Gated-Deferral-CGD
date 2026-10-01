@@ -1,0 +1,16 @@
+[Unit]
+Description=SSH tunnel to our own GPU's zadum-gpu/1 gateway: 127.0.0.1:18000 -> pod 127.0.0.1:8000 (gpu/SETUP.md)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+# Written by gpu/deploy.sh from legalbench_map/gpu/zadum-gpu-tunnel.service with the pod's address.
+# The pod's SSH port changes when the pod restarts: run `gpu/deploy.sh HOST PORT start` again.
+ExecStart=/usr/bin/ssh -N -i /root/.ssh/runpod_ed25519 -o IdentitiesOnly=yes -o ExitOnForwardFailure=yes \
+  -o ServerAliveInterval=15 -o ServerAliveCountMax=3 -o StrictHostKeyChecking=accept-new -o BatchMode=yes \
+  -p @PORT@ -L 127.0.0.1:18000:127.0.0.1:8000 root@@HOST@
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

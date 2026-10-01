@@ -189,6 +189,25 @@ def test_fact_questions_answered_by_rule_without_llm(question, answer):
     assert (a.path, a.answer, a.llm_calls) == ("span", answer, 0), a.reason
 
 
+@pytest.mark.parametrize("clause, party", [
+    ("Licensee shall have the right to audit the books and records of Licensor.", "Licensee"),  # req_6071448f...
+    ("Licensee's right to audit the books of Licensor shall survive termination.", "Licensee"),
+    ("Licensee is entitled to audit the books of Licensor once per year.", "Licensee"),
+    ("Licensor shall permit Licensee to audit the books of Licensor.", "Licensee"),  # the object does it
+    ("Licensor shall give Licensee the right to inspect the books.", "Licensee"),  # never the giver
+    ("Licensor shall provide Licensee with the right to audit the books.", "Licensee"),
+    ("Licensor grants Licensee the right to audit the books of Licensor.", None),  # misparsed: defer
+    ("Licensor shall not permit Licensee to audit the books of Licensor.", None),
+    ("Licensee shall not audit the books of Licensor.", None),
+])
+@pytest.mark.parametrize("question", ["Who can audit the books?", "who can review the books?", "Who may inspect the books?"])
+def test_who_does_it_when_the_verb_has_no_subject_of_its_own(question, clause, party):
+    from router import spans
+    doc = "This License Agreement is between Licensor and Licensee.\n" + clause
+    r = spans.answer(classify(question), doc, llm=None)
+    assert (r.answer if r.fired else None) == party, r.reason
+
+
 @pytest.mark.parametrize("question", ["When does the lease expire?", "What is the pet deposit?"])
 def test_facts_the_text_does_not_state_are_deferred(question):
     llm = FakeLLM(choice={"none of these": 0.9})

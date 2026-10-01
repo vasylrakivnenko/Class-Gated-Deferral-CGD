@@ -137,6 +137,13 @@ SPAN_SYNONYMS = {
     "late": {"late", "overdue", "delinquent"},
     "fee": {"fee", "charge"},
     "cancel": {"cancel", "terminat"},
+    # Asked "review/check the books", a clause that audits, inspects or examines them answers it
+    # (only this way round: a clause's "review" of marketing materials isn't an audit).
+    "review": {"review", "audit", "inspect", "examin"},
+    "check": {"check", "audit", "inspect", "examin"},
+    "audit": {"audit", "inspect", "examin"},  # as the lexicon's ACTION:AUDIT (router/frames.py)
+    "inspect": {"inspect", "audit", "examin"},
+    "examine": {"examin", "audit", "inspect"},
 }  # not minimum ≈ "at least": it took "at least 25 images" for "a minimum of 400" (spans_test2)
 # Loose ones only pick the clauses shown to the LLM: "When does the lease expire?" may be
 # answered by a clause about the term's end, but the rule tier mustn't take the term's start.
@@ -298,6 +305,47 @@ def _heading(unit: str) -> set:
     return set(frames.tokens(m.group(1))) if m else set()
 
 
+_GIVING = frozenset("grant give provide afford confer extend allow permit offer award".split())
+
+
+def _doer(verb):
+    """Who does `verb`: its subject, or for an infinitive without one, who it's about:
+    "Licensee shall have the right to audit" / "Licensor grants Licensee the right to audit" /
+    "Licensee's right to audit" / "Licensee is entitled to audit" / "Licensor shall permit Licensee
+    to audit" -> Licensee. None when a "not" is on the way ("shall not permit Licensee to audit")."""
+    t = verb
+    for _ in range(4):
+        if any(c.dep_ == "neg" for c in t.children):
+            return None
+        subj = next((c for c in t.children if c.dep_ in ("nsubj", "nsubjpass")), None)
+        if subj is not None:
+            return subj
+        if t.dep_ == "conj":
+            t = t.head
+        elif t.dep_ == "xcomp":  # "permit Licensee to audit": the object does it; else the subject
+            obj = next((c for c in t.head.children if c.dep_ in ("dobj", "dative")), None)
+            if obj is not None:
+                return None if any(c.dep_ == "neg" for c in t.head.children) else obj
+            t = t.head
+        elif t.dep_ == "acl" and t.head.pos_ in ("NOUN", "PROPN"):  # "the right to audit"
+            noun = t.head
+            owner = next((c for c in noun.children if c.dep_ == "poss"), None)
+            if owner is not None:
+                return owner
+            with_ = noun.dep_ == "pobj" and noun.head.lower_ == "with"  # "provide Licensee with the right"
+            if not (with_ or noun.dep_ in ("dobj", "attr")):
+                return None
+            t = noun.head.head if with_ else noun.head
+            if t.lemma_.lower() in _GIVING:  # the one given the right, never the giver; spaCy often misparses
+                if any(c.dep_ == "neg" for c in t.children):  # "grants Licensee the right", so else defer
+                    return None
+                return next((c for c in t.children if c.dep_ in ("dative", "iobj") or (with_ and c.dep_ == "dobj")),
+                            None)
+        else:
+            return None
+    return None
+
+
 def _agent(unit: str, parties: list, term_words: set) -> str | None:
     """For "who" questions: the party that is the subject of the clause's verb
     the question is about ("Landlord shall repair the heating system")."""
@@ -309,9 +357,7 @@ def _agent(unit: str, parties: list, term_words: set) -> str | None:
         stem = frames.normalize(t.lower_)
         if not (stem in term_words or stem[:5] in {w[:5] for w in term_words} or t.lemma_.lower() in term_words):
             continue
-        subj = next((c for c in t.children if c.dep_ in ("nsubj", "nsubjpass")), None)
-        if subj is None and t.dep_ == "conj":
-            subj = next((c for c in t.head.children if c.dep_ in ("nsubj", "nsubjpass")), None)
+        subj = _doer(t)
         if subj is not None:
             text = unit[subj.left_edge.idx:subj.right_edge.idx + len(subj.right_edge)]
             hit = [p for p in parties if re.search(rf"\b{re.escape(p)}\b", text)]
@@ -401,6 +447,7 @@ def answer(frame, document: str, llm=None) -> SpanResult:
     conditional = conditional or qualified(question)
     if typ == "PARTY":
         tw = {t for t in terms if ":" not in t} | {t.split(":")[1].lower() for t in terms if ":" in t}
+        tw |= {v for t in list(tw) for v in SPAN_SYNONYMS.get(t, ())}  # "who can review" -> the auditing verb
         agents = {a for i in matching if (a := _agent(us[i], parties, tw))}
         if matching and len(agents) == 1 and not conditional and len(matching) <= 2:
             a = agents.pop()

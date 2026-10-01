@@ -7,10 +7,13 @@ The request log keeps who asked, when, and how the question was answered
 answered: the question, the answer with its confidence and evidence, and the
 document. Each request has an id ("req_..."); each document is stored once,
 under an id made from its text ("doc_..."), so asking again about the same
-text doesn't store it again. When Tier 2 ran, the Fireworks service tier it
-used and its timings (tier2_*), to compare standard and priority:
+text doesn't store it again. When Tier 2 ran, which reader it used (router/tier2.py's
+option id; "standard" / "priority" before 2026-10-01 meant Fireworks') and its timings
+(tier2_*), to compare them on live traffic:
     SELECT tier2, COUNT(*), AVG(tier2_ms), AVG(tier2_server_ms) FROM requests
     WHERE tier2 IS NOT NULL GROUP BY tier2;
+`settings` keeps what the admin page sets that must survive a restart: the tier switches
+(router/stages.py) and the Tier 2 reader (router/tier2.py).
 """
 from __future__ import annotations
 
@@ -48,16 +51,19 @@ REQUEST_CONTENT = (
     ("answer", "TEXT"),
     ("confidence", "REAL"),
     ("evidence", "TEXT"),  # JSON: [{"text", "label", "p"}]
-    # Tier 2 (router/reader.py), when it ran: to compare Fireworks' service tiers on live traffic
-    ("tier2", "TEXT"),  # "standard" | "priority" (as requested)
+    # Tier 2 (router/reader.py), when it ran: to compare the readers on live traffic
+    ("tier2", "TEXT"),  # router/tier2.py's option id; before 2026-10-01 "standard" | "priority" (Fireworks)
     ("tier2_ms", "REAL"),  # the reader call's round trip from this server
-    ("tier2_server_ms", "REAL"),  # Fireworks' own processing time (queue + compute), from its reply headers
+    ("tier2_server_ms", "REAL"),  # the server's own time: Fireworks' reply headers, or our GPU gateway's
     ("tier2_result", "TEXT"),  # what came of it: answered and checked, not stated, dropped, unavailable
     ("tier2_usage", "TEXT"),  # JSON: tokens, time to first token, attempts
     # Which tiers were on (router/stages.py `mask`), so "free classifier share" and the
     # latency numbers can be read against the configuration that produced them.
     ("stages", "TEXT"),
 )
+
+
+LEGACY_TIER2 = {"standard": "fireworks-standard", "priority": "fireworks-priority"}  # as logged before 2026-10-01
 
 
 def _now() -> dt.datetime:
@@ -87,6 +93,11 @@ class Usage:
                     self._db.execute(f"ALTER TABLE requests ADD COLUMN {name} {kind}")
             self._db.execute("CREATE UNIQUE INDEX IF NOT EXISTS requests_id ON requests (id)")
             self._db.execute("CREATE INDEX IF NOT EXISTS requests_document ON requests (document_id)")
+            # `settings` was made with only key and value on 2026-10-01 (the Tier 2 switch)
+            have = {row[1] for row in self._db.execute("PRAGMA table_info(settings)")}
+            for name in ("updated_at", "updated_by"):
+                if name not in have:
+                    self._db.execute(f"ALTER TABLE settings ADD COLUMN {name} TEXT")
 
     @staticmethod
     def _today() -> str:
@@ -142,11 +153,32 @@ class Usage:
                     ts, now.date().isoformat(), email, status, reader,
                     a.get("path"), a.get("answered_by"), a.get("ms"), a.get("llm_calls"),
                     request_id, question, doc_id, a.get("answer"), a.get("confidence"), evidence,
-                    t2_usage.get("service_tier") if t2 else None, round(t2["ms"], 1) if t2.get("ms") else None,
+                    (t2_usage.get("option") or t2_usage.get("service_tier")) if t2 else None,
+                    round(t2["ms"], 1) if t2.get("ms") else None,
                     round(t2_usage["server_s"] * 1000, 1) if "server_s" in t2_usage else None,
                     t2.get("reason") or None,
-                    json.dumps({k: v for k, v in t2_usage.items() if k != "service_tier"}) if t2_usage else None,
+                    json.dumps({k: v for k, v in t2_usage.items() if k not in ("service_tier", "option")})
+                    if t2_usage else None,
                     stages))
+
+    def tier2_stats(self, days: int = 7) -> dict:
+        """Per Tier 2 reader over the last `days`: reads, how they ended, round-trip percentiles."""
+        start = (_now().date() - dt.timedelta(days=days - 1)).isoformat()
+        with self._lock:
+            rows = self._db.execute("SELECT tier2, tier2_ms, tier2_result FROM requests WHERE day >= ? AND tier2 IS NOT NULL",
+                                    (start,)).fetchall()
+        by = {}
+        for option, ms, result in rows:
+            option = LEGACY_TIER2.get(option, option)
+            s = by.setdefault(option, {"reads": 0, "answered": 0, "unavailable": 0, "ms": []})
+            s["reads"] += 1
+            s["answered"] += (result or "").startswith("copied")
+            s["unavailable"] += (result or "").startswith("the reader was unavailable")
+            if ms is not None:
+                s["ms"].append(ms)
+        pct = lambda xs, p: round(sorted(xs)[min(len(xs) - 1, int(len(xs) * p))]) if xs else None
+        return {o: {"reads": s["reads"], "answered": s["answered"], "unavailable": s["unavailable"],
+                    "p50_ms": pct(s["ms"], .5), "p90_ms": pct(s["ms"], .9)} for o, s in by.items()}
 
     def set_limit(self, email: str, daily_limit: int | None) -> None:
         """A per-user limit (0 blocks the user); None goes back to the default."""
@@ -171,7 +203,7 @@ class Usage:
     def set_setting(self, key: str, value, by: str = "") -> None:
         with self._lock, self._db:
             self._db.execute(
-                "INSERT INTO settings VALUES (?, ?, ?, ?) ON CONFLICT(key) DO UPDATE SET "
+                "INSERT INTO settings (key, value, updated_at, updated_by) VALUES (?, ?, ?, ?) ON CONFLICT(key) DO UPDATE SET "
                 "value = excluded.value, updated_at = excluded.updated_at, updated_by = excluded.updated_by",
                 (key, json.dumps(value), _now().isoformat(timespec="seconds"), by))
 
@@ -209,9 +241,11 @@ class Usage:
                           (SELECT COUNT(*) FROM requests WHERE email = u.email AND status = 'error')
                    FROM users u LEFT JOIN limits l ON l.email = u.email
                    ORDER BY u.last_seen DESC""", today, self.daily_limit, week)]
-            recent = [dict(zip(("ts", "email", "status", "reader", "path", "answered_by", "ms", "llm_calls", "stages"), r)) for r in q(
-                "SELECT ts, email, status, reader, path, answered_by, ms, llm_calls, stages "
-                "FROM requests ORDER BY ts DESC, rowid DESC LIMIT 25")]
+            recent = [dict(zip(("ts", "email", "status", "reader", "path", "answered_by", "ms", "llm_calls", "tier2", "stages"), r))
+                      for r in q("SELECT ts, email, status, reader, path, answered_by, ms, llm_calls, tier2, stages "
+                                 "FROM requests ORDER BY ts DESC, rowid DESC LIMIT 25")]
+            for r in recent:
+                r["tier2"] = LEGACY_TIER2.get(r["tier2"], r["tier2"])
         daily = []
         for i in range(days):
             d = (_now().date() - dt.timedelta(days=days - 1 - i)).isoformat()

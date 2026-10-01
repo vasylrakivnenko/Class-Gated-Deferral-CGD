@@ -42,6 +42,12 @@
   .btn.small { padding: 2px 8px; font-size: 12px; }
   .btn.danger { color: var(--bad); }
 
+  .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 16px; overflow-x: auto; }
+  .tab { border: 0; background: none; padding: 8px 12px; margin-bottom: -1px; cursor: pointer; color: var(--muted);
+    font-weight: 500; border-bottom: 2px solid transparent; white-space: nowrap; }
+  .tab:hover { color: var(--text); }
+  .tab[aria-selected="true"] { color: var(--text); border-bottom-color: var(--series-1); }
+  .tab .tabnote { color: var(--muted); font-weight: 400; font-size: 12px; }
   .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 16px; }
   .tile { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
   .tile .label { color: var(--muted); font-size: 12px; }
@@ -49,8 +55,9 @@
   .tile .sub { color: var(--muted); font-size: 12px; margin-top: 2px; }
   .tile .sub.bad { color: var(--bad); }
 
-  .pane h2 { font-size: 15px; font-weight: 600; margin: 0 0 2px; }
-  .pane .desc { color: var(--muted); font-size: 12px; margin-bottom: 12px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+  .card h2 { font-size: 15px; font-weight: 600; margin: 0 0 2px; }
+  .card .desc { color: var(--muted); font-size: 12px; margin-bottom: 12px; }
   .legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: var(--muted); margin-bottom: 8px; }
   .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
   .chart { position: relative; }
@@ -81,30 +88,26 @@
   .bar.full > span { background: var(--bad); }
   .limit input { width: 70px; padding: 2px 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); }
   .limit { display: flex; gap: 4px; align-items: center; }
-  .empty { color: var(--muted); padding: 16px 0; }
-  .error { color: var(--bad); padding: 12px 0; }
-
-  /* Folder tabs: each sits on the panel below it, and the open one joins it by
-     covering the panel's top border, the way a sheet tab does in a spreadsheet. */
-  .tabs { display: flex; align-items: flex-end; gap: 2px; padding-left: 10px; overflow-x: auto; scrollbar-width: none; }
-  .tabs::-webkit-scrollbar { display: none; }
-  .tab { position: relative; top: 2px; appearance: none; cursor: pointer; white-space: nowrap;
-    border: 1px solid var(--line); border-bottom: none; border-radius: 10px 10px 0 0;
-    background: var(--chip); color: var(--muted); font-size: 13px; padding: 7px 16px 7px; }
-  .tab:hover { color: var(--text); }
-  .tab[aria-selected="true"] { top: 0; background: var(--panel); color: var(--text); font-weight: 500;
-    padding-bottom: 9px; z-index: 1; }
-  .tab[aria-selected="true"]::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px;
-    height: 1px; background: var(--panel); }
-  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 0 12px 12px 12px;
-    padding: 16px; min-height: 240px; }
-  .pane[hidden] { display: none; }
-
+  .opts { display: grid; gap: 8px; }
+  .opt { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 16px; align-items: center;
+    border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+  .opt.live { border-color: var(--series-1); box-shadow: inset 3px 0 0 var(--series-1); }
+  .opt .name { font-weight: 600; }
+  .opt .facts { color: var(--muted); font-size: 12px; margin-top: 2px; }
+  .opt .week { font-size: 12px; margin-top: 6px; font-variant-numeric: tabular-nums; }
+  .opt .side { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; text-align: right; }
+  .opt .note { font-size: 12px; color: var(--muted); max-width: 280px; white-space: normal; }
+  .opt .note.bad { color: var(--bad); }
+  .pill.on { background: var(--series-1); color: #fff; }
+  .t2foot { color: var(--muted); font-size: 12px; margin-top: 10px; }
+  .flow { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+  .flow code { font-family: var(--mono); color: var(--text); }
   .sw { display: flex; align-items: center; gap: 14px; padding: 13px 0; border-top: 1px solid var(--line); }
-  .sw:first-of-type { border-top: 0; padding-top: 4px; }
+  .sw:first-of-type { border-top: 0; }
   .sw .text { flex: 1; min-width: 0; }
   .sw .name { font-weight: 500; }
   .sw .note { color: var(--muted); font-size: 12px; margin-top: 3px; }
+  .sw .note.bad { color: var(--bad); }
   .switch { position: relative; width: 40px; height: 22px; flex: none; }
   .switch input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
   .switch .track { position: absolute; inset: 0; border: 1px solid var(--line); border-radius: 999px;
@@ -113,19 +116,16 @@
     border-radius: 50%; background: var(--panel); box-shadow: 0 1px 2px rgba(0, 0, 0, .25); transition: transform .15s; }
   .switch input:checked ~ .track { background: var(--series-1); border-color: var(--series-1); }
   .switch input:checked ~ .track::after { transform: translateX(18px); }
+  .switch input:focus-visible ~ .track { outline: 2px solid var(--series-1); outline-offset: 2px; }
   .switch input:disabled { cursor: not-allowed; }
   .switch input:disabled ~ .track { opacity: .45; }
-  .sw select { border: 1px solid var(--line); border-radius: 8px; background: var(--bg); padding: 5px 8px; }
   .warn { border: 1px solid var(--line); border-left: 3px solid var(--series-2); border-radius: 8px;
-    background: var(--chip); padding: 10px 12px; font-size: 12px; margin-top: 14px; }
+    background: var(--chip); padding: 10px 12px; font-size: 12px; margin-top: 6px; }
   .warn b { font-weight: 600; }
-  .actions { display: flex; align-items: center; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
-  .actions .spacer { flex: 1; }
-  .btn.primary { background: var(--text); color: var(--bg); border-color: var(--text); }
-  .btn.primary:hover { opacity: .88; background: var(--text); }
   .btn[disabled] { opacity: .45; cursor: not-allowed; }
-  .flow { font-size: 12px; color: var(--muted); margin-bottom: 14px; }
-  .flow code { font-family: var(--mono); color: var(--text); }
+  @media (max-width: 640px) { .opt { grid-template-columns: 1fr; } .opt .side { align-items: flex-start; text-align: left; } }
+  .empty { color: var(--muted); padding: 16px 0; }
+  .error { color: var(--bad); padding: 12px 0; }
 </style>
 </head>
 <body>
@@ -139,17 +139,15 @@
   </header>
 
   <div id="err"></div>
-  <div class="tiles" id="tiles"></div>
+  <nav class="tabs" role="tablist" aria-label="Admin sections">
+    <button class="tab" role="tab" id="tab-usage" aria-controls="panel-usage" data-tab="usage">Usage</button>
+    <button class="tab" role="tab" id="tab-pipeline" aria-controls="panel-pipeline" data-tab="pipeline">Routing Pipeline <span class="tabnote" id="t2tab"></span></button>
+  </nav>
 
-  <div class="tabs" role="tablist" id="tabs">
-    <button class="tab" role="tab" data-pane="daily" aria-selected="true">Questions per day</button>
-    <button class="tab" role="tab" data-pane="users" aria-selected="false">Users</button>
-    <button class="tab" role="tab" data-pane="recent" aria-selected="false">Recent requests</button>
-    <button class="tab" role="tab" data-pane="pipeline" aria-selected="false">Routing Pipeline</button>
-  </div>
+  <div role="tabpanel" id="panel-usage" aria-labelledby="tab-usage">
+    <div class="tiles" id="tiles"></div>
 
-  <div class="panel">
-    <section class="pane" data-pane="daily">
+    <section class="card">
       <h2>Questions per day</h2>
       <div class="desc">Last 30 days (UTC), answered questions by who answered them.</div>
       <div class="legend"><span><i style="background:var(--series-1)"></i>Free classifier</span><span><i style="background:var(--series-2)"></i>LLM (Jev / Kev)</span></div>
@@ -157,22 +155,37 @@
       <details><summary>Show as table</summary><div class="scroll" id="daily-table"></div></details>
     </section>
 
-    <section class="pane" data-pane="users" hidden>
+    <section class="card">
       <h2>Users</h2>
       <div class="desc">Everyone who has signed in, most recent first. Set a per-user daily limit, 0 to block, or Default to use the global limit.</div>
       <div class="scroll" id="users"></div>
     </section>
 
-    <section class="pane" data-pane="recent" hidden>
+    <section class="card">
       <h2>Recent requests</h2>
-      <div class="desc">The last 25. Question and document text are never stored. Pipeline is which tiers were on when the question ran.</div>
+      <div class="desc">The last 25. Tier 2 is the reader that ran, if one did; Pipeline is which tiers were on.</div>
       <div class="scroll" id="recent"></div>
     </section>
+  </div>
 
-    <section class="pane" data-pane="pipeline" hidden>
-      <h2>Routing Pipeline</h2>
-      <div class="desc">Which tiers may answer a question, for everyone. Saved on the server, so a restart keeps it.</div>
-      <div id="pipeline"><div class="empty">Loading…</div></div>
+  <div role="tabpanel" id="panel-pipeline" aria-labelledby="tab-pipeline" hidden>
+    <section class="card">
+      <h2>Tiers</h2>
+      <div class="desc">Which tiers may answer a question, for everyone, in this order. A switch takes effect on the next
+        question and survives restarts.</div>
+      <div class="flow" id="flow"></div>
+      <div id="sterr"></div>
+      <div id="switches"><div class="empty">Loading…</div></div>
+      <div class="t2foot" id="stfoot"></div>
+    </section>
+
+    <section class="card">
+      <h2>Tier 2 reader</h2>
+      <div class="desc">Reads the fact questions the rules defer: it copies the answer from a clause, and Jev checks the clause states it.
+        Switching sends one test read first and keeps the current reader if that fails. The choice survives restarts.</div>
+      <div id="t2err"></div>
+      <div class="opts" id="tier2"><div class="empty">Loading…</div></div>
+      <div class="t2foot" id="t2foot"></div>
     </section>
   </div>
 </div>
@@ -308,17 +321,17 @@ function users(list, def) {
 function recent(list) {
   if (!list.length) { $("recent").innerHTML = `<div class="empty">No requests yet.</div>`; return; }
   const status = { ok: "answered", error: '<span class="pill bad">failed</span>', limited: '<span class="pill">over limit</span>' };
-  $("recent").innerHTML = `<table><thead><tr><th>When</th><th>User</th><th>Result</th><th>Reader</th><th>Answered by</th><th>Pipeline</th><th class="num">Latency</th><th class="num">LLM calls</th></tr></thead><tbody>` +
+  $("recent").innerHTML = `<table><thead><tr><th>When</th><th>User</th><th>Result</th><th>Reader</th><th>Answered by</th><th>Tier 2</th><th>Pipeline</th><th class="num">Latency</th><th class="num">LLM calls</th></tr></thead><tbody>` +
     list.map((r) => `<tr><td class="muted" title="${esc(r.ts)}">${when(r.ts)}</td><td>${esc(r.email)}</td><td>${status[r.status] || esc(r.status)}</td>` +
-      `<td>${esc(r.reader || "–")}</td><td>${esc(r.answered_by || "–")}</td>` +
-      `<td>${r.stages ? `<span class="pill" style="font-family:var(--mono);font-size:11px">${esc(r.stages)}</span>` : '<span class="muted">–</span>'}</td>` +
-      `<td class="num">${ms(r.ms)}</td><td class="num">${n(r.llm_calls)}</td></tr>`).join("") +
+      `<td>${esc(r.reader || "–")}</td><td>${esc(r.answered_by || "–")}</td><td class="muted">${esc(r.tier2 || "–")}</td>` +
+      `<td class="muted" style="font-family:var(--mono);font-size:11px;white-space:nowrap">${esc(r.stages || "–")}</td><td class="num">${ms(r.ms)}</td><td class="num">${n(r.llm_calls)}</td></tr>`).join("") +
     `</tbody></table>`;
 }
 
-// ---- Routing Pipeline ------------------------------------------------------
-// The switches are server-wide: one reader turning a tier off changes what every
-// other reader's question costs, which is why they are here and not on the page.
+// ---- Routing Pipeline --------------------------------------------------------
+// The tier switches (router/stages.py) and the Tier 2 reader (router/tier2.py). Both are
+// server-wide: one reader turning a tier off would change what every other reader's
+// question costs, which is why they are here and not on the playground page.
 const SWITCHES = [
   { key: "pretier0", name: "Pre-Tier 0 (regex)",
     note: "Regex and a phrase automaton, ~0.2 ms, no model. Answers topic, frame and presence questions, finds the parties, and rewords we/you questions for Tier 0." },
@@ -329,94 +342,96 @@ const SWITCHES = [
   { key: "classifiers", name: "Free classifiers",
     note: "The task classifiers in the bank. Off means they are on standby and their tasks go to Jev. Needs Tier 1, which routes the question and checks the document type." },
 ];
-let PIPE = null;  // the stages being edited; null until the first load
 
-function pipeDirty() {
-  if (!PIPE || !SETTINGS) return false;
-  return PIPE.tier2 !== SETTINGS.stages.tier2 || SWITCHES.some((s) => PIPE[s.key] !== SETTINGS.stages[s.key]);
-}
-
-function pipeProblem(st) {
-  // The same two rules as router/stages.py problem(), so the page says why before saving.
-  if (!st.tier1 && st.tier2 === "off")
-    return "Turn on Tier 1 (Jev) or Tier 2: with both off nothing answers a question the regex rules miss, so every question would defer.";
-  if (st.classifiers && !st.tier1)
-    return "The free classifiers need Tier 1 (Jev): it routes the question to one and checks the document\u2019s type.";
-  return null;
-}
-
-function pipeline(d) {
-  if (PIPE === null) PIPE = { ...d.stages };
-  const st = PIPE;
-  const problem = pipeProblem(st);
-  const opts = d.tier2_options.map((o) =>
-    `<option value="${esc(o.id)}"${o.id === st.tier2 ? " selected" : ""}>${esc(o.label)}${o.check_min ? ` — Jev checks at ≥ ${o.check_min}` : ""}</option>`).join("");
-  const rows = SWITCHES.map((s) => {
-    const off = s.key === "classifiers" && !st.tier1;
-    return `<div class="sw">
-      <label class="switch"><input type="checkbox" data-key="${s.key}"${st[s.key] ? " checked" : ""}${off ? " disabled" : ""}><span class="track"></span></label>
-      <div class="text"><div class="name">${esc(s.name)}</div><div class="note">${s.note}</div></div>
-    </div>`;
-  }).join("");
-  const t2 = `<div class="sw">
-      <select id="tier2">${opts}</select>
-      <div class="text"><div class="name">Tier 2 (hosted LLM)</div>
-      <div class="note">Reads the facts the span rules and Jev defer, copying the answer word for word from a clause. With Tier 1 off it also decides the yes/no questions Jev would have answered — nothing checks those.</div></div>
-    </div>`;
-  const by = d.updated_at ? `Last changed ${when(d.updated_at)}${d.updated_by ? ` by ${esc(d.updated_by)}` : ""}` : "Never changed here: these are the service\u2019s own flags";
-  $("pipeline").innerHTML =
-    `<div class="flow">Now running: <code>${esc(d.summary)}</code></div>` + rows + t2 +
-    (problem ? `<div class="warn"><b>Can\u2019t save.</b> ${problem}</div>` : "") +
-    (!st.tier1 && !problem ? `<div class="warn"><b>Tier 1 off.</b> Jev no longer checks what Tier 2 reads, and the yes/no questions it used to answer go to Tier 2 unchecked — a path the bake-off never measured. Precision on facts was measured <i>with</i> the check.</div>` : "") +
-    `<div class="actions"><button class="btn primary" id="pipe-save"${problem || !pipeDirty() ? " disabled" : ""}>Save</button>` +
-    `<button class="btn" id="pipe-reset"${pipeDirty() ? "" : " disabled"}>Discard changes</button>` +
-    `<span class="spacer"></span><span class="muted" style="font-size:12px">${by}</span></div>` +
-    `<div id="pipe-err"></div>`;
-  $("pipeline").querySelectorAll("input[data-key]").forEach((box) => {
-    box.onchange = () => { PIPE = { ...PIPE, [box.dataset.key]: box.checked }; pipeline(SETTINGS); };
-  });
-  $("tier2").onchange = () => { PIPE = { ...PIPE, tier2: $("tier2").value }; pipeline(SETTINGS); };
-  $("pipe-reset").onclick = () => { PIPE = { ...SETTINGS.stages }; pipeline(SETTINGS); };
-  $("pipe-save").onclick = async () => {
-    $("pipe-save").disabled = true;
-    const r = await fetch("/api/admin/settings", { method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(PIPE) });
-    const data = await r.json().catch(() => ({ error: `The server hit an error (HTTP ${r.status}).` }));
-    if (!r.ok) { $("pipe-err").innerHTML = `<div class="error">${esc(data.error || r.statusText)}</div>`; $("pipe-save").disabled = false; return; }
-    SETTINGS = data;
-    PIPE = { ...data.stages };
-    pipeline(SETTINGS);
+function switches(d) {
+  const st = d.stages, t2on = d.tier2.active !== "off";
+  // Why a switch can't be flipped now: the same rules as router/stages.py problem().
+  const why = {
+    tier1: st.tier1 && !t2on ? "Pick a Tier 2 reader below first: with Tier 1 and Tier 2 both off nothing answers what the rules miss."
+      : st.tier1 && st.classifiers ? "Turn off the free classifiers first: Jev routes the question to them." : "",
+    classifiers: !st.tier1 && !st.classifiers ? "Needs Tier 1 (Jev)." : "",
   };
+  $("flow").innerHTML = `Now running: <code>${esc(d.summary)}</code>`;
+  $("switches").innerHTML = SWITCHES.map((s) => `<div class="sw">
+      <label class="switch"><input type="checkbox" data-key="${s.key}" aria-label="${esc(s.name)}"${st[s.key] ? " checked" : ""}${why[s.key] ? " disabled" : ""}><span class="track"></span></label>
+      <div class="text"><div class="name">${esc(s.name)}</div><div class="note">${s.note}</div>${why[s.key] ? `<div class="note bad">${esc(why[s.key])}</div>` : ""}</div>
+    </div>`).join("") +
+    (st.tier1 ? "" : `<div class="warn"><b>Tier 1 off.</b> Jev no longer checks what Tier 2 reads, and the yes/no questions it used to answer go to Tier 2 unchecked, a path the bake-off never measured. Precision on facts was measured <i>with</i> the check.</div>`);
+  $("stfoot").textContent = d.updated_at ? `Last changed ${when(d.updated_at)}${d.updated_by ? ` by ${d.updated_by}` : ""}`
+    : "Never changed here: these are the service\u2019s own flags.";
+  $("switches").querySelectorAll("input[data-key]").forEach((box) => box.addEventListener("change", async () => {
+    $("switches").querySelectorAll("input").forEach((x) => { x.disabled = true; });
+    $("sterr").innerHTML = "";
+    const r = await fetch("/api/admin/stages", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ [box.dataset.key]: box.checked }) });
+    const out = await r.json().catch(() => ({ error: `The server hit an error (HTTP ${r.status}).` }));
+    if (!r.ok) $("sterr").innerHTML = `<div class="error">${esc(out.error || r.statusText)}</div>`;
+    loadPipeline(r.ok ? out : null);
+  }));
 }
 
-let SETTINGS = null;
-async function loadSettings() {
+function tier2(t, st) {
+  const week = (s) => !s ? "No reads in the last 7 days." :
+    `Last 7 days: ${n(s.reads)} read${s.reads === 1 ? "" : "s"} · ${n(s.answered)} answered (${pct(s.answered / s.reads)})` +
+    ` · ${ms(s.p50_ms)} p50 · ${ms(s.p90_ms)} p90` + (s.unavailable ? ` · <span style="color:var(--bad)">${n(s.unavailable)} unavailable</span>` : "");
+  const row = (o) => {
+    const live = t.active === o.id;
+    return `<div class="opt${live ? " live" : ""}">
+      <div>
+        <div class="name">${esc(o.name)}</div>
+        <div class="facts">${esc(o.where)} · Jev check ≥ ${o.check_min}</div>
+        <div class="facts">${esc(o.measured)}</div>
+        <div class="facts">${esc(o.price)}</div>
+        <div class="week">${week(t.stats[o.id])}</div>
+      </div>
+      <div class="side">
+        ${live ? '<span class="pill on">Live</span>' : `<button class="btn" data-opt="${o.id}"${o.ready ? "" : " disabled"}>Switch to this</button>`}
+        ${o.note ? `<span class="note${o.ready ? "" : " bad"}">${esc(o.note)}</span>` : ""}
+      </div>
+    </div>`;
+  };
+  const off = t.active === "off";
+  $("tier2").innerHTML = t.options.map(row).join("") + `<div class="opt${off ? " live" : ""}">
+      <div><div class="name">Off</div><div class="facts">Deferred facts stay deferred; no clause leaves this server for Tier 2.</div></div>
+      <div class="side">${off ? '<span class="pill on">Live</span>' : `<button class="btn" data-opt="off"${st.tier1 ? "" : " disabled"}>Turn off</button>`}
+        ${off || st.tier1 ? "" : '<span class="note bad">Turn Tier 1 (Jev) on first: with both off nothing answers what the rules miss.</span>'}</div>
+    </div>`;
+  const live = t.options.find((o) => o.id === t.active);
+  $("t2tab").textContent = `· ${live ? live.name : "Tier 2 off"}`;
+  const c = t.chosen || {};
+  const chosen = (t.options.find((o) => o.id === c.option) || { name: c.option === "off" ? "Off" : c.option }).name;
+  $("t2foot").innerHTML = (c.at ? `Set to ${esc(chosen)} by ${esc(c.by)} ${when(c.at)}` : `${esc(chosen)}, set by ${esc(c.by || "--tier2")} at startup`) +
+    (c.test ? ` · test read ${ms(c.test.ms)}` : "") + (t.error ? ` · <span style="color:var(--bad)">${esc(t.error)}</span>` : "");
+  $("tier2").querySelectorAll("button[data-opt]").forEach((b) => b.addEventListener("click", async () => {
+    $("tier2").querySelectorAll("button").forEach((x) => { x.disabled = true; });
+    b.textContent = b.dataset.opt === "off" ? "Turning off…" : "Testing…";
+    $("t2err").innerHTML = "";
+    const r = await fetch("/api/admin/tier2", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ option: b.dataset.opt }) });
+    const d = await r.json().catch(() => ({ error: `The server hit an error (HTTP ${r.status}).` }));
+    if (!r.ok) $("t2err").innerHTML = `<div class="error">${esc(d.error || r.statusText)}</div>`;
+    loadPipeline(r.ok ? d : null);
+  }));
+}
+
+async function loadPipeline(data) {
   try {
-    const r = await fetch("/api/admin/settings");
-    if (r.status === 401) { location.reload(); return; }
-    const d = await r.json();
-    if (!r.ok) throw new Error(d.error || r.statusText);
-    SETTINGS = d;
-    if (!pipeDirty()) PIPE = { ...d.stages };  // don't clobber edits in progress
-    pipeline(d);
+    if (!data) {
+      const r = await fetch("/api/admin/pipeline");
+      if (r.status === 404) throw new Error("This server started before the Routing Pipeline existed; restart zadum-router to get it.");
+      data = await r.json();
+      if (!r.ok) throw new Error(data.error || r.statusText);
+    }
+    switches(data);
+    tier2(data.tier2, data.stages);
   } catch (e) {
-    $("pipeline").innerHTML = `<div class="error">${esc(e.message)}</div>`;
+    $("t2err").innerHTML = `<div class="error">${esc(e.message)}</div>`;
+    for (const id of ["tier2", "switches"]) if ($(id).querySelector(".empty")) $(id).innerHTML = "";
   }
 }
 
-// ---- tabs ------------------------------------------------------------------
-function showPane(name) {
-  document.querySelectorAll(".tab").forEach((t) => t.setAttribute("aria-selected", String(t.dataset.pane === name)));
-  document.querySelectorAll(".pane").forEach((s) => { s.hidden = s.dataset.pane !== name; });
-  try { localStorage.setItem("admin-tab", name); } catch (e) {}
-  // The chart measures its container, so it can only be drawn while the pane is visible.
-  if (name === "daily" && DATA) chart(DATA.daily);
-  if (name === "pipeline") loadSettings();
-}
-
-document.querySelectorAll(".tab").forEach((t) => { t.onclick = () => showPane(t.dataset.pane); });
-
 async function load() {
+  loadPipeline();
   try {
     const r = await fetch("/api/admin/stats");
     if (r.status === 401) { location.reload(); return; }
@@ -426,7 +441,7 @@ async function load() {
     $("err").innerHTML = "";
     $("meta").textContent = `Updated ${new Date().toLocaleTimeString()} · days are UTC`;
     tiles(data.tiles, data);
-    if (!$("chart").closest(".pane").hidden) chart(data.daily);
+    chart(data.daily);
     users(data.users, data.default_limit);
     recent(data.recent);
   } catch (e) {
@@ -434,18 +449,25 @@ async function load() {
   }
 }
 
-$("refresh").onclick = () => { load(); if (!$("pipeline").closest(".pane").hidden) loadSettings(); };
+function showTab(name) {
+  if (name === "tier2") name = "pipeline";  // the tab's name before 2026-10-01
+  if (!["usage", "pipeline"].includes(name)) name = "usage";
+  document.querySelectorAll(".tab").forEach((t) => t.setAttribute("aria-selected", String(t.dataset.tab === name)));
+  $("panel-usage").hidden = name !== "usage";
+  $("panel-pipeline").hidden = name !== "pipeline";
+  if (name === "usage" && DATA) chart(DATA.daily);  // drawn at the panel's real width
+}
+document.querySelectorAll(".tab").forEach((t) => t.addEventListener("click", () => {
+  history.replaceState(null, "", t.dataset.tab === "usage" ? location.pathname : "#pipeline");
+  showTab(t.dataset.tab);
+}));
+showTab(location.hash.slice(1));
+
+$("refresh").onclick = load;
 let resizeTimer;
-window.addEventListener("resize", () => {
-  clearTimeout(resizeTimer);
-  resizeTimer = setTimeout(() => { if (DATA && !$("chart").closest(".pane").hidden) chart(DATA.daily); }, 150);
-});
+window.addEventListener("resize", () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => DATA && chart(DATA.daily), 150); });
 setInterval(load, 60000);
-let startTab = "daily";
-try { startTab = localStorage.getItem("admin-tab") || "daily"; } catch (e) {}
-if (!document.querySelector(`.tab[data-pane="${startTab}"]`)) startTab = "daily";
 load();
-showPane(startTab);
 </script>
 </body>
 </html>

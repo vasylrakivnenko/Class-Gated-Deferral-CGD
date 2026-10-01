@@ -183,7 +183,7 @@ def aggregate(units: list, proba, classes: list) -> tuple[str, float, list, dict
 
 class Harness:
     def __init__(self, router: SystemOne, llm: SystemOne, bank: Bank, tier0=None, pretier0: bool = False,
-                 classifiers: bool = True, reader=None, jev: bool = True, check_min: float | None = None):
+                 classifiers: bool = True, reader=None, jev: bool = True):
         self.router = router
         self.llm = llm
         self.bank = bank
@@ -195,7 +195,6 @@ class Harness:
         # the span and choice rules run without its pick, Tier 2 reads unchecked, and the yes/no
         # questions it would have answered go to Tier 2's `decide`. Routing needs it, so it's off too.
         self.jev = jev
-        self.check_min = check_min  # the Tier 2 reader's own floor for Jev's check; None uses reader.CHECK_MIN
 
     @property
     def _pick(self) -> SystemOne | None:
@@ -285,10 +284,12 @@ class Harness:
         try:
             t2 = reader.read(asked, reader.select_clauses(asked, document), self.reader,
                              check=self.llm.noul if self.jev else None, answer_type=frame.answer_type,
-                             document=document, check_min=self.check_min)
+                             document=document, check_min=getattr(self.reader, "check_min", reader.CHECK_MIN))
         except (reader.ReaderError, SystemOneError) as e:
+            option = getattr(self.reader, "option", None)  # router/tier2.py's Connected
             t2 = reader.ReaderResult(False, reason=f"the reader was unavailable ({str(e)[:120]})",
-                                     usage={"service_tier": getattr(self.reader, "service_tier", None)})
+                                     usage={"option": option.id} if option else
+                                     {"service_tier": getattr(self.reader, "service_tier", None)})
         calls = self._calls() - before
         name = getattr(self.reader, "name", "LLM reader")
         if not t2.fired:
@@ -298,7 +299,8 @@ class Harness:
             return a
         return Answer(question=question, answer=t2.answer, confidence=t2.check, path="reader",
                       reason=f"{r.reason}; Tier 2: {t2.reason}", asked=asked,
-                      answered_by=f"Tier 2: {name}, checked by {self.llm.model_version or self.llm.model}",
+                      answered_by=f"Tier 2: {name}, " + (f"checked by {self.llm.model_version or self.llm.model}"
+                                                         if self.jev else "unchecked (Tier 1 off)"),
                       evidence=[{"text": t2.clause, "label": t2.answer, "p": t2.check}],
                       probabilities={t2.answer: t2.check}, llm_calls=calls, span=r.to_dict(), reader=t2.to_dict())
 

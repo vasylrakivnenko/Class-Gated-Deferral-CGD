@@ -16,10 +16,10 @@ overwrites the header, so it cannot be forged from outside. Each --admin
 email can open /admin: users, requests per day, per-user limits, and the
 Routing Pipeline tab.
 
-Which tiers answer (Pre-Tier 0, Tier 0, Tier 1 = Jev, Tier 2) is set in /admin,
-not on the page, and is stored in --usage-db, so it survives a restart. The
---classifiers and --tier2 flags are only the startup default, used until an
-admin saves something; see router/stages.py.
+Which tiers answer (Pre-Tier 0, Tier 0, Tier 1 = Jev, router/stages.py) and which
+reader is Tier 2 (router/tier2.py) are set in /admin's Routing Pipeline tab, not on
+the page, and are stored in --usage-db, so they survive a restart. The --classifiers
+and --tier2 flags are only the startup default, used until an admin saves something.
 """
 from __future__ import annotations
 
@@ -30,12 +30,14 @@ import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-from router import qtree, reader as reader_mod, stages as stages_mod
+from router import qtree, stages as stages_mod
 from router.bank import Bank
 from router.harness import Harness
+from router.reader import ReaderError
 from router.stages import Stages
 from router.systemone import SystemOne, SystemOneError
 from router.tier0 import Tier0
+from router.tier2 import LEGACY, OPTIONS, Tier2
 from router.usage import Usage, document_id, new_request_id
 
 PAGE = Path(__file__).resolve().parent / "router" / "ui.html"
@@ -58,39 +60,24 @@ class App:
         self.kev = SystemOne.kev()
         self.usage = usage  # None: no sign-in, no limits (local use)
         self.admins = admins
-        # Which tiers answer (router/stages.py). The flags are the startup default; what an
-        # admin saves in /admin's Routing Pipeline tab is stored in usage.db and wins over
-        # them, so a restart keeps the configuration the admin chose.
-        self.default_stages = Stages.from_dict({"classifiers": classifiers, "tier2": tier2 or stages_mod.TIER2_OFF})
-        self.stages = self.default_stages
-        self._readers: dict = {}  # Tier 2 client per reader id, built on first use and kept
-        if usage is not None:
-            saved = usage.get_setting("stages")
-            if saved:
-                st = Stages.from_dict(saved, self.default_stages)
-                if st.problem() is None:
-                    self.stages = st
+        # Which tiers answer (router/stages.py) and which reader is Tier 2 (router/tier2.py). The
+        # flags are the startup default; what an admin saves in /admin's Routing Pipeline tab is
+        # stored in usage.db and wins over them, so a restart keeps the configuration they chose.
+        self.tier2 = Tier2(tier2, store=usage)
+        if self.tier2.error:
+            print(f"Tier 2: {self.tier2.error}", flush=True)
+        self.stages = Stages(classifiers=classifiers)
+        saved = usage.get_setting(stages_mod.SETTING) if usage else None
+        if saved:
+            st = Stages.from_dict(saved, self.stages)
+            problem = st.problem(tier2_on=self.tier2.reader is not None)
+            if problem:  # Tier 1 saved off, and Tier 2 didn't start: keep Jev on rather than defer everything
+                print(f"Saved tiers not used: {problem}", flush=True)
+            else:
+                self.stages = st
         self.tier0 = Tier0()  # loads spaCy and the NLI model once, at startup
         qtree.classify("Is this loaded at startup?")  # the question tree's parser, likewise
         self._lock = threading.Lock()  # one question at a time: the clients' call counters are shared
-
-    def reader_for(self, stages: Stages):
-        """(Tier 2 client, the Jev check floor it was measured with), or (None, None) when off.
-        Built on first use: a missing API key raises here, not at startup."""
-        rid = stages.reader_id
-        if rid is None:
-            return None, None
-        if rid not in self._readers:
-            self._readers[rid] = reader_mod.build_reader(rid)
-        return self._readers[rid]
-
-    def set_stages(self, stages: Stages, by: str = "") -> None:
-        """Save a configuration from /admin. Builds the Tier 2 client first, so a missing
-        key or a bad model id fails the save instead of every later question."""
-        self.reader_for(stages)
-        if self.usage is not None:
-            self.usage.set_setting("stages", stages.to_dict(), by)
-        self.stages = stages
 
     def ask(self, question: str, document: str, reader: str) -> dict:
         st = self.stages
@@ -98,29 +85,21 @@ class App:
         with self._lock:
             start = time.perf_counter()
             # With Kev the document stays on this machine, so no hosted Tier 2.
-            client, check_min = self.reader_for(st) if reader == "jev" else (None, None)
-            harness = Harness(self.jev, llm, self.bank, self.tier0 if st.tier0 else None, st.pretier0,
-                              st.classifiers, reader=client, jev=st.tier1, check_min=check_min)
+            harness = Harness(self.jev, llm, self.bank, self.tier0 if st.tier0 else None, st.pretier0, st.classifiers,
+                              reader=self.tier2.reader if reader == "jev" else None, jev=st.tier1)
             answer = harness.answer(question, document)
             elapsed = time.perf_counter() - start
         return {**answer.to_dict(), "seconds": round(elapsed, 1), "ms": round(elapsed * 1000),
                 "stages": st.to_dict()}
 
 
-def _settings_payload(app: App) -> dict:
-    """What /admin's Routing Pipeline tab shows: the tiers that are on, the Tier 2 options
-    with the check floor each was measured at, and who last changed it."""
-    st = app.stages
-    return {
-        "stages": st.to_dict(),
-        "summary": st.summary(),
-        "defaults": app.default_stages.to_dict(),  # what the service flags say, used on Reset
-        "tier2_options": [{"id": "off", "label": "Off", "check_min": None}] +
-                         [{"id": i, "label": lbl, "check_min": floor}
-                          for i, (lbl, floor) in stages_mod.TIER2.items()],
-        "labels": stages_mod.LABELS,
-        **(app.usage.setting_meta("stages") if app.usage else {"updated_at": None, "updated_by": None}),
-    }
+def _pipeline(app: App) -> dict:
+    """What /admin's Routing Pipeline tab shows: the tier switches and who last changed them,
+    and the Tier 2 readers with whether each could run now and its last 7 days."""
+    t2 = app.tier2.status()
+    live = next((o["name"] for o in t2["options"] if o["id"] == t2["active"]), None)
+    return {"stages": app.stages.to_dict(), "summary": app.stages.summary(live), "labels": stages_mod.LABELS,
+            **app.usage.setting_meta(stages_mod.SETTING), "tier2": {**t2, "stats": app.usage.tier2_stats()}}
 
 
 def make_handler(app: App):
@@ -159,9 +138,9 @@ def make_handler(app: App):
             elif path == "/api/admin/stats":
                 if self._admin() is not None:
                     self._json(200, app.usage.stats())
-            elif path == "/api/admin/settings":
+            elif path == "/api/admin/pipeline":
                 if self._admin() is not None:
-                    self._json(200, _settings_payload(app))
+                    self._json(200, _pipeline(app))
             elif path in ("/", "/index.html"):
                 self._send(200, PAGE.read_bytes(), "text/html; charset=utf-8")  # re-read: edits show on refresh
             else:
@@ -179,20 +158,37 @@ def make_handler(app: App):
                 app.usage.set_limit(email, limit)
                 self._json(200, app.usage.status(email))
                 return
-            if self.path == "/api/admin/settings":
-                if self._admin() is None:
+            if self.path == "/api/admin/stages":
+                email = self._admin()
+                if email is None:
                     return
                 proposed = Stages.from_dict(self._body(), app.stages)
-                problem = proposed.problem()
+                problem = proposed.problem(tier2_on=app.tier2.reader is not None)
+                if problem:
+                    self._json(400, {"error": problem})
+                    return
+                app.usage.set_setting(stages_mod.SETTING, proposed.to_dict(), email)
+                app.stages = proposed
+                self._json(200, _pipeline(app))
+                return
+            if self.path == "/api/admin/tier2":
+                email = self._admin()
+                if email is None:
+                    return
+                option = self._body().get("option")
+                if option != "off" and option not in OPTIONS:
+                    self._json(400, {"error": f"Send an option: off or one of {', '.join(OPTIONS)}."})
+                    return
+                problem = app.stages.problem(tier2_on=False) if option == "off" else None
                 if problem:
                     self._json(400, {"error": problem})
                     return
                 try:
-                    app.set_stages(proposed, by=self.headers.get(USER_HEADER) or "")
-                except Exception as e:  # a missing API key or an unreachable reader
-                    self._json(502, {"error": f"Tier 2 wouldn't start, so nothing was changed: {e}"})
+                    app.tier2.select(option, by=email)
+                except ReaderError as e:
+                    self._json(409, {"error": f"Not switched, the test read failed: {e}"})
                     return
-                self._json(200, _settings_payload(app))
+                self._json(200, _pipeline(app))
                 return
             if self.path != "/api/ask":
                 self.send_error(404)
@@ -203,7 +199,7 @@ def make_handler(app: App):
             req = self._body()
             question, document = (req.get("question") or "").strip(), (req.get("document") or "").strip()
             reader = "kev" if req.get("reader") == "kev" else "jev"
-            mask = app.stages.mask()  # which tiers were on for this request
+            mask = app.stages.mask(app.tier2.active)  # which tiers were on for this request
             if not question or not document:
                 self._json(400, {"error": "Enter both a document and a question."})
                 return
@@ -255,10 +251,11 @@ def main() -> None:
     p.add_argument("--admin", action="append", default=[], help="email allowed to open /admin (repeatable; needs --require-user)")
     p.add_argument("--classifiers", action="store_true",
                    help="answer with the free classifiers; without it they are on standby (their tasks go to the LLM)")
-    p.add_argument("--tier2", choices=["standard", "priority", *stages_mod.TIER2],
-                   help="Tier 2 at startup: fact questions the span tier defers go to this hosted reader, checked "
-                        "by Jev; without it they defer. 'standard' and 'priority' name gpt-oss-120b on Fireworks. "
-                        "Jev reader only (Kev keeps documents local). /admin can change this without a restart")
+    p.add_argument("--tier2", choices=[*OPTIONS, *LEGACY],
+                   help="Tier 2 at startup: fact questions the span tier defers go to this reader (router/tier2.py), "
+                        "checked by Jev; without it they defer. Once an admin picks a reader in /admin's Routing "
+                        "Pipeline tab, that choice wins. Jev reader only (Kev keeps documents local). "
+                        "standard/priority = fireworks-standard/-priority")
     args = p.parse_args()
     usage = Usage(args.usage_db, args.daily_limit) if args.require_user else None
     admins = frozenset(a.strip().lower() for a in args.admin)
