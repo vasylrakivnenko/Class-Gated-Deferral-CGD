@@ -1,0 +1,9 @@
+[Unit]
+Description=Deploy zadumai main to the router if GitHub has something new
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/root/projects/zadumai/deploy/router/deploy.sh
+Environment=PYTHONUNBUFFERED=1

@@ -1,0 +1,33 @@
+# Instant deploys, as an alternative to the one-minute timer in
+# deploy/router/install-autodeploy.sh. Both can run: the script does nothing
+# when the checkout already matches origin/main.
+#
+# Needs two repository secrets:
+#   ROUTER_SSH_KEY   a private key whose public half is in the box's authorized_keys
+#   ROUTER_HOST      root@5.78.143.140 (or root@router.zadum.ai)
+name: Deploy router
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-router
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Load the deploy key
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.ROUTER_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "${HOST#*@}" >> ~/.ssh/known_hosts 2>/dev/null
+        env:
+          HOST: ${{ secrets.ROUTER_HOST }}
+
+      - name: Pull, restart, health-check, roll back on failure
+        run: ssh -o BatchMode=yes "${{ secrets.ROUTER_HOST }}" 'bash /root/projects/zadumai/deploy/router/deploy.sh'
