@@ -11,7 +11,8 @@
 - Tier 2 (hosted LLM reader) is ON: `--tier2 priority` in /etc/systemd/system/zadum-router.service (see TIER 2 LIVE).
   Since 2026-10-01 02:10 UTC the reader is switched on /admin instead, between 4 readers incl. our own GPU (see TIER 2
   SWITCH). Until an admin picks one, the flag decides. 2026-10-01 ~04:45 UTC: that tab became "Routing Pipeline",
-  which also switches Pre-Tier 0 / Tier 0 / Tier 1 (see ROUTING PIPELINE); tested on :8777, not yet live.
+  which also switches Pre-Tier 0 / Tier 0 / Tier 1 (see ROUTING PIPELINE); live since 04:45 UTC (8926c9e on main;
+  this box's checkout is now on main, not router-pretier0-tier0).
 - Since 2026-09-30 ~17:00 UTC every `/api/ask` call is saved in `/var/lib/zadum-router/usage.db` (`router/usage.py`):
   `requests` has the question, answer, confidence, evidence (JSON) and `id` (= the reply's `request_id`, `req_…`);
   `documents` stores each document once under `document_id` (`doc_` + sha256 of the text). Older rows have NULLs.
