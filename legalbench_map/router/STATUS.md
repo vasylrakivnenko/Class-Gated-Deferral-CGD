@@ -279,6 +279,39 @@ span tier defers. A key-term check on the cited clause (`bakeoff.about_the_quest
 - Ideas: redo cuad scoring by hand for textual answers vs dates; ENTITY/LOCATION facts through Tier 2 (not measured);
   Tier 2 for deferred choice questions; the next fresh set is cuad_blind4 (228 unused contracts left).
 
+**PRE-TIER 0 + TIER 2 FIXES (2026-10-01 ~07:00 UTC; live, NOT committed)**
+- Tier 2 reads every fact question the local tiers leave (any answer type; `reader.fits` checks only the measured
+  types) and every why / what-if / how / unclassified question (`harness._answer_kind`); Jev's check still guards.
+  Trigger: "what can the licensee do not more than once per calendar year?" was typed DATE ("calendar year") and
+  dropped. qtree: "what can/must/may X do ..." is ACTION (`_ASKS_ACTION`). spans_test2 + Tier 2 133/133 (was 129/129).
+- /admin's Pre-Tier 0 switch now also turns off the fact and choice rules (`spans.answer` / `choice.answer`
+  `rules=`); with it off, Jev picks and Tier 2 reads.
+- Topic matcher (`pretier0._topic`): word families via `_root` (terminate/termination, assign/assignment), roles kept
+  apart (employer/employee, assignor/assign), terms of art whole (`_TERMS`: change of control, ROFR, MFN...). The
+  old 6-letter prefix answered "Is the employer discussed?" from "The Employee shall...". Eval:
+  `/root/zadumai_nli_proto/extensive/topic/eval_topic.py dev` (CUAD categories as topic questions): 20.8% answered at
+  96.8% label agreement (was 18.4% at 96.4%; the disagreements are mostly mentions CUAD files elsewhere). Requiring
+  the question's word pairs to stay together was tried and dropped (lost right answers).
+- frames.py, from LegalBench dev misses where every concept was present: the agreement as the subject of its term's
+  end (`_AGREEMENT_TERM`, +42 dev); recipients listed as the exception to a ban may receive it
+  (`_permitted_by_exception`); "Recipient Party" is the receiver; an NDA that never says receiving party/recipient
+  asks about any party (`_RECEIVER_WORDS`); property questions ignore cross-reference carve-outs and conditions
+  after the property and its thing (+56 dev), not insurance limits as a liability cap; "shall not make more copies
+  than necessary" is a limit, not a "no". Tried and dropped (no gain or net loss): singular forms of plural-only
+  lexicon words; mapping nominalizations to verbs; not splitting sentences at "14.1".
+  | set | before | after |
+  |---|---|---|
+  | LegalBench dev (tuned on) | 627 = 8.4%, 99.5% | 729 = 9.8%, 99.6% |
+  | LegalBench held-out (reused) | 720 = 5.8%, 99.7% | 811 = 6.5%, 99.8% |
+  | fresh half A (open) | 79 = 3.3%, 98.7% | 104 = 4.3%, 99.0% |
+  | fresh half B (blind run) | 83 = 3.4%, 97.6% | 107 = 4.4%, 96.3% (then the comparative fix: 106, 97.2%) |
+- **Fresh held-out set** (`/root/zadumai_nli_proto/extensive/v3/build_fresh.py`, `fresh_rows.json`,
+  `eval_fresh.py --half A|B`): 4,805 rows: ContractNLI train/dev clauses (LegalBench used its test split; neutral left
+  out: it means "not the evidence span", all 10 neutral "errors" read were right), its 3 hypotheses LegalBench never
+  used, 164 unused CUAD clauses, LegalBench consumer_contracts_qa (396) and contract_qa (80). Split by clause into
+  half A (open) and half B (blind). Half B was read after the final run above, so it is no longer blind: the next
+  blind check needs another set. New question types (consumer_contracts_qa, the 3 new hypotheses) get ~0 answers.
+
 **ROUTING PIPELINE (2026-10-01)** — /admin's second tab (was "Tier 2 reader"; `#tier2` links still open it). Merges
 the laptop's commit bc11055 (tier switches, made without this box's uncommitted Tier 2 switch) with the Tier 2 switch.
 - Tiers card: on/off switches for Pre-Tier 0, Tier 0 (NLI), Tier 1 (Jev) and the free classifiers, server-wide; the

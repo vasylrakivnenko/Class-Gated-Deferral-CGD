@@ -32,7 +32,7 @@ import functools
 import json
 import re
 import time
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, replace
 from pathlib import Path
 
 import ahocorasick
@@ -48,7 +48,8 @@ LEXICON = {
     ("ACTOR", "ANY"): ["a party", "one party", "one of the parties"],  # in a question: whichever party
     ("ACTOR", "IT"): ["it", "such party", "each such party"],  # the actor named before it in the sentence
     ("ACTOR", "OTHER"): ["the other party", "other party", "the other parties", "the non-breaching party"],
-    ("ACTOR", "RECEIVER"): ["receiving party", "the receiving party", "recipient", "the recipient", "receiving parties"],
+    ("ACTOR", "RECEIVER"): ["receiving party", "the receiving party", "recipient", "the recipient", "receiving parties",
+                            "recipient party", "the recipient party", "recipient parties"],
     ("ACTOR", "DISCLOSER"): ["disclosing party", "the disclosing party", "discloser", "the discloser"],
     # modality; precedence NOT > MAY > MUST > DOES
     ("MODAL", "NOT"): ["not", "never", "no right", "cannot", "can't", "won't", "don't", "doesn't", "shan't",
@@ -682,10 +683,10 @@ def _judge(frame: Frame, sentence: str, trie: dict) -> tuple[str, str | None] | 
         return _judge_presence(frame, sentence, trie)
     if frame.values and not set(frame.values) <= values(sentence):
         return None
+    if frame.asks == "PROPERTY":
+        return _judge_property(frame, tag(tokens(_CROSS_REFERENCE.sub(" ", sentence)), trie), sentence)
     toks = tokens(sentence)
     tags = tag(toks, trie)
-    if frame.asks == "PROPERTY":
-        return _judge_property(frame, tags)
     caps = _case_flags(sentence)
     for clause in _clauses(tags):
         wanted = set(frame.actions or [frame.action])
@@ -750,6 +751,44 @@ def _judge(frame: Frame, sentence: str, trie: dict) -> tuple[str, str | None] | 
     return None
 
 
+# Who information can go to: a question "can X share it with its employees?" names one of these.
+_RECIPIENTS = {"EMPLOYEES", "ADVISORS", "THIRD_PARTIES", "AFFILIATES", "ADVERTISERS", "ANALYTICS", "SERVICE_PROVIDERS",
+               "CUSTOMERS"}
+_EXCEPTION_WORDS = {"other than", "except", "excepting", "save"}
+# After "except", a circumstance ("except with consent", "except as required by law"), not a list of recipients.
+_CIRCUMSTANCE = {"with", "as", "in", "where", "if", "pursuant", "upon", "when", "under", "by", "that", "which", "insofar",
+                 "so", "otherwise", "after", "before", "during", "within", "until", "unless", "the extent"}
+
+
+def _permitted_by_exception(frame, toks, clause, actor) -> bool:
+    """"Recipient shall not disclose Confidential Information to any person other than to its directors, officers
+    and employees": the recipients the question asks about are the exception to a prohibition, so it may share with
+    them (2026-10-01; LegalBench dev's ContractNLI sharing misses). Only when the exception lists recipients, not
+    a circumstance ("except with the prior written consent ... to its employees" permits nothing)."""
+    wanted = [th for th in frame.things if th[0] == "THING" and th[1] in _RECIPIENTS]
+    if frame.asks not in ("CAN", "DOES") or not wanted:
+        return False
+    for i, t in enumerate(clause):
+        if t.kind != "BLOCK" or t.start < actor.start or " ".join(toks[t.start:t.end]) not in _EXCEPTION_WORDS:
+            continue
+        j = t.end
+        while j < len(toks) and toks[j] in ("to", "for", "disclosur", "disclosure"):
+            j += 1
+        if j >= len(toks) or toks[j] in _CIRCUMSTANCE or " ".join(toks[j:j + 2]) in _CIRCUMSTANCE:
+            continue
+        listed = []  # the exception's own words: up to the next condition or clause break
+        for u in clause[i + 1:]:
+            if u.kind == "BLOCK":
+                break
+            listed.append(u)
+        if all(_has_thing(th, listed) for th in wanted):
+            return True
+    return False
+
+
+_COMPARATIVE = re.compile(r"\b(?:more|fewer|less|greater|longer)\b(?:\s+\w+){0,6}?\s+than\b")
+
+
 def _verdict(frame, sentence, toks, tags, clause, actor, modals, prev):
     """The answer once actor, action and things are in place: conditions, then modality."""
     if frame.conds or frame.only:
@@ -759,6 +798,8 @@ def _verdict(frame, sentence, toks, tags, clause, actor, modals, prev):
         if isinstance(met, str):
             return met
     elif _blocked(tags):
+        if ("NOT" in modals or "BAN" in modals) and _permitted_by_exception(frame, toks, clause, actor):
+            return ("yes", "may" if frame.asks == "DOES" else None)
         return "the sentence has a condition or exception"
     if frame.only and ("NOT" in modals or "BAN" in modals) and any(t.kind == "BLOCK" for t in clause) \
             and _EXCEPT_ONLY.search(sentence):
@@ -775,6 +816,8 @@ def _verdict(frame, sentence, toks, tags, clause, actor, modals, prev):
         if "MAY" in modals:
             return ("no", None)
         return "the text says it happens, not whether it is prohibited"
+    if negated and _COMPARATIVE.search(" ".join(toks[actor.start:])):
+        return "the text limits how much, it doesn't forbid it"  # "shall not make more copies than necessary"
     if negated:
         return ("no", None)
     if "MAY" in modals:
@@ -855,6 +898,26 @@ def _negated_sentence(raw: list, tags: list) -> bool:
                for i, w in enumerate(raw))
 
 
+# ", unless earlier terminated as provided herein,": a condition on ending early, not on when the term ends.
+_UNLESS_EARLIER = re.compile(r",\s*(?:unless|except|subject to)\b[^,.;]{0,140},", re.I)
+# "This Agreement shall commence on the Effective Date and shall terminate on December 31, 2022": the agreement
+# itself as the subject ("This Development Agreement", "The Agreement"), for questions about its term (2026-10-01;
+# 128 of LegalBench dev's misses had every word but this). Only "shall"/"will" (or "and", sharing an earlier one:
+# "will take effect ... and remain in effect for one year") with a verb that ends or lasts it, and the date or
+# period soon after; no
+# "may", renewal or notice on the way ("may be terminated upon thirty (30) days' notice" is a right to end it).
+_AGREEMENT_TERM = re.compile(
+    r"\b(?:this|the)\s+(?:\w+\s+){0,2}?(?:agreement|contract|lease|license|licence|attachment|addendum|amendment)\b"
+    r"(?:(?!\brenew|\bnotice\b|\bmay\b)[^.;]){0,160}?"
+    r"\b(?:shall|will|and)\s+(?:automatically\s+)?(?:terminate|expire|end|continue|remain|run|be\s+in\s+(?:full\s+)?"
+    r"(?:force|effect))\b(?:(?!\brenew|\bnotice\b)[^.;]){0,70}?" + f"(?:{_DATE_OR_DURATION.pattern})"
+    r"(?![^.;]{0,25}\bnotice\b)", re.I)
+
+
+def _about_the_term(frame: Frame) -> bool:
+    return frame.when and any(it.label == "THING:W_TERM" for alt in frame.alts for it in alt)
+
+
 def _states_when(frame: Frame, sentence: str) -> bool:
     """"The term of this Agreement shall be twelve (12) months", "...shall
     expire on December 31, 2021": the head noun as the subject of a verb that
@@ -862,6 +925,9 @@ def _states_when(frame: Frame, sentence: str) -> bool:
     stems = sorted({st for alt in frame.alts for it in alt for st in it.stems}, key=len, reverse=True)
     if not stems:
         return False
+    sentence = _UNLESS_EARLIER.sub(" ", sentence)
+    if _about_the_term(frame) and _AGREEMENT_TERM.search(sentence):
+        return True
     head = "|".join(map(re.escape, stems))
     not_after = "".join(f"(?<!{w} )" for w in ("renewal", "current", "applicable", "extension", "successive", "additional", "extend the", "of the",
                                                  "of its", "of this", "during the", "during its", "within the"))
@@ -877,7 +943,8 @@ def _judge_presence(frame: Frame, sentence: str, trie: dict):
     question's polarity; a reason when present but negated; None otherwise."""
     raw = _raw_tokens(sentence)
     norm = " " + " ".join(normalize(w) for w in raw) + " "
-    if not any(all(_item_present(it, raw, norm) for it in alt) for alt in frame.alts):
+    if not any(all(_item_present(it, raw, norm) for it in alt) for alt in frame.alts) and not (
+            _about_the_term(frame) and _AGREEMENT_TERM.search(_UNLESS_EARLIER.sub(" ", sentence))):
         return None
     if frame.when and not _states_when(frame, sentence):
         return None
@@ -927,20 +994,40 @@ def _conditions_met(frame: Frame, toks: list, tags: list, raw: list, clause: lis
     return True
 
 
-def _judge_property(frame: Frame, tags: list):
+# "a non-exclusive, non-transferable (except in accordance with Section 14.1) license": an exception that only
+# points elsewhere doesn't undo the property the sentence states (2026-10-01; property questions only: "shall not
+# assign (except as permitted under Section 14)" stays a condition on the "no").
+_CROSS_REFERENCE = re.compile(r"\((?:except|other than|save|subject to|unless|but)\b[^()]{0,80}?\b(?:section|article|"
+                              r"paragraph|clause|schedule|exhibit)s?\s*[\w.]+[^()]{0,40}\)", re.I)
+
+
+_INSURANCE_WORDS = re.compile(r"\b(?:insur\w*|umbrella|general liability|excess liability|coverage|polic(?:y|ies)|"
+                              r"underwriter|per occurrence)\b", re.I)
+
+
+def _judge_property(frame: Frame, tags: list, sentence: str = ""):
     for clause in _clauses(tags):
         props = [t for t in clause if t.kind == "PROP" and t.name in frame.props]
         if not props or not all(_has_thing(th, clause) for th in frame.things):
             continue
-        if _blocked(tags):
-            return "the sentence has a condition or exception"
         prop = props[0]
+        if prop.name in ("CAPPED", "UNLIMITED") and _INSURANCE_WORDS.search(sentence):
+            continue  # "Umbrella/Excess Liability with limits of $5,000,000": insurance limits, not a cap on liability
+        # A condition after the property and its thing limits what the thing covers ("non-transferable license
+        # to reproduce the Software only for installation"), not the property; one before it can undo it
+        # ("Upon expiration, the licenses will become perpetual"). (2026-10-01)
+        named = max([prop.start] + [next((t.start for t in clause if _has_thing(th, [t])), prop.start)
+                                    for th in frame.things])
+        if any(t.kind == "BLOCK" and t.start < named and not _upon_notice(t, tags) for t in tags):
+            return "the sentence has a condition or exception"
         if any(t.kind == "MODAL" and t.name in ("NOT", "BAN") and 0 < prop.start - t.start <= 3 for t in clause):
             return "the property is negated"
         return ("yes", None)
     return None
 
 
+# Every period ends a sentence, "Section 14.1" too: not splitting there (2026-10-01) lost more right answers on
+# LegalBench dev (23) and held-out (25) than it gained (16, 10), as longer sentences carry more conditions.
 _BOUNDARY = re.compile(r"[.!?\n]")
 FEW_SENTENCES = 64  # below this, check candidate sentences one by one instead of rescanning
 # A question whose words fill more sentences than this isn't one a single clause
@@ -1147,11 +1234,18 @@ def _jsonable(o):
     return o
 
 
+_RECEIVER_WORDS = re.compile(r"\b(?:receiving\s+part|recipient|receiver)", re.I)
+
+
 def _answer(question: str, document: str, parties) -> FrameResult:
     q_trie = _build_trie(_party_lexicon(parties)) if parties else _BASE_TRIE
     frame = question_frame(question, q_trie)
     if isinstance(frame, str):
         return FrameResult(reason=f"no frame: {frame}")
+    if frame.actor == "RECEIVER" and not _RECEIVER_WORDS.search(document):
+        # A one-way NDA can name its receiving party and never call it that ("The Contractor shall not disclose
+        # Confidential Information..."): there the question asks what any party does (2026-10-01).
+        frame = replace(frame, actor="ANY")
     fd = _jsonable(asdict(frame))
     # Sentences also name actors a question can't ("SpringCo shall ..."): they
     # count as parties when the question asks about any party.

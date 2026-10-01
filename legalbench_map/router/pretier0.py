@@ -186,41 +186,117 @@ def check(question: str, document: str) -> PreTier0Result:
     return result
 
 
-def _stem(word: str) -> str:
-    """auditing/audits/audited -> audit, books -> book, rights -> right."""
-    w = word.lower()
-    for suffix in ("ing", "ed", "es", "s"):
-        if w.endswith(suffix) and len(w) - len(suffix) >= 4:
-            w = w[: -len(suffix)]
+# How a topic question's words are found (since 2026-10-01; the 6-letter prefix before it read "employer" as
+# "employee" and "assignor" as "assign", and found "change of control" in "change the control panel"):
+#   - a word matches its inflections (frames.normalize) and derivations (terminate / termination, assign /
+#     assignment), never a party role made from it (employer / employee, assignor / assign);
+#   - a term of art (_TERMS) must be there as the term;
+#   - otherwise the words only have to share the sentence ("auditing of records" in "audit the books and records").
+# Requiring the words a question writes together to stay together ("audit rights" as "right to audit") was tried
+# and dropped: on CUAD dev it lost more right answers than it saved ("the laws of New York shall govern").
+# On CUAD dev topic questions (extensive/topic/eval_topic.py) it answers 20.8%, up from 18.4%, with 96.8% of answers
+# agreeing with CUAD's labels (was 96.4%); nearly all the rest mention the topic under another CUAD category.
+# Noun and adverb endings a word's family shares a root across (longest tried first). Not -ee/-or/-er/-ant:
+# those make the parties ("assignee", "licensor", "employer"), which aren't the act.
+# frames.normalize drops a final "e" from words outside the lexicon, so "-able" can arrive as "-abl".
+_DERIVATIONS = sorted("ification ication ability ibility ation ition ment ance ence able ible anc enc abl ibl ity ion ure "
+                      "ify ate at al ly".split(), key=len, reverse=True)
+_FAMILY = {"payment": "pay"}  # too short for the suffix rule
+_NOT_FAMILY = frozenset({"government"})  # looks like govern + ment, isn't governing
+_TERMS = [re.compile(p, re.I) for p in (
+    r"\bchanges? (?:of|in) (?:the )?(?:\w+ )?control\b", r"\bright of first refusal\b", r"\bright of first offer\b",
+    r"\bright of first negotiation\b", r"\bmost[- ]favou?red[- ](?:nation|customer)s?\b", r"\bcovenants? not to sue\b",
+    r"\bforce majeure\b", r"\bliquidated damages\b", r"\bthird[- ]part(?:y|ies)[- ](?:\w+ )?beneficiar\w*")]
+_TOPIC_WORD = re.compile(r"[a-z0-9]+")
+
+
+def _key(word: str) -> str:
+    if word.endswith("ies") and len(word) > 5:  # warranties -> warranty (the stemmer would leave "warranti")
+        word = word[:-3] + "y"
+    n = frames.normalize(word)
+    return _FAMILY.get(n, n)
+
+
+def _root(key: str) -> str:
+    """terminate / termination -> termin, assign / assignment / assignable -> assign, confidential /
+    confidentiality -> confidenti, committed / commitment -> commit; "assignee" stays "assignee".
+    Up to two endings come off, and none that would leave under 5 letters."""
+    if key in _NOT_FAMILY:
+        return key
+    for _ in range(2):
+        cut = next((sfx for sfx in _DERIVATIONS if key.endswith(sfx) and len(key) - len(sfx) >= 5), None)
+        if cut is None:
             break
-    return w[:6]
+        key = key[:-len(cut)]
+    if key[-1:] in ("e", "y") and not key.endswith("ee") and len(key) > 5:
+        key = key[:-1]
+    if len(key) > 5 and key[-1] == key[-2] and key[-1] not in "aeiousl":  # committ -> commit, transferr -> transfer
+        key = key[:-1]
+    return key
 
 
-def topic_words(question: str) -> list:
-    return [w for w in _Q_WORD.findall(question) if w.lower() not in _NOT_TOPIC and len(w) > 1]
+def _same(a: str, b: str) -> bool:
+    """Whether two keys are one word's family: equal, or the same root of 5 letters or more."""
+    return a == b or (len(ra := _root(a)) >= 5 and ra == _root(b))
+
+
+def _words(text: str) -> list:
+    """Lowercased words, "'s" dropped; hyphenated words split ("non-compete" -> non, compete)."""
+    return _TOPIC_WORD.findall(re.sub(r"'s\b", "", text.lower().replace("’", "'")))
+
+
+def topic_words(question: str) -> tuple:
+    """(terms of art, topic words as keys)."""
+    low = question.lower()
+    terms = [t for t in _TERMS if t.search(low)]
+    for t in terms:
+        low = t.sub(" ", low)  # its words are the term's
+    words = [_key(w) for w in _words(low) if w not in _NOT_TOPIC and len(w) > 1]
+    return terms, words
+
+
+def _discusses(sentence: str, terms: list, words: list) -> bool:
+    if not all(t.search(sentence) for t in terms):
+        return False
+    keys = [_key(w) for w in _words(sentence)]
+    return all(any(_same(k, w) for k in keys) for w in words)
+
+
+def _finder(word: str) -> re.Pattern:
+    """A fast scan for the word's sentences: its stem as a prefix, and its irregular forms (paid -> pay)."""
+    base = _root(word) if len(_root(word)) >= 5 else word
+    base = base[:-1] if base[-1] in "ey" and len(base) > 4 else base  # "share" also finds "sharing"
+    forms = [re.escape(base)] + [re.escape(f) for f, v in frames.IRREGULAR.items() if v == word and f != base]
+    forms += [re.escape(f) for f, v in _FAMILY.items() if v == word]
+    return re.compile(r"\b(?:" + "|".join(forms) + ")", re.I)
 
 
 def _topic(question: str, document: str) -> PreTier0Result | None:
-    """"yes" if one sentence holds every topic word; None to defer."""
+    """"yes" if one sentence holds every topic word (as above); None to defer."""
     if not TOPIC_QUESTION.search(question) or _TOPIC_NEGATION.search(question):
         return None
-    words = topic_words(question)
-    if not words:
+    terms, words = topic_words(question)
+    if not terms and not words:
         return None
-    wanted = {_stem(w) for w in words}
-    # Every stem must occur somewhere (a few fast scans); then only sentences
-    # around the rarest stem are split into words.
-    counts = {}
-    for stem in wanted:
-        counts[stem] = len(re.findall(rf"\b{stem}", document, re.I))
-        if not counts[stem]:
+    # Every word and term must occur somewhere (a few fast scans); then only the
+    # sentences around the rarest one are split into words.
+    finders = terms + [_finder(w) for w in words]
+    counts = []
+    for f in finders:
+        counts.append(len(f.findall(document)))
+        if not counts[-1]:
             return None
-    rarest = min(counts, key=counts.get)
+    rarest = finders[counts.index(min(counts))]
     sentences, _ = frames.indexed(document)
-    for m in re.finditer(rf"\b{rarest}", document, re.I):
-        _, sentence = sentences.at(m.start())
-        if wanted <= {_stem(w) for w in _Q_WORD.findall(sentence)}:
-            return PreTier0Result(True, "yes", reason=f"one sentence has every topic word ({', '.join(words)})",
+    seen = set()
+    for m in rarest.finditer(document):
+        start, sentence = sentences.at(m.start())
+        if start in seen:
+            continue
+        seen.add(start)
+        if _discusses(sentence, terms, words):
+            named = [t.search(sentence).group(0) for t in terms] + words
+            return PreTier0Result(True, "yes", reason=f"one sentence has every topic word ({', '.join(named)})",
                                   evidence=[{"text": sentence, "label": "yes", "p": 1.0}])
     return None
 

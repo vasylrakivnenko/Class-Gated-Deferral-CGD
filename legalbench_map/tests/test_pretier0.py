@@ -110,3 +110,32 @@ def test_a_verb_the_lexicon_reads_as_a_condition_is_not_dropped():
     # and "is health data mentioned?" is not the question. (PrivacyQA, M4 2026-09-30)
     doc = "We will ask for your explicit consent to share any sensitive personal information such as health."
     assert not check("does it save any of my health data?", doc).fired
+
+
+# ---- topic words (2026-10-01): word families, not a 6-letter prefix; terms of art as terms
+
+ROLES_DOC = ("The Employee shall report to the Chief Executive Officer. The Licensee may change the control panel "
+             "settings at any time. Neither party shall assign this Agreement without consent.")
+
+
+@pytest.mark.parametrize("question, fires", [
+    ("Is the employer discussed here?", False),  # the 6-letter prefix read "employer" as "employee"
+    ("Is the employee discussed here?", True),
+    ("Is the assignor mentioned in the agreement?", False),  # "assignor" is a party, "assign" the act
+    ("Is assignment discussed here?", True),  # assign / assignment: one family
+    ("Is change of control discussed here?", False),  # a term of art, not "change" and "control" anywhere
+])
+def test_topic_words_keep_roles_apart_and_terms_whole(question, fires):
+    assert check(question, ROLES_DOC).fired is fires
+
+
+@pytest.mark.parametrize("question, doc", [
+    ("Is change of control discussed here?", "Upon a change in effective control of Licensee, Licensor may terminate."),
+    ("Is a minimum purchase commitment discussed here?", "Distributor will make purchases at least equal to the "
+                                                         "Guaranteed Minimum Purchase amounts through committed orders."),
+    ("Is the warranty period discussed here?", "The above warranties are valid for a period of one year."),
+    ("Is termination for convenience discussed here?", "NETTAXI may terminate this Agreement for its convenience."),
+    ("Does the clause mention third-party beneficiaries?", "Duval is an intended third party creditor beneficiary hereof."),
+])
+def test_topic_words_match_their_family(question, doc):
+    assert check(question, doc).fired

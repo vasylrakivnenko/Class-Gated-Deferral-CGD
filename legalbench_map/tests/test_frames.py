@@ -264,3 +264,49 @@ def test_head_noun_is_the_noun_not_its_adjective():
     q = "Does the agreement specify when its initial term expires?"
     assert run(q, "This initial order shall be received no later than April 1, 2000.") == (None, None)
     assert run(q, "This Agreement will renew for successive terms of one (1) year each.") == (None, None)
+
+
+# ---- 2026-10-01: structure fixes from LegalBench dev misses (each with the case it must still refuse)
+
+EXPIRES = "Does the agreement specify when its initial term expires?"
+SHARE_EMPLOYEES = "Can the receiving party share confidential information with its employees?"
+
+
+@pytest.mark.parametrize("document, question, fires", [
+    # the agreement itself as the subject of its term's end, past an "unless earlier terminated" clause
+    ("This Agreement shall commence on the Effective Date and shall terminate on December 31, 2022.", EXPIRES, True),
+    ("The term of this Agreement starts on the Effective Date and, unless this Agreement is earlier terminated in "
+     "accordance with its provisions, will expire ten (10) years from the Effective Date.", EXPIRES, True),
+    ("This Agreement will take effect on the Effective Date and remain in effect for a period of 1 year.", EXPIRES, True),
+    ("This Agreement may be terminated by either party upon thirty (30) days' prior written notice.", EXPIRES, False),
+    ("This Agreement shall automatically renew for successive one (1) year periods.", EXPIRES, False),
+    # recipients listed as the exception to a ban may receive it; a circumstance as the exception permits nothing
+    ("The Receiving Party shall not disclose Confidential Information to any person other than to its directors, "
+     "officers and employees who need to know it.", SHARE_EMPLOYEES, True),
+    ("The Receiving Party shall not, except with the prior written consent of the Disclosing Party, disclose "
+     "Confidential Information to its employees.", SHARE_EMPLOYEES, False),
+    ("Each Recipient Party shall not disclose Confidential Information to any person other than to its officers and "
+     "employees.", SHARE_EMPLOYEES, True),  # "Recipient Party" is the receiving party
+    # a one-way NDA that names its receiving party and never calls it that
+    ("The Contractor shall not disclose Confidential Information to any person other than its employees.",
+     SHARE_EMPLOYEES, True),
+    # a carve-out pointing elsewhere, and scope conditions after the license, don't undo the property
+    ("Licensor grants to Licensee a non-exclusive, non-transferable (except in accordance with Section 14) license "
+     "to reproduce the Software only for installation on Licensee's servers.", "Is the license non-transferable?", True),
+    ("Upon expiration of this Agreement, the license granted under Section 3 will become perpetual.",
+     "Is the license perpetual?", False),  # a condition before the property can undo it
+    ("Umbrella/Excess Liability with limits of not less than $5,000,000 in excess of the Commercial General "
+     "Liability.", "Is a party's liability capped?", False),  # insurance limits, not a liability cap
+    # a limit isn't a ban (found in the fresh held-out's half B)
+    ("You shall not make more copies of the Evaluation Material than are reasonably necessary.",
+     "Can the receiving party make copies of the confidential information?", False),
+])
+def test_structure_fixes(document, question, fires):
+    r = check(question, document)
+    assert (r.fired and r.answer == "yes") is fires, (r.reason, r.frames and r.frames.get("reason"))
+
+
+def test_a_real_ban_on_copies_is_still_a_no():
+    r = check("Can the receiving party make copies of the confidential information?",
+              "The Receiving Party shall not make any copies of the Confidential Information.")
+    assert (r.fired, r.answer) == (True, "no")
