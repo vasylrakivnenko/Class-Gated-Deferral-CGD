@@ -323,6 +323,12 @@ def _form(q: str, doc) -> tuple[str, str | None]:
     return "other", None
 
 
+# "What can/must/may X do ...", "What is X allowed/required to do ...": the answer is an act. Checked before the
+# typed-noun fallback, which read "calendar year" in "...do once per calendar year" as a DATE question.
+_ASKS_ACTION = re.compile(r"\bwhat\s+(?:can|could|may|might|must|shall|should|will|would|does|do|did)\b[^?]*?\bdo\b"
+                          r"|\bwhat\s+(?:is|are)\b[^?]*?\b(?:allowed|permitted|entitled|required|obligated|obliged)\s+to\s+do\b")
+
+
 def _span_type(q: str, wh: str, doc) -> str:
     low = q.lower()
     if wh == "how":
@@ -350,6 +356,8 @@ def _span_type(q: str, wh: str, doc) -> str:
         if root is not None and root.lemma_ == "be":
             noun = next((c for c in root.children if c.dep_ in ("nsubj", "attr") and c.i != wh_tok.i
                          and c.pos_ in ("NOUN", "PROPN")), None)
+    if _ASKS_ACTION.search(low):
+        return "ACTION"  # "What can the licensee do once per calendar year?": an act, whatever nouns follow
     if re.search(r"\b(?:interest|apr|uptime|percentage|percent|share|split)\b", low):
         return "PERCENT"  # "What interest rate applies?", "What uptime is guaranteed?"
     if re.search(r"\b(?:minimum|maximum|required|legal)\s+age\b|\bage\s+(?:limit|requirement)\b", low):

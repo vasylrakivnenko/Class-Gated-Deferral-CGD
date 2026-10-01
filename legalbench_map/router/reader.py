@@ -153,8 +153,8 @@ def fits(answer: str, clause: str, question: str, answer_type: str | None, docum
     date, the date of the document and not of some other event (see _own_date). Definitions are
     phrases, so any answer fits. On cuad_blind2 (seen once, 2026-09-30) Jev passed 10 answers
     that were wrong or unlabeled, 9 of them misfits like these."""
-    if not answer_type or answer_type == "DEFINITION":
-        return True
+    if not answer_type or answer_type == "DEFINITION" or answer_type not in spans.ANSWERED_TYPES:
+        return True  # a phrase, or a type with no value pattern (ENTITY, ACTION...): Jev's check alone decides
     if answer_type == "DATE" and spans.document_date_kind(question) not in (None, "expir"):
         return _own_date(answer, clause, question)
     text = _REDACTED.sub("30", answer)

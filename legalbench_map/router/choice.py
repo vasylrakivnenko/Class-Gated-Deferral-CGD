@@ -88,7 +88,9 @@ def _matching(us: list, required: list) -> list:
     return [i for i, u in enumerate(us) if required and all(spans._covers(t, spans._unit_terms(u)) for t in required)]
 
 
-def answer(frame, document: str, llm=None) -> ChoiceResult:
+def answer(frame, document: str, llm=None, rules: bool = True) -> ChoiceResult:
+    """`rules`: whether the rule may answer by itself (Pre-Tier 0's switch in /admin); off, only
+    the LLM's pick can."""
     options = [o.strip(" ,?.") for o in frame.options if o.strip(" ,?.")]
     keys = {re.sub(r"[^a-z0-9]", "", o.lower()) for o in options}
     if len(options) < 2 or len(keys) < len(options) or not all(_words(o) or _numbers(o) for o in options):
@@ -125,12 +127,13 @@ def answer(frame, document: str, llm=None) -> ChoiceResult:
             for o in options:
                 if _states(o, us[i]):
                     stated.setdefault(o, []).append(i)
-    if len(stated) == 1 and len(matching) <= 3 and not spans.qualified(question):
+    if rules and len(stated) == 1 and len(matching) <= 3 and not spans.qualified(question):
         o, units_ = next(iter(stated.items()))
         return ChoiceResult(True, o, 1.0, "rule", reason=f'the clauses about it state "{o}", not the other option',
                             evidence=[{"text": us[i], "label": o, "p": 1.0} for i in units_[:2]], options=options)
     if llm is None or (not matching and len(document) > spans.LOOSE_MAX_CHARS):
-        why = "no clause names everything the question asks about" if not matching else \
+        why = "the choice rules (Pre-Tier 0) are off" if not rules else \
+            "no clause names everything the question asks about" if not matching else \
             "the clauses about it state more than one option" if len(stated) > 1 else \
             "the clauses about it state none of the options"
         return ChoiceResult(False, reason=why, options=options)

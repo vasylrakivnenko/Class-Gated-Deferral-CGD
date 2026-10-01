@@ -334,7 +334,7 @@ function recent(list) {
 // question costs, which is why they are here and not on the playground page.
 const SWITCHES = [
   { key: "pretier0", name: "Pre-Tier 0 (regex)",
-    note: "Regex and a phrase automaton, ~0.2 ms, no model. Answers topic, frame and presence questions, finds the parties, and rewords we/you questions for Tier 0." },
+    note: "Regex and a phrase automaton, ~0.2 ms, no model. Answers topic, frame and presence questions, and facts and choices by rule; finds the parties and rewords we/you questions for Tier 0. Off: Jev picks facts and choices, and Tier 2 reads the rest." },
   { key: "tier0", name: "Tier 0 (local NLI)",
     note: "cross-encoder/nli-deberta-v3-xsmall on this machine. Answers \u201cyes\u201d only, when one sentence settles it, with no hosted call." },
   { key: "tier1", name: "Tier 1 (Jev)",

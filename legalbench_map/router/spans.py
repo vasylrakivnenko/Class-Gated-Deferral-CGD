@@ -414,7 +414,9 @@ def _attached(unit: str, unit_cands: list, terms: list) -> list:
     return [c for c in unit_cands if any(s <= c.start < e for s, e in spans_)]
 
 
-def answer(frame, document: str, llm=None) -> SpanResult:
+def answer(frame, document: str, llm=None, rules: bool = True) -> SpanResult:
+    """`rules`: whether the rules may answer by themselves (Pre-Tier 0's switch in /admin); off,
+    only the LLM's pick among the candidates can."""
     typ = frame.answer_type
     if typ not in ANSWERED_TYPES:
         return SpanResult(False, reason=f"answers of type {typ} are not built yet")
@@ -425,12 +427,14 @@ def answer(frame, document: str, llm=None) -> SpanResult:
         return SpanResult(False, reason=f"the text has no {typ.lower()} at all")
     question = frame.lookup or frame.question
     if typ == "DEFINITION":
+        if not rules:
+            return SpanResult(False, reason="the fact rules (Pre-Tier 0) are off")
         return _definition(question, us, cands, frame, llm)
     terms = key_terms(question)
     if typ == "DATE" and (kind := document_date_kind(question)):
         # Dates of the document itself ("When does this agreement become effective?"): only their
         # anchors answer by rule; amendments and exhibits carry other "effective" dates.
-        return _document_date(us, cands, frame, llm, kind)
+        return _document_date(us, cands, frame, llm, kind, rules)
     if not terms:
         return SpanResult(False, reason="couldn't tell what the question is about")
     unit_terms = {i: _unit_terms(us[i]) for i in {c.unit for c in cands}}
@@ -449,7 +453,7 @@ def answer(frame, document: str, llm=None) -> SpanResult:
         tw = {t for t in terms if ":" not in t} | {t.split(":")[1].lower() for t in terms if ":" in t}
         tw |= {v for t in list(tw) for v in SPAN_SYNONYMS.get(t, ())}  # "who can review" -> the auditing verb
         agents = {a for i in matching if (a := _agent(us[i], parties, tw))}
-        if matching and len(agents) == 1 and not conditional and len(matching) <= 2:
+        if rules and matching and len(agents) == 1 and not conditional and len(matching) <= 2:
             a = agents.pop()
             return SpanResult(True, a, 1.0, "rule", reason="one party is the subject of the clause's verb",
                               evidence=[{"text": us[i], "label": a, "p": 1.0} for i in matching])
@@ -457,14 +461,15 @@ def answer(frame, document: str, llm=None) -> SpanResult:
         # Rule: the clauses about it hold one value attached to the words the question is about.
         attached = [c for i in matching for c in _attached(us[i], [c for c in cands if c.unit == i], terms)]
         values = {_value_key(typ, c.text) for c in attached}
-        if matching and len(values) == 1 and not conditional and len(matching) <= 2:
+        if rules and matching and len(values) == 1 and not conditional and len(matching) <= 2:
             c = attached[0]
             return SpanResult(True, c.text, 1.0, "rule",
                               reason=f"one clause names the {' '.join(t.split(':')[-1].lower() for t in terms)} "
                                      f"and one {typ.lower()} attached to it",
                               evidence=[{"text": us[c.unit], "label": c.text, "p": 1.0}])
     if llm is None or (not matching and len(document) > LOOSE_MAX_CHARS):
-        why = "no clause names everything the question asks about" if not matching else \
+        why = "the fact rules (Pre-Tier 0) are off" if not rules else \
+            "no clause names everything the question asks about" if not matching else \
             "the clause about it has a condition" if conditional else \
             f"no single {typ.lower()} is attached to what the question asks about"
         return SpanResult(False, reason=why)
@@ -560,7 +565,7 @@ def _preamble_dates(us: list, cands: list, starts: bool = False) -> list:
     return out
 
 
-def _document_date(us: list, cands: list, frame, llm, kind: str = "agreement") -> SpanResult | None:
+def _document_date(us: list, cands: list, frame, llm, kind: str = "agreement", rules: bool = True) -> SpanResult | None:
     """The document's own date (signed / effective / expiring), by its anchors;
     None when the question isn't about the document itself."""
     found = _anchored_dates(us, cands, _DOC_DATE_KINDS[kind])
@@ -569,7 +574,7 @@ def _document_date(us: list, cands: list, frame, llm, kind: str = "agreement") -
     elif not found and kind in ("effectiv", "commenc", "start", "begin"):
         found = _preamble_dates(us, cands, starts=True)
     values = {_value_key("DATE", c.text) for c in found}
-    if len(values) == 1:
+    if rules and len(values) == 1:
         c = found[0]
         return SpanResult(True, c.text, 1.0, "rule",
                           reason="the date the document defines as its " + ("date" if kind == "agreement" else

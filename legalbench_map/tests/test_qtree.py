@@ -324,11 +324,44 @@ def test_tier2_answers_must_fit_the_question(answer, clause, question, answer_ty
     assert fits_(answer, clause, question, answer_type) is fits
 
 
-def test_tier2_only_reads_fact_types_it_was_measured_on():
-    reader = FakeReader('{"answer": "Tenant", "clause": null}')
+AUDIT = ("Licensee shall have the right, upon thirty (30) days' prior written notice, to audit the books and records of "
+         "Licensor relating to this Agreement, no more than once per calendar year.")
+DO_YEARLY = "what can the licensee do not more than once per calendar year?"
+
+
+def test_tier2_reads_facts_of_types_the_bakeoff_did_not_measure():
+    """Since 2026-10-01 every fact the local tiers leave goes to Tier 2; Jev's check is the guard."""
+    reader = FakeReader('{"answer": "audit the books and records of Licensor relating to this Agreement", "clause": 1}')
     h, _ = _tier2(reader)
-    a = h.answer("What color is the front door?", PETS)
-    assert a.path != "reader" and not reader.prompts
+    a = h.answer(DO_YEARLY, AUDIT)
+    assert (a.path, a.answer) == ("reader", "audit the books and records of Licensor relating to this Agreement"), a.reason
+    h, _ = _tier2(FakeReader(reader.reply), noul=0.3)
+    assert h.answer(DO_YEARLY, AUDIT).path == "deferred"
+
+
+@pytest.mark.parametrize("question, answer_type", [
+    (DO_YEARLY, "ACTION"),  # was DATE: "calendar year"
+    ("What may the tenant do with the premises during the term?", "ACTION"),
+    ("What is the receiving party required to do with the information at the end of the agreement?", "ACTION"),
+    ("What does the customer have to pay for onboarding?", "MONEY"),  # no "do": unchanged
+    ("What is the late fee?", "MONEY"),
+])
+def test_what_can_x_do_asks_for_an_act(question, answer_type):
+    assert classify(question).answer_type == answer_type
+
+
+def test_pretier0_off_turns_off_the_fact_and_choice_rules():
+    """/admin's Pre-Tier 0 switch covers every rule that answers alone: with it off, the reader reads."""
+    reply = '{"answer": "once per calendar year", "clause": 1}'
+    llm = FakeLLM(choice={"none of these": 0.9}, noul={"Question about this text": 0.95})
+    on = Harness(llm, llm, StubBank(), None, pretier0=True, classifiers=False, reader=FakeReader(reply))
+    assert on.answer("How often can the licensee audit the books?", AUDIT).path == "span"
+    off = Harness(llm, llm, StubBank(), None, pretier0=False, classifiers=False, reader=FakeReader(reply))
+    a = off.answer("How often can the licensee audit the books?", AUDIT)
+    assert (a.path, a.answer) == ("reader", "once per calendar year"), a.reason
+    a = Harness(llm, llm, StubBank(), None, pretier0=False, classifiers=False).answer(
+        "Who pays for water, the tenant or the landlord?", CHOICES)
+    assert a.path != "choice", a.reason
 
 
 # ---- M3: choice questions (router/choice.py)
@@ -429,3 +462,18 @@ def test_either_questions_keep_yes_no_when_the_text_states_both(question):
 ])
 def test_permission_obligation_and_presence_questions_are_never_undecided(question):
     assert classify(question).maybe_options == []
+
+
+def test_tier2_reads_why_and_how_questions_the_tree_would_defer():
+    """The user's call (2026-10-01): with Tier 2 on, nothing stops at the question tree; Jev's check still guards."""
+    doc = "Either party may terminate this Agreement upon sixty (60) days written notice to the other party."
+    reader = FakeReader('{"answer": "upon sixty (60) days written notice to the other party", "clause": 1}')
+    h, _ = _tier2(reader)
+    a = h.answer("How can a party terminate this agreement?", doc)
+    assert (a.path, a.answer) == ("reader", "upon sixty (60) days written notice to the other party"), a.reason
+    h, _ = _tier2(FakeReader(reader.reply), noul=0.3)
+    a = h.answer("Why can a party terminate this agreement?", doc)
+    assert a.path == "deferred" and a.answered_by.startswith("Tier 2:") and "Jev doubts" in a.reason
+    a = Harness(FakeLLM(), FakeLLM(), StubBank(), None, pretier0=True, classifiers=False).answer(
+        "How can a party terminate this agreement?", doc)  # no Tier 2: the tree defers, as before
+    assert a.path == "deferred" and a.answered_by == "question tree (router/qtree.py)"

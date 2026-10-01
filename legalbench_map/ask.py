@@ -37,7 +37,7 @@ def main() -> None:
     document = args.doc.read_text() if args.doc else args.text
     router = SystemOne.jev()
     llm = router if args.llm == "jev" else SystemOne.kev()
-    a = Harness(router, llm, Bank()).answer(args.question, document)
+    a = Harness(router, llm, Bank(), pretier0=True).answer(args.question, document)
 
     if args.json:
         print(json.dumps(a.to_dict(), indent=1))

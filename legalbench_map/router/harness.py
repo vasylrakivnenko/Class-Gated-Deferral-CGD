@@ -241,8 +241,13 @@ class Harness:
         if frame.leaf == "choice":
             return self._choice(question, document, frame)
         if frame.leaf != "boolean":
+            if self.reader is not None:
+                # why / what if / how / unclassified: no local tier answers these, so the Tier 2 reader
+                # reads the clauses about it (Jev's check still guards). Unmeasured, the user's call (2026-10-01).
+                return self._read(question, document, frame, spans.SpanResult(False, reason=NOT_ANSWERED[frame.leaf]),
+                                  self._calls())
             return self._not_answered(question, frame, "deferred", NOT_ANSWERED[frame.leaf])
-        if frame.maybe_options:
+        if frame.maybe_options and self.pretier0:
             # "Does the photographer deliver on a USB drive or through an online gallery?": if the
             # text states exactly one of the two, the question was which one. By rule only.
             r = choice.answer(replace(frame, options=frame.maybe_options), document, llm=None)
@@ -260,10 +265,10 @@ class Harness:
         """A fact question: a span copied from the document (router/spans.py), by rule or
         picked by the LLM among the document's candidates; otherwise deferred."""
         before = self._calls()
-        r = spans.answer(frame, document, llm=self._pick)
+        r = spans.answer(frame, document, llm=self._pick, rules=self.pretier0)
         calls = self._calls() - before
         if not r.fired:
-            if self.reader is not None and frame.answer_type in spans.ANSWERED_TYPES:
+            if self.reader is not None:
                 return self._read(question, document, frame, r, before)
             a = self._not_answered(question, frame, "deferred",
                                    f"asks for a fact ({(frame.answer_type or '').lower()}); {r.reason}")
@@ -279,7 +284,8 @@ class Harness:
 
     def _read(self, question: str, document: str, frame, r, before: int) -> Answer:
         """Tier 2: the reader copies the fact from the clauses about it; Jev checks the clause
-        states it. Only for the fact types the bake-off measured (spans.ANSWERED_TYPES)."""
+        states it. The bake-off measured the types in spans.ANSWERED_TYPES; since 2026-10-01 it reads
+        every fact the local tiers leave (ACTION, ENTITY... unmeasured), with Jev's check as the guard."""
         asked = frame.lookup or question
         try:
             t2 = reader.read(asked, reader.select_clauses(asked, document), self.reader,
@@ -293,9 +299,10 @@ class Harness:
         calls = self._calls() - before
         name = getattr(self.reader, "name", "LLM reader")
         if not t2.fired:
-            a = self._not_answered(question, frame, "deferred", f"asks for a fact ({(frame.answer_type or '').lower()}); "
-                                                                f"{r.reason}; Tier 2: {t2.reason}")
+            fact = f"asks for a fact ({(frame.answer_type or '').lower()}); " if frame.leaf == "span" else ""
+            a = self._not_answered(question, frame, "deferred", f"{fact}{r.reason}; Tier 2: {t2.reason}")
             a.span, a.reader, a.llm_calls, a.evidence = r.to_dict(), t2.to_dict(), calls, r.evidence
+            a.answered_by = f"Tier 2: {name}, no answer it could stand behind"  # it read the clauses, not the tree
             return a
         return Answer(question=question, answer=t2.answer, confidence=t2.check, path="reader",
                       reason=f"{r.reason}; Tier 2: {t2.reason}", asked=asked,
@@ -308,7 +315,7 @@ class Harness:
         """A choice question: the one alternative the text states (router/choice.py), by rule
         or picked by the LLM; otherwise deferred."""
         before = self._calls()
-        r = choice.answer(frame, document, llm=self._pick)
+        r = choice.answer(frame, document, llm=self._pick, rules=self.pretier0)
         calls = self._calls() - before
         if not r.fired:
             a = self._not_answered(question, frame, "deferred",
