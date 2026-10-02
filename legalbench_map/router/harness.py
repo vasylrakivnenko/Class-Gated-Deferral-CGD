@@ -102,6 +102,8 @@ class Answer:
     span: dict | None = None  # a fact question's search (router/spans.py), None for other kinds
     reader: dict | None = None  # Tier 2's read of a deferred fact (router/reader.py), None if it didn't run
     netreader: dict | None = None  # the reader network's attempt (router/netreader.py), None if it wasn't run
+    contract_map: dict | None = None  # the document's kind, the question's clause type, and whether the local tiers
+    # left it to the LLM (router/contract_map.py); None if the contract map is off
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -184,7 +186,7 @@ def aggregate(units: list, proba, classes: list) -> tuple[str, float, list, dict
 
 class Harness:
     def __init__(self, router: SystemOne, llm: SystemOne, bank: Bank, tier0=None, pretier0: bool = False,
-                 classifiers: bool = True, reader=None, jev: bool = True, netreader=None):
+                 classifiers: bool = True, reader=None, jev: bool = True, netreader=None, contract_map=None):
         self.router = router
         self.llm = llm
         self.bank = bank
@@ -197,6 +199,9 @@ class Harness:
         # questions it would have answered go to Tier 2's `decide`. Routing needs it, so it's off too.
         self.jev = jev
         self.netreader = netreader  # a router.netreader.NetReader, tried after Tier 0; None to skip
+        # router.contract_map.ContractMap: the document's kind and section types, reported on each answer; with its
+        # ROUTE_* flags on, it can send a question past the local tiers to the LLM (off: "local first"); None to skip
+        self.contract_map = contract_map
 
     @property
     def _pick(self) -> SystemOne | None:
@@ -212,17 +217,21 @@ class Harness:
 
     def answer(self, question: str, document: str) -> Answer:
         frame = qtree.classify(question)
-        result = self._answer_kind(question, document, frame)
+        decision = None
+        if self.contract_map is not None and frame.leaf not in ("judgmental", "request"):
+            decision = self.contract_map.decide(question, document, llm=self.llm if self.jev else None)
+        result = self._answer_kind(question, document, frame, decision)
         if result.path == "choice" and frame.leaf == "boolean":  # the document decided: it asked which one
             frame = replace(frame, leaf="choice", lehnert="disjunctive", options=frame.maybe_options,
                             trace=[*frame.trace, "the text states exactly one alternative: it asks which"])
         result.qtree = frame.to_dict()
+        result.contract_map = decision.to_dict() if decision is not None else None
         return result
 
     def _calls(self) -> int:
         return self.router.calls + (self.llm.calls if self.llm is not self.router else 0)
 
-    def _answer_kind(self, question: str, document: str, frame) -> Answer:
+    def _answer_kind(self, question: str, document: str, frame, decision=None) -> Answer:
         if frame.leaf == "judgmental":
             # Advice or a legal conclusion: a contract calling itself enforceable doesn't
             # make it so, so the lookup tiers never answer; Jev gives its reading.
@@ -238,6 +247,8 @@ class Harness:
             return self._not_answered(question, frame, "declined",
                                       f'asks for a task ("{frame.cue}"), not a question about the text; '
                                       f"the router answers questions")
+        if decision is not None and decision.to_llm and frame.leaf in ("boolean", "span", "choice"):
+            return self._to_llm(question, document, frame, decision.reason)
         if frame.leaf == "span":
             return self._span(question, document, frame)
         if frame.leaf == "choice":
@@ -263,11 +274,27 @@ class Harness:
         result.question = question  # as asked; `asked` holds what the tiers answered
         return result
 
-    def _span(self, question: str, document: str, frame) -> Answer:
+    def _to_llm(self, question: str, document: str, frame, reason: str) -> Answer:
+        """The contract map sent it to the LLM: no regex rule, Tier 0 or reader network answers. A yes/no goes
+        where the local tiers' leftovers go (Jev, or Tier 2 when Tier 1 is off); a fact or a choice is picked by
+        the LLM among the candidates, then read by Tier 2."""
+        before = self._calls()
+        if frame.leaf == "span":
+            result = self._span(question, document, frame, rules=False)
+        elif frame.leaf == "choice":
+            result = self._choice(question, document, frame, rules=False)
+        else:
+            result = self._answer(frame.lookup or question, document)
+            result.question = question
+        result.reason = f"{reason}; {result.reason}" if result.reason else reason
+        result.llm_calls = self._calls() - before
+        return result
+
+    def _span(self, question: str, document: str, frame, rules: bool | None = None) -> Answer:
         """A fact question: a span copied from the document (router/spans.py), by rule or
         picked by the LLM among the document's candidates; otherwise deferred."""
         before = self._calls()
-        r = spans.answer(frame, document, llm=self._pick, rules=self.pretier0)
+        r = spans.answer(frame, document, llm=self._pick, rules=self.pretier0 if rules is None else rules)
         calls = self._calls() - before
         if not r.fired:
             if self.reader is not None:
@@ -313,11 +340,11 @@ class Harness:
                       evidence=[{"text": t2.clause, "label": t2.answer, "p": t2.check}],
                       probabilities={t2.answer: t2.check}, llm_calls=calls, span=r.to_dict(), reader=t2.to_dict())
 
-    def _choice(self, question: str, document: str, frame) -> Answer:
+    def _choice(self, question: str, document: str, frame, rules: bool | None = None) -> Answer:
         """A choice question: the one alternative the text states (router/choice.py), by rule
         or picked by the LLM; otherwise deferred."""
         before = self._calls()
-        r = choice.answer(frame, document, llm=self._pick, rules=self.pretier0)
+        r = choice.answer(frame, document, llm=self._pick, rules=self.pretier0 if rules is None else rules)
         calls = self._calls() - before
         if not r.fired:
             a = self._not_answered(question, frame, "deferred",

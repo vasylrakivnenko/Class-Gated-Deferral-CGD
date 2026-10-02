@@ -450,6 +450,13 @@ function render(a) {
     : (notAnswered || fact) && a.qtree ? a.qtree.leaf + (a.qtree.answer_type ? " · " + a.qtree.answer_type : "") : a.task || "fallback";
   const q = a.qtree;
   const kind = q ? `<dt>Question type</dt><dd>${esc(KINDS[q.leaf] || q.leaf)}${q.cue ? ` <span class="dim">("${esc(q.cue)}")</span>` : ""}</dd>` : "";
+  // The contract map (router/contract_map.py): the document's kind, its most common section types, and whether the
+  // question was left to the LLM.
+  const cm = a.contract_map, cd = cm && cm.document;
+  const docmap = cd ? `<dt>Document</dt><dd>${cd.kind ? esc(cd.kind) + ` <span class="dim">(p ${cd.kind_p})</span>` : `kind not sure <span class="dim">(maybe ${esc(cd.kind_top)}, p ${cd.kind_p})</span>`}${
+      Object.keys(cd.types || {}).length ? ` · sections: ${Object.entries(cd.types).slice(0, 6).map(([t, n]) => `${esc(t)} ×${n}`).join(", ")}` : ""}${
+      cd.pending ? ` <span class="dim">(still tagging)</span>` : ""}${
+      cm.to_llm ? `<br><b>Left to the LLM:</b> ${esc(cm.reason)}` : cm.question_types.length ? `<br><span class="dim">asks about ${esc(cm.question_types.join(", "))}</span>` : ""}</dd>` : "";
   $("out").innerHTML = `
     <div class="row" id="row">
       <div class="grid">
@@ -461,6 +468,7 @@ function render(a) {
         <dt>Answered by</dt><dd>${esc(by)}</dd>
         <dt>Why</dt><dd>${esc(a.reason)}</dd>
         ${kind}
+        ${docmap}
         <dt>Question answered</dt><dd>${esc(a.asked)}</dd>
         ${evidence}
         ${pretier0}

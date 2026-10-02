@@ -38,6 +38,7 @@ from router.stages import Stages
 from router.systemone import SystemOne, SystemOneError
 from router.tier0 import Tier0
 from router.netreader import NetReader
+from router.contract_map import ContractMap
 from router.tier2 import LEGACY, OPTIONS, Tier2
 from router.usage import Usage, document_id, new_request_id
 
@@ -82,6 +83,11 @@ class App:
         except (FileNotFoundError, OSError) as e:
             self.netreader = None
             print(f"Tier 0 reader network not loaded: {e}", flush=True)
+        try:  # the contract map (router/contract_map.py); its switch in /admin is off until an admin turns it on
+            self.contract_map = ContractMap()
+        except (FileNotFoundError, OSError) as e:
+            self.contract_map = None
+            print(f"Contract map not loaded: {e}", flush=True)
         qtree.classify("Is this loaded at startup?")  # the question tree's parser, likewise
         self._lock = threading.Lock()  # one question at a time: the clients' call counters are shared
 
@@ -93,7 +99,8 @@ class App:
             # With Kev the document stays on this machine, so no hosted Tier 2.
             harness = Harness(self.jev, llm, self.bank, self.tier0 if st.tier0 else None, st.pretier0, st.classifiers,
                               reader=self.tier2.reader if reader == "jev" else None, jev=st.tier1,
-                              netreader=self.netreader if st.tier0net else None)
+                              netreader=self.netreader if st.tier0net else None,
+                              contract_map=self.contract_map if st.contractmap else None)
             answer = harness.answer(question, document)
             elapsed = time.perf_counter() - start
         return {**answer.to_dict(), "seconds": round(elapsed, 1), "ms": round(elapsed * 1000),

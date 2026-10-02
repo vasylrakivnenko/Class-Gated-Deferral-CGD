@@ -46,6 +46,32 @@ Lexicon: 94 concepts / 767 phrases. The LLM-proposed ones are in `lexicon_extra.
 `kimi-k3` verifies, via Fireworks, key `FIREWORKS_API_KEY` in `/root/.env`; 202 requests used. Work files are in
 `/root/zadumai_nli_proto/extensive/v3/`.
 
+## CONTRACT MAP (2026-10-02; deployed 23:30 UTC = 16:30 PDT; /admin switch "Contract map", off until an admin turns it on)
+The user asked to use SALI/FOLIO, CUAD and ACORD for a tree of contract and clause types; research, benchmarks and
+the build are in `/root/zadumai_nli_proto/contract_map/` (`bench/RESULTS.md` has every number; `taxonomy.json` = the
+shared taxonomy: 146 clause types, 31 shared across datasets, 50 linked to FOLIO clause classes).
+- `router/contract_map.py`: the document's kind (commercial / NDA / privacy policy / terms of service / lease / not a
+  contract) and its sections' clause types, reported on each answer (`Answer.contract_map`; "Document" line in the
+  playground). **Who answers is unchanged ("local first", the user's call).** Harness: `contract_map=` (ask_ui passes
+  it when the switch is on); mask " m1" when on.
+- Models: `models/contract_map/` (gitignored; built by `/root/zadumai_nli_proto/contract_map/build_models.py`): router
+  95.1% on 1,156 held-out documents (99.1% on the 75% at p >= 0.9; texts < 3,000 chars get no kind); taggers by kind:
+  LEDGAR 77 types (91.5% right on the 97% tagged), CUAD 37 (F1 0.60), ContractNLI 17 (0.68), OPP-115 9 (0.77),
+  UNFAIR-ToS 8 (0.74); leases: fine-tuned MiniLM (0.28 on all 8,057 test paragraphs; TF-IDF 0.21), run in a background
+  thread. Jev reads at most 8 unsure sections per new document (CUAD/ToS/privacy taggers; +0.015-0.02 F1 measured).
+  Analysis is cached per document (64 documents).
+- Built, measured and left off (`ROUTE_HIGH_RISK`, `ROUTE_LEASES`): sending questions about 35 hard-to-tag CUAD types
+  (caps on liability, exclusivity, non-compete...) and every lease question straight to the LLM. On the open sets it
+  would move 10% of user-style questions (57-70% of LegalBench's) off the local tiers, which answer them 99.6% right
+  (open sets: Pre-Tier 0 604/604, network 469/472) where the LLM (Jev) got 88.4% (499 sampled; 1,000 Jev calls).
+  Scripts: `contract_map/eval_routing.py`, `llm_check.py`. Lease rule unmeasured (no lease questions in our sets).
+- Checked before the deploy: router suites 494 pass (exit 0); :8777 same answers as the p3 deploy; in-process with the
+  live stages and the map on, 7 questions over 5 real documents (a 101k-char CUAD contract, NDA, privacy policy, ToS,
+  lease): answers identical with the map on and off, kinds all right, first question per document +0.01-0.28 s, then
+  cached; lease tags arrive in the background.
+- Deploy note: an uncommitted Pre-Tier 0 fix ("f1", from the free public sets work) was in the tree; it was set aside
+  for this deploy and put back afterwards, still not deployed or committed (`/root/backups/f1-working-tree-2026-10-02.patch`).
+
 ## ACTIVE WORK: Pre-Tier 0 "next level" (started 2026-10-01 ~20:15 UTC; user: "go build it to the next level")
 DEPLOYED 2026-10-02 04:22 UTC (p3 = passive/noun shapes + routing to the network + rule fixes, the user's OK):
 checked on :8777 and in-process with the live stages (routed questions answered on path tier0net in 44-113 ms; the

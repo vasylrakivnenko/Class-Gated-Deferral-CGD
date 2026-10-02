@@ -19,8 +19,8 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, replace
 
 SETTING = "stages"  # its key in usage.db `settings`
-SWITCHES = ("pretier0", "tier0", "tier0net", "tier1", "classifiers")
-LABELS = {"pretier0": "Pre-Tier 0 (regex)", "tier0": "Tier 0 (local NLI)", "tier0net": "Tier 0 (reader network)",
+SWITCHES = ("contractmap", "pretier0", "tier0", "tier0net", "tier1", "classifiers")
+LABELS = {"contractmap": "Contract map", "pretier0": "Pre-Tier 0 (regex)", "tier0": "Tier 0 (local NLI)", "tier0net": "Tier 0 (reader network)",
           "tier1": "Tier 1 (Jev)", "classifiers": "Free classifiers"}
 
 
@@ -31,6 +31,9 @@ class Stages:
     tier0net: bool = False  # the reader network (router/netreader.py), after Tier 0
     tier1: bool = True  # Jev
     classifiers: bool = False  # the task classifiers in the bank; on standby by default
+    # router/contract_map.py (2026-10-02): the document's kind and its sections' clause types, on each answer. Who
+    # answers doesn't change ("local first"). Off until an admin turns it on.
+    contractmap: bool = False
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -63,5 +66,6 @@ class Stages:
         `tier2` is router/tier2.py's option id, or "off". The reader network shows only when on ("n1"),
         so masks from before it are unchanged."""
         net = " n1" if self.tier0net else ""
+        cmap = " m1" if self.contractmap else ""  # likewise the contract map
         return (f"p{int(self.pretier0)} t{int(self.tier0)}{net} j{int(self.tier1)} "
-                f"c{int(self.classifiers)} r:{tier2}")
+                f"c{int(self.classifiers)}{cmap} r:{tier2}")

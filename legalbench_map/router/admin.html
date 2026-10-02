@@ -333,6 +333,8 @@ function recent(list) {
 // server-wide: one reader turning a tier off would change what every other reader's
 // question costs, which is why they are here and not on the playground page.
 const SWITCHES = [
+  { key: "contractmap", name: "Contract map",
+    note: "Tells the document's kind (commercial, NDA, privacy policy, terms of service, lease, not a contract; 95% right, 99% when sure) and tags its sections' clause types (LEDGAR, CUAD, ContractNLI, OPP-115, UNFAIR-ToS types; a small network for leases), shown on each answer. Who answers doesn't change: local tiers first, the LLM for what they leave. Jev may read up to 8 unsure sections per new document (~0.3 s, once per document)." },
   { key: "pretier0", name: "Pre-Tier 0 (regex)",
     note: "Regex and a phrase automaton, ~0.2 ms, no model. Answers topic, frame and presence questions, and facts and choices by rule; finds the parties and rewords we/you questions for Tier 0. Off: Jev picks facts and choices, and Tier 2 reads the rest." },
   { key: "tier0", name: "Tier 0 (local NLI)",
