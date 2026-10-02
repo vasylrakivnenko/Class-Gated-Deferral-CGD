@@ -69,6 +69,56 @@ _CONSIDERED = re.compile(r"^(?:is|are)\s+(?P<x>.+?)\s+(?:considered|deemed|treat
                          re.I)
 _INFO_COVERS = re.compile(r"^(?:does|do)\s+(?P<y>(?:the\s+)?(?:confidential|proprietary)\s+(?:information|material)s?)\s+"
                           r"(?:cover|encompass|extend to|take in)\s+(?P<x>.+)$", re.I)
+# Noun-shaped questions put the action in a noun; put it back in a verb so the frames can check who does what
+# (2026-10-02, from the passive/noun study on the open generated sets):
+#   "Is there a requirement for notices to be in writing?"   -> "Must notices be in writing?"
+#   "Is there a right for the Company to amend the Plan?"     -> "Can the Company amend the Plan?"
+#   "Is there a prohibition on assignment of the agreement?"  -> "Is a party prohibited from assigning the agreement?"
+#   "Is there a cap on the combined expenses?"               -> "Are the combined expenses capped?"
+#   "Is assignment of this Agreement prohibited without consent?" -> "Is a party prohibited from assigning this ..."
+_NEED_NOUN = re.compile(r"^(?:is|are)\s+there\s+(?:a|an|any)\s+(?:requirement|obligation|duty|need)\s+(?:(?:for|that|on)\s+"
+                        r"(?P<subj>.+?)\s+(?:to|must|shall|will|should)\s+|to\s+)(?P<vp>.+)$", re.I)
+_RIGHT_NOUN = re.compile(r"^(?:is|are)\s+there\s+(?:a|an|any)\s+(?:right|option|ability|permission)\s+(?:for\s+(?P<subj>.+?)\s+)?"
+                         r"to\s+(?P<vp>.+)$", re.I)
+_BAN_NOUN = re.compile(r"^(?:is|are)\s+there\s+(?:a|an|any)\s+(?:prohibition|ban|restriction|bar)\s+(?:on|against)\s+(?P<x>.+)$", re.I)
+_CAP_NOUN = re.compile(r"^(?:is|are)\s+there\s+(?:a|an|any)\s+(?:cap|limit|ceiling|maximum|limitation)\s+(?:on|to|for)\s+(?P<x>.+)$",
+                       re.I)
+NOMINAL = {"assignment": "assign", "disclosure": "disclose", "termination": "terminate", "transfer": "transfer",
+           "solicitation": "solicit", "use": "use", "reproduction": "reproduce", "modification": "modify",
+           "renewal": "renew", "cancellation": "cancel", "payment": "pay", "sale": "sell", "sublicense": "sublicense",
+           "sublease": "sublease", "competition": "compete", "audit": "audit", "inspection": "inspect",
+           "amendment": "amend", "extension": "extend", "delivery": "deliver", "publication": "publish",
+           "distribution": "distribute", "removal": "remove", "deletion": "delete", "retention": "retain",
+           "return": "return", "destruction": "destroy", "indemnification": "indemnify", "notification": "notify",
+           "collection": "collect", "storage": "store", "hiring": "hire", "employment": "employ", "purchase": "purchase"}
+_NOMINAL_MOD = re.compile(r"^(?:is|are)\s+(?:the\s+|any\s+)?(?P<head>" + "|".join(NOMINAL) + r")\b(?:\s+of\s+(?P<obj>.+?))?\s+"
+                          r"(?P<mod>prohibited|forbidden|banned|barred|not allowed|not permitted|allowed|permitted|required)"
+                          r"\b(?P<rest>.*)$", re.I)
+
+
+_REFRAIN = re.compile(r"^(?:must|shall|should|does|do|is|are)\s+(?P<subj>.+?)\s+(?:have to\s+|has to\s+|required to\s+|obligated to\s+)?"
+                      r"(?:refrain|abstain)\s+from\s+(?P<vp>.+)$", re.I)
+_SUBJECT_FORM = {"me": "I", "us": "we", "him": "he", "her": "she", "them": "they"}  # "a right for me to own" -> "Can I own"
+
+
+def _gerund(verb: str) -> str:
+    if verb.endswith("ie"):
+        return verb[:-2] + "ying"
+    if verb.endswith("e") and not verb.endswith("ee"):
+        return verb[:-1] + "ing"
+    if re.search(r"[^aeiou][aeiou][bdgmnprt]$", verb) and verb not in ("audit", "deliver", "cancel", "extend"):
+        return verb + verb[-1] + "ing"  # transferring, permitting
+    return verb + "ing"
+
+
+def _verb_phrase(x: str) -> str:
+    """"assignment of the agreement" -> "assigning the agreement"; a gerund or anything else stays."""
+    m = re.match(r"^(?:the\s+|any\s+)?(?P<head>" + "|".join(NOMINAL) + r")\b(?:\s+of\s+(?P<obj>.+))?$", x, re.I)
+    if not m:
+        return x
+    return f"{_gerund(NOMINAL[m.group('head').lower()])}{' ' + m.group('obj') if m.group('obj') else ''}"
+
+
 _LIMIT_USE = re.compile(r"\b(?:limit|restrict|confine)\s+(?:the\s+|its\s+|their\s+|his\s+|her\s+)?use\s+of\s+(?P<x>.+?)\s+"
                         r"(?:to|for)\s+(?P<p>(?:the\s+)?(?:purpose|purposes|uses?)\b.*)$", re.I)
 
@@ -79,6 +129,22 @@ def canonical(question: str) -> str:
     if not q:
         return question
     out = q
+    if m := _NEED_NOUN.match(out):
+        out = f"Must {_SUBJECT_FORM.get((m.group('subj') or '').lower(), m.group('subj') or 'a party')} {m.group('vp')}"
+    elif m := _RIGHT_NOUN.match(out):
+        out = f"Can {_SUBJECT_FORM.get((m.group('subj') or '').lower(), m.group('subj') or 'a party')} {m.group('vp')}"
+    elif m := _BAN_NOUN.match(out):
+        out = f"Is a party prohibited from {_verb_phrase(m.group('x'))}"
+    elif m := _CAP_NOUN.match(out):
+        x = m.group("x")
+        out = f"{'Are' if re.search(r's\b', x.split(' of ')[0].split()[-1]) else 'Is'} {x} capped"
+    elif m := _NOMINAL_MOD.match(out):
+        verb = NOMINAL[m.group("head").lower()]
+        obj = f" {m.group('obj')}" if m.group("obj") else ""
+        mod = m.group("mod").lower()
+        out = (f"Can a party {verb}{obj}{m.group('rest')}" if mod in ("allowed", "permitted") else
+               f"Must a party {verb}{obj}{m.group('rest')}" if mod == "required" else
+               f"Is a party prohibited from {_gerund(verb)}{obj}{m.group('rest')}")
     for rx, shape in ((_SPECIFIED_IN, "Does {doc} specify {x}"), (_ABOUT, "Does {doc} discuss {x}"),
                       (_COVERS, "Does {doc} discuss {x}"), (_CONSIDERED, "Does {y} include {x}"),
                       (_INFO_COVERS, "Does {y} include {x}")):
@@ -91,6 +157,8 @@ def canonical(question: str) -> str:
         if m and re.match(rf"^{_AUX}\b", m.group("main"), re.I):
             cue = m.group("cue").lower()
             out = f"{m.group('main').rstrip(' ?')} {cue} {m.group('cond')}"
+    if m := _REFRAIN.match(out):  # "Must the Participant refrain from disparaging ...?"
+        out = f"Is {m.group('subj')} prohibited from {m.group('vp')}"
     for rx, lead in ((_REQUIRE, "Must"), (_ALLOW, "Can"), (_GIVE_RIGHT, "Can"), (_HAVE_TO, "Must"),
                      (_HAVE_RIGHT, "Can")):
         m = rx.match(out)

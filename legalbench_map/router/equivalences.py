@@ -88,7 +88,8 @@ RULES = [
          "the agreement keeps the existence or terms of the agreement confidential", cue=("existence", "fact", "terms of this agreement", "terms and conditions of this agreement")),
     Rule("survival",
          _rx(r"^(?=.*\b(?:obligations?|duties|duty|confidentiality|non-?disclosure|restrictions?|covenants?|terms|"
-             r"provisions?)\b)(?:do|does|will|shall|must)\s+(?:the\s+|any\s+|all\s+|its\s+|their\s+|some\s+)?(?:[\w'-]+\s+){0,7}?"
+             r"provisions?|indemnif\w*|indemnity|representations?|warranties|sections?|clauses?)\b)(?:do|does|will|shall|must)\s+(?:the\s+|any\s+|all\s+|its\s+|their\s+|some\s+)?"
+             r"(?:(?!(?:when|if|after|once|while|whether|before|until|unless|we|i|you|they)\b)[\w'-]+\s+){0,7}?"
              r"(?:survive|survives|continue|continues|remain|remains|last|lasts|stay|stays)\b(?!.*\b(?:not|no|exactly|period|years?|months?|days?|until|how long|"
              r"limit|one|two|three|four|five|six|seven|eight|nine|ten|twelve)\b)(?!.*\d)"
              r"(?=.*\b(?:terminat\w*|expir\w*|end\w*|cancel\w*)\b)"),
@@ -103,6 +104,35 @@ RULES = [
          also=_rx(r"\b(?:confiden\w*|non-?disclosure|nondisclosure|secrecy|proprietary|obligations?\b[^.;]{0,30}?\b"
                   r"(?:hereunder|under this agreement|of this agreement|herein)|(?:this|the) agreement shall survive)"),
          also_if=_rx(r"\bconfiden|\bnon-?disclosure")),
+    Rule("changes in writing",
+         # "Must any amendment be in writing?" <- "No provision may be amended ... except in a writing signed by ..."
+         # only the question itself, whole: anything more ("without ...", "within 30 days", "for the Lender",
+         # "every future amendment") is a detail the formula doesn't settle
+         _rx(r"^(?:must|shall|do|does|is|are)\s+(?:any\s+|all\s+)?(?:amendments?|modifications?|changes?|waivers?)"
+             r"(?:\s+(?:to|of)\s+(?:this|the)\s+(?:agreement|contract))?\s+(?:need\s+to\s+|have\s+to\s+|required\s+to\s+)?"
+             r"be\s+(?:made\s+)?in\s+writing(?:\s+(?:and\s+)?signed(?:\s+by\s+(?:both|all|the)\s+parties)?)?\??$"),
+         _rx(r"\b(?:no|not|nor)\b[^.;]{0,160}?\b(?:amend\w*|modif\w*|waive[sd]?|waiver|chang\w*|supplement\w*|alter\w*)"
+             r"\b[^.;]{0,160}?\b(?:unless|except|other than|save)\b[^.;]{0,40}?\b(?:in writing|by (?:a |an )?(?:written|writing)|"
+             r"in a writing|by a writing|by an instrument in writing|by (?:a |an )?(?:further |subsequent )?(?:written )?"
+             r"(?:agreement|instrument),? in writing)"
+             r"|\b(?:amend\w*|modif\w*|waive[sd]?|waiver|chang\w*|supplement\w*)\b[^.;]{0,100}?\b(?:shall|must|will)\s+"
+             r"(?:only\s+)?be\s+(?:made\s+|effective\s+only\s+(?:if|when)\s+)?in writing"),
+         _rx(r"\b(?:orally|oral)\b[^.;]{0,40}\b(?:may|can)\b"),
+         "the agreement lets it be changed or waived only in writing",
+         also=_rx(r"\b(?:sign\w*|execut\w*)\b"), also_if=_rx(r"\b(?:sign\w*|execut\w*)\b"),
+         cue=("amend", "modif", "waive", "waiver", "chang", "supplement", "alter")),
+    Rule("exhibits are part of it",
+         # "Must the Exhibits be considered part of the agreement?" <- "The Exhibits constitute a part hereof"
+         _rx(r"^(?:are|is|must|do|does)\s+(?:the\s+)?(?:exhibits?|schedules?|annex(?:es)?|appendi(?:x|ces)|attachments?|"
+             r"recitals?)(?:\s+(?:to|of)\s+(?:this|the)\s+(?:agreement|contract|amendment))?\s+(?:be\s+)?(?:considered\s+|deemed\s+|"
+             r"treated\s+as\s+)?(?:(?:a|an)\s+(?:integral\s+)?part\s+of\s+(?:the|this)\s+(?:agreement|contract|amendment)|"
+             r"incorporated(?:\s+(?:into|in)\s+(?:the|this)\s+(?:agreement|contract|amendment))?(?:\s+by\s+reference)?)\??$"),
+         _rx(r"\b(?:exhibits?|schedules?|annex(?:es)?|appendi(?:x|ces)|attachments?|recitals?)\b[^.;]{0,120}?\b(?:constitute|"
+             r"form|are|is|shall be|be deemed|deemed)\s+(?:to be\s+)?(?:a\s+|an\s+)?(?:integral\s+)?part\b"
+             r"|\b(?:exhibits?|schedules?|annex(?:es)?|appendi(?:x|ces)|attachments?|recitals?)\b[^.;]{0,120}?\bincorporated\b"),
+         _rx(r"\bnot\s+(?:be\s+)?(?:deemed\s+)?(?:a\s+)?part\b|\bnot\s+incorporated\b"),
+         "the agreement makes them part of it",
+         cue=("exhibit", "schedule", "annex", "appendi", "attachment", "recital")),
     Rule("no license",
          _rx(r"(?=.*\b(?:no|not|never|nothing)\b(?:\W+\w+){0,6}?\W+(?:licen[cs]e|rights?)\b)"
              r"(?=.*\b(?:grant\w*|give|given|gives|confer\w*|transfer\w*|provid\w*)\b)"),

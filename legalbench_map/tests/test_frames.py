@@ -200,7 +200,9 @@ def test_catch_all_presence_leaves_questions_about_a_named_party_alone():
     assert run("Must the employee reimburse the employer for travel expenses?", doc) == (None, None)
 
 
-def test_catch_all_presence_makes_conditions_a_conditional_yes():
+def test_catch_all_presence_makes_conditions_a_conditional_yes(monkeypatch):
+    from router import pretier0
+    monkeypatch.setattr(pretier0, "ROUTE_RISKY", False)  # the catch-all's own reading; the router leaves it to the network
     doc = "Employee shall receive severance equal to six months' salary if terminated without Cause."
     r = check("Is a party entitled to severance?", doc)
     assert (r.answer, r.frames["qualifier"], r.frames["condition"]) == ("yes", "with a condition",

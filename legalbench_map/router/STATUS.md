@@ -47,6 +47,11 @@ Lexicon: 94 concepts / 767 phrases. The LLM-proposed ones are in `lexicon_extra.
 `/root/zadumai_nli_proto/extensive/v3/`.
 
 ## ACTIVE WORK: Pre-Tier 0 "next level" (started 2026-10-01 ~20:15 UTC; user: "go build it to the next level")
+DEPLOYED 2026-10-02 04:22 UTC (p3 = passive/noun shapes + routing to the network + rule fixes, the user's OK):
+checked on :8777 and in-process with the live stages (routed questions answered on path tier0net in 44-113 ms; the
+fixed rows answer or defer as intended), zadum-router restarted, live switches unchanged after it (Pre-Tier 0 ->
+network -> Jev, NLI Tier 0 off, Tier 2 fireworks-priority). Pre-restart diff:
+/root/backups/live-tree-before-restart-2026-10-02-p3.patch. Committed and pushed with c4 (818b4bf) to origin/main.
 DEPLOYED 2026-10-01 23:13 UTC (c4, the user's OK): checked on :8777 (Pre-Tier 0 on the new shapes in 2-9 ms, defers
 where it should) and in-process with the live stages (Pre-Tier 0 -> reader network -> Jev; NLI Tier 0 off), then
 zadum-router restarted. Committed after the restart (see `git log`). Pre-restart diff:
@@ -215,8 +220,90 @@ intentionally). Every open set unchanged otherwise; v6 now 42/42.
 fresh B 7.9% -> 23.6% (97.4% -> 99.6%); rewordings held out 2.4% -> 11.5%; user-style blind: 84.8% -> 92.3% (v5,
 s15), 76.1% -> 95.3% (v6, c3); system on v6 93.6% -> 98.8%; whole contracts 290 -> 332 answers (teacher-literal right
 on 48/51 of s15's new ones); latency 9.1 ms worst (300 KB) vs 9.0; tests 693 pass.
-**Not done / needs the user:** restart zadum-router to deploy (test on :8777 first), commit (new files:
-router/qshapes.py, router/equivalences.py, tests/test_pretier0_v4.py), top up OpenRouter for more eval sets.
+**Bulk LLM calls moved to Fireworks (2026-10-01 ~23:30 UTC, the user's choice):** reader_net/llm.py defaults to
+Fireworks (OpenRouter ids mapped to Fireworks'), held to 20k output tokens/min and 8 requests at once of the account's
+45k/min that the live Tier 2 shares (_FireworksGuard). deepseek-v4-pro isn't deployed on the Fireworks account
+(404): the second blind checker on Fireworks is kimi-k3. **v6b (pre-registered):** the v6 passages OpenRouter left
+unverified (never evaluated), verified by gpt-oss-120b + kimi-k3 on Fireworks (`v4/build_v6b.py`); run once for
+4ef0122, s15 and c4 (= 818b4bf, live), Pre-Tier 0 alone and the system; totals by shape.
+**v6b result (run once, 2026-10-02 00:10 UTC; 1,201 rows, 219 of them over ToS; 17 passages dropped after Fireworks
+read timeouts):** Pre-Tier 0 alone: 4ef0122 73 at 84.9%; s15 67 at 89.6%; c4 66 at **89.4%** (7 wrong). System:
+4ef0122 229 = 19.1% at 95.2%; c4 225 = 18.7% at **96.9%** (network 159/159). By path (c4, v6b): action 27/29,
+action on a rewritten question 14/15, presence 1/3, catch-all 16/17, formula 1/2; dropping the risky paths (P3) would
+give 97.6%. **Pooled over the blind sets (v5 s15, v6 c3, v6b c4): "direct" questions 168/168; every other shape ~79%
+(79/100).** v6b's errors (not fixed; open since): survival formula on "Do we have to notify ... when obligations
+survive" (the formula's question must have survive as its own verb, not after "have to ... when"); "except for X"
+names X only to exclude it; "if the amendment is not adverse" vs the question's "if ... adverse" (negation inside the
+condition); "it is your obligation to avoid making available" ("avoid" as a ban); "Is there a requirement that
+Renren must provide ..." (an action question in a presence shape, roles swapped); "we may edit ... modifying ..., we
+will not modify the meaning" read as a yes to "Must the Company modify ...?". Each blind set has turned up ~7 errors of
+this kind in the non-direct shapes: patching alone won't take user-style questions to 99.5%.
+**River AI (2026-10-02, the user's request):** client `river-client` in `/root/zadumai_nli_proto/river_venv` (uv,
+Python 3.12; key RIVER_API_KEY in /root/.env); reader_net/llm.py has backend="river" (run it with that venv's python:
+it has requests, so llm.py works there). 13 models on the key; Qwen3.5-397B/-122B, DeepSeek-V4.1-Flash and Nemotron
+time out cold at first, then answer slowly. Checker benchmark (`v4/river_bench.py`, report in
+`v4/river_bench_report.txt`; A = 156 ToS questions with the human dataset's gold, B = 50 v5 passages / 217 questions,
+C = 120 near-misses where any "yes" is wrong), accuracy over answered items:
+| model | A ToS | B generated | C false yes | missing | tokens/call |
+|---|---|---|---|---|---|
+| River Kimi-K2.6 | 91.0% | 97.7% | **12.2%** | 1.0% | 2,062 |
+| River GLM-5.2 | 92.2% | 99.0% | 15.3% | 4.3% | 1,022 |
+| River Qwen3.8-27B | 89.7% | 96.7% | 15.5% | 1.4% | 1,469 |
+| River Qwen3.6-35B-A3B | 93.6% | 97.7% | 25.8% | 0% | 1,601 |
+| River DeepSeek-V4-Flash | 91.0% | 98.6% | 55.0% | 0% | 39 |
+| Fireworks gpt-oss-120b (in B's gold) | 90.4% | 98.6% | 22.5% | 0% | 308 |
+| Fireworks kimi-k3 | 92.3% | 99.1% | 24.2% | 1.0% | 427 |
+(partial runs: Qwen3.5-122B 93.4/99.4/22.0% with 12.6% missing; Qwen3.5-397B 92.3/100/0% with 64% missing;
+Nemotron 89.3/93.7/13.4% with 14.6% missing; GLM-5.3-Flash 91.0/98.6/24.7%.) A doesn't separate the models (its
+ceiling is the dataset's category labels); C does. llm.json_of now also handles reasoning that ends in a bare
+"</think>" (Qwen3.8, Nemotron on River).
+**Passive and noun shapes (2026-10-02, the user: "focus on the engine — fix the passive and noun shapes"); candidate
+p2, working tree only (NOT deployed, NOT committed; live = c4 = 818b4bf):** on the open generated sets (v4all, v5all,
+v6all, v6ball: 1,183 passive / 1,374 noun questions) c4 answered passive 28 (25 right), noun 16 (13 right); p2 answers
+passive 33 (31 right), noun 21 (20 right). Changes: noun questions rewritten to verbs in qshapes ("Is there a
+requirement for X to V" -> "Must X V", "a right for X to V" -> "Can X V", "a prohibition on assignment of X" -> "Is a
+party prohibited from assigning X", "a cap/limit on X" -> "Is X capped", "Is assignment of X prohibited/permitted/
+required" -> verb forms; "Must X refrain from V-ing" -> "Is X prohibited from V-ing"); a passive's modal carries over
+"and" ("shall accrue, and be carried forward"); verb particles aren't things ("carried over"/"carried forward");
+"except for X" (and the question's whole object, "permitted liens") names X only to exclude it, in positive sentences
+(in a ban, "other than its employees" still permits them); a participle question ("Is the provision terminated ...?")
+needs the verb, not just the noun; a single-word action after an article is a noun in sentences too ("construed as a
+release"); list markers "(a)", "(iv)" are removed before judging ("shall not (a) use"); a question word matches a
+sentence word the document made a name ("Vacation shall accrue"); formulas "changes in writing" and "exhibits are part
+of it" (strict question forms only: the loose versions answered 14 near-misses "yes"); survival also for
+indemnification / representations / sections. Tried and dropped: "no" from passives without "by X" (+4 answers, 2
+wrong); passive gold-"no" questions are mostly contrasts ("by email" vs "by express mail"), out of reach of safe rules.
+Open sets, p2 vs c4: dev 969 -> 967 (99.6%), fresh A 628 -> 627, fresh B 570 -> 572 (99.8%), held-out 1,196 -> 1,195
+(99.7%), genval 75 -> 79 (100%), v4all 130 -> 144 (98.6%), v5all 145 -> 150, v6all 42 -> 44 (100%), v6ball 66 -> 64
+(errors 7 -> 4), conval false yes 3. Tests 711 pass (+17 cases); latency 9.2 ms worst. **v7** (`v4/build_v7.py`,
+sealed, passive + noun questions only, over the last 236 unused passages, Fireworks: gpt-oss writes and checks,
+kimi-k3 checks) is the blind check: run once for 4ef0122 / c4 / p2.
+**v7 result (blind, run once 2026-10-02 02:44, 1,120 passive + noun questions):** Pre-Tier 0 alone: 4ef0122 115
+answered @ 84.3%, c4 100 @ 91.0%, p2 111 @ 90.1%. System (Pre-Tier 0 + network): c4 263 @ 96.6%, p2 269 @ 95.9%. The
+network was right on every v7 row it answered. Rule patches raised coverage on these shapes, not precision.
+**p3 = p2 + routing + fixes (2026-10-02; deployed 04:22 UTC, committed):**
+- Routing: `pretier0.ROUTE_RISKY` (env `PRETIER0_ROUTE_RISKY`, default "1") leaves Pre-Tier 0's answer to the reader
+  network on its two weakest paths on generated questions: catch-all presence frames (`strict`) and action frames on
+  a question qshapes rewrote (`_left_to_the_network`). `v4/policy_study.py` (P1 = Pre-Tier 0 first, live order; P3 =
+  network only on those paths; log `v4/policy_p2.log`): on every open set the network was right on all rows where both
+  answered; the rows it declines are where the rules erred (12 wrong of 145 there).
+- Fixes for the 7 rule errors left on v7 / v6b: "waive the right to V" defers (it was read as "can V"); "for my own
+  benefit", "written notice" must be said about the same act (`_QUALIFIERS`, `_stretch_has`); "receives no
+  consideration" and "avoid V-ing" negate; "it" right after a verb is an object ("translating it, modifying the
+  size"), not the subject; the survival formula needs the obligations as the question's subject (not "notify ... when
+  obligations survive"); "sell or transfer" takes "transfer" literally (not as disclosure). Diff on all 11 open sets:
+  only the targeted rows changed, plus 2 newly right, no right answer lost.
+- **Determinism bug fixed:** the extra-lexicon lemma table depended on the process's hash seed ("fees" was a form of
+  "fee" in some processes, its own word in others), so an answer could change between restarts. Now file order,
+  shortest base first; answers identical over 3 seeds on all open sets (24,600 rows); test covers 8 seeds.
+- System (Pre-Tier 0 + network), answered / wrong, P1 (p2 in live order) -> p3 (`runs/sys_p3_routed.json`):
+  v7all 269/11 -> 238/0 (c4 live: 263/9); v6ball 224/4 -> 207/0; v5all 595/6 -> 565/4; v4all 507/4 -> 472/2; genval
+  537/0 -> 531/0; freshA 732/2 -> 727/2; freshB 652/1 -> 647/1; dev 1373/7 -> 1351/6; adv 21/0 -> 21/0. Held-out
+  (report only) c4 live 1753/10 -> p3 1710/10 (Pre-Tier 0 1196/3 -> 1102/2). Generated user-style sets (v4-v7):
+  errors 25 -> 6 for 7% fewer answers; LegalBench-style sets: about even.
+- Tests 720 pass (+8; test_determinism's byte-identical check fails as before, on old commits too).
+**Open:** a new sealed set to check p3 blind (v7 / v6b are open now; ~1 h of throttled Fireworks), top up
+OpenRouter for more eval sets.
 **Next levers (ranked):** (1) consumer/ToS documents: both tiers are weak there (Pre-Tier 0 ~1% on ToS category
 questions; network 88% precise on ToS-generated questions vs 99.8% on LEDGAR) -> a network round with ToS data;
 (2) rewording robustness of the NDA formulas (26% -> 11.5% on unseen wordings); (3) a literal-labeled whole-contract

@@ -276,11 +276,15 @@ for _phrases in LEXICON.values():
 # Added phrases extend the table but never remap a curated form ("account books"
 # must not pull "accounts" onto "account"); their inflected words ("never
 # expires") are left to the stemmer, which treats both sides alike.
-for _phrase in _EXTRA_PHRASES:
-    for _word in _phrase.split():
-        if _crude(_word) != _word or _word in _LEMMA:
-            continue
-        for _form in _forms(_word):
+# In the file's order, shortest base first: a set's order changes with the process's hash seed, and "first one
+# wins" made "fees" a form of "fee" in some processes and its own word in others (2026-10-02).
+_CURATED = set(_LEMMA)
+for _word in sorted({w for ps in LEXICON.values() for p in ps if p in _EXTRA_PHRASES for w in p.split()},
+                    key=lambda w: (len(w), w)):
+    if _crude(_word) != _word or _word in _LEMMA:
+        continue
+    for _form in _forms(_word):
+        if _form not in _CURATED:
             _LEMMA.setdefault(_form, _word)
 _LEMMA.update(IRREGULAR)
 
@@ -376,6 +380,8 @@ class Frame:
     values: list = field(default_factory=list)  # numbers, amounts, months the question names: the sentence must have them all
     compare: str = ""  # "up" / "down" when the question puts a value on one side ("more than $175,000,000")
     any_things: list = field(default_factory=list)  # things the question asks about as "any X": the text must say any/all
+    object_toks: list = field(default_factory=list)  # the question's words after its verb, up to a condition
+    qualifiers: list = field(default_factory=list)  # stems the action's own stretch of the sentence must hold ("own", "writ")
 
 
 @dataclass
@@ -477,7 +483,8 @@ def _action_frame(question: str, trie: dict) -> Frame | str:
     tags = [Tag("WORD", toks[1:][t.start], t.start, t.end) if t.kind == "ACTION" and t.start
             and toks[1:][t.start - 1] in _DETERMINERS and t.end in (-1, t.start + 1) else t for t in tags]
     first_block = next((t.start for t in tags if t.kind == "BLOCK"), len(toks))
-    if any(t.name in ("NOT", "NONE") and t.start < first_block for t in tags):
+    if any(t.name in ("NOT", "NONE") and t.start < first_block and toks[1:][t.start] not in ("waive", "waiv")
+           for t in tags):  # ("required to waive any provision": a verb in a question, not a negation)
         return "negated question"  # (a "not" in the question's condition is the condition's: "if it isn't defined")
     # A condition in the question ("... if the other party undergoes a change
     # of control", "... only for the purposes of the agreement") is what the
@@ -517,10 +524,17 @@ def _action_frame(question: str, trie: dict) -> Frame | str:
     for a, b in zip(actions, actions[1:]):  # only "soliciting or hiring": adjacent, joined by "or"
         if toks1[a.start + 1:b.start] != ["or"]:
             return "more than one action (\"use and distribute\")"
+    if len(actions) > 1 and any(t.name == "SELL" for t in actions):
+        # "sell or transfer the Borrower's information": a transfer of what is sold, not a disclosure (2026-10-02)
+        tags = [Tag("ACTION", f"{OPEN}transfer", t.start, t.end) if t in actions and t.name == "SHARE"
+                and toks1[t.start] == "transfer" else t for t in tags]
+        actions = [t for t in tags if t.kind == "ACTION"]
     actor, action = actors[0], actions[0]
     between = [t for t in tags if actor.start < t.start < action.start]
     if any(t.kind == "WORD" and t.name != "have" for t in between):
         return "a word between the actor and the action isn't in the lexicon"
+    if any(t.kind == "MODAL" and t.name == "NOT" for t in between):
+        return "the question waives the act (\"waive the right to demand\")"  # not "Can the Guarantor demand?"
     asks = QUESTION_AUX[toks[0]]
     if len({t.name for t in between if t.kind == "MODAL" and t.name in ("MAY", "MUST", "BAN")}) > 1:
         return "two modalities at once (\"prohibited from having to\")"
@@ -534,14 +548,36 @@ def _action_frame(question: str, trie: dict) -> Frame | str:
     # ("its rights" after the verb is what it acts on, not "may": "Can a party transfer its rights?")
     if any(k == "PROP" for k, _ in ((t.kind, t.name) for t in tags if t.start > actor.start)):
         return "a property inside an action question"
-    things = [th for th in things if th != ("ACTOR", "IT")]  # "with its employees": "its" is the actor's own
+    things = [th for th in things if th != ("ACTOR", "IT") and not (th[0] == "WORD" and th[1] in _PARTICLES)]
+    # ("with its employees": "its" is the actor's own; "carried over" / "carried forward": a particle isn't a thing)
     any_things = [(t.kind, t.name) for t in tags if t.start > last_action.start and t.kind in ("THING", "WORD")
                   and t.start >= 1 and toks[1:][t.start - 1] == "any" and t.start >= 2
                   and toks[1:][t.start - 2] in ("from", "to", "with", "by", "for")]  # "from any insurer"
+    obj_end = next((t.start for t in tags if t.kind == "BLOCK" and t.start > last_action.start), len(toks) - 1)
+    object_toks = [w for w in toks[1:][(last_action.end if last_action.end > 0 else last_action.start + 1):obj_end]
+                   if w not in STOPWORDS]
+    asked = " ".join(_raw_tokens(question)[1:][:blocks[0].start] if blocks else _raw_tokens(question)[1:])
+    qualifiers = [stem for rx, stem in _QUALIFIERS if rx.search(asked)]
     return Frame(asks, actor.name, action.name, things, actions=[a.name for a in actions], conds=conds, only=only,
-                 cues=cues, cue_words=cue_words, any_things=any_things)
+                 cues=cues, cue_words=cue_words, any_things=any_things, object_toks=object_toks, qualifiers=qualifiers)
 
 
+# Words in the question that narrow its act, which the sentence must say about the same act: "for my own benefit" is
+# not "for the benefit of Unum", "give written notice" is not "shall notify" (2026-10-02, v7 passive/noun rows).
+_QUALIFIERS = ((re.compile(r"\bfor\s+(?:my|your|its|his|her|their|our)\s+own\b"), "own"),  # ("its own assets": its assets)
+               (re.compile(r"\bwritten\b|\bin\s+writing\b"), "writ"))
+
+
+def _stretch_has(stems, toks: list, tags: list, action) -> bool:
+    """The question's qualifiers in the action's own stretch of the sentence: from the action or break before it to
+    the one after ("written notice shall be given", "shall give the Tenant written notice")."""
+    lo = max((t.start + 1 for t in tags if t.kind in ("ACTION", "BREAK") and t.start < action.start), default=0)
+    hi = min((t.start for t in tags if t.kind in ("ACTION", "BREAK") and t.start > action.start), default=len(toks))
+    return all(any(w.startswith(stem) for w in toks[lo:hi]) for stem in stems)
+
+
+_LIST_MARKER = re.compile(r"\((?:[a-zA-Z]|[ivxIVX]{1,5})\)")
+_PARTICLES = frozenset("over forward out up back down off away along".split())
 _DETERMINERS = frozenset("the a an such any all its their his her our your my these those this that each no every "
                          "some".split())
 OPEN = "V:"  # an action outside the lexicon: the question's own verb, matched as that word ("V:surrender")
@@ -779,7 +815,7 @@ _SIDE_WORDS = {"before": {"before", "prior", "until", "till", "preceding", "earl
                "after": {"after", "following", "upon", "once", "subsequent", "thereafter", "surviv", "survive", "survives",
                          "survival", "continue", "continues", "continu", "beyond", "post", "later", "remain"}}
 _EXCLUDERS = re.compile(r"\b(?:excluding|exclusive of|without regard to|without reference to|without giving effect to|"
-                        r"other than|excluded|exclusion of|disregarding)\b(?:\W+\w+){0,2}?\W+$")
+                        r"other than|excluded|exclusion of|disregarding|except for|but not)\b(?:\W+\w+){0,2}?\W+$")
 _FORBIDS_S = re.compile(r"\b(?:prohibit\w*|forbid\w*|ban|bans|banned|barred|not\s+(?:be\s+)?(?:permitted|allowed)|"
                         r"may\s+not|shall\s+not|must\s+not|restrict\w*)\b", re.I)
 _PERMITS_S = re.compile(r"\b(?:permitted|allowed|may|entitled|free\s+to)\b", re.I)
@@ -806,6 +842,10 @@ def _presence_guards(q: str) -> dict:
         g["restrict"] = True
     if re.search(r"\binclud", q):
         g["include"] = True
+    if m := re.match(r"^(?:is|are)\s+(?:the\s+|a\s+|an\s+|any\s+)?(?:[\w'-]+\s+){1,5}?(?P<p>\w+(?:ed|en))\b", q):
+        stem = _crude(m.group("p"))
+        if any(stem in [_crude(w) for w in ph.split()] for (k, n), phs in LEXICON.items() if k == "ACTION" for ph in phs):
+            g["participle"] = stem  # "Is the confidentiality provision terminated if ...?": an act done to it
     if re.search(r"\b(?:permitted|allowed|entitled|free to|may|can)\b", q) and not re.search(r"\bnot\b", q):
         g["permit"] = True
     elif re.search(r"\b(?:prohibited|forbidden|banned|barred|not allowed|not permitted)\b", q):
@@ -855,6 +895,9 @@ def _guards_fail(frame: Frame, sentence: str, raw: list, norm: str) -> str | Non
     for w, a in g.get("agents", []):
         if not re.search(rf"\b{re.escape(w)}\w*\s+by\s+(?:\w+\s+){{0,3}}{re.escape(a)}", " ".join(raw)):
             return f"the question names who or how ('{w} by {a}'); the sentence doesn't"
+    if "participle" in g and not any(w.startswith(g["participle"]) and not w.endswith(("tion", "tions", "ment", "ments", "al"))
+                                     for w in raw):
+        return f"the question asks whether it is {g['participle']}ed; the sentence names it only as a noun"
     if g.get("permit") and _FORBIDS_S.search(sentence):
         return "the question asks whether it is allowed; the sentence prohibits something"
     if g.get("forbid") and _PERMITS_S.search(sentence) and not _FORBIDS_S.search(sentence):
@@ -900,6 +943,8 @@ def _has_thing(thing: tuple, clause: list) -> bool:
     for t in clause:
         if t.kind == kind and t.name == name:
             return True
+        if kind == "WORD" and t.kind == "ACTOR" and t.name == name:
+            return True  # "Vacation shall accrue": named_actors made the word a name, it's still the question's word
         if kind == "THING" and t.kind == "THING" and BROADER.get(t.name) == name:
             return True
         if kind == "ACTOR" and t.kind == "ACTOR" and (name in ("OTHER", "ANY") or t.name == name):
@@ -974,6 +1019,7 @@ def _judge(frame: Frame, sentence: str, trie: dict) -> tuple[str, str | None] | 
         return None
     if frame.asks == "PROPERTY":
         return _judge_property(frame, tag(tokens(_CROSS_REFERENCE.sub(" ", sentence)), trie), sentence)
+    sentence = _LIST_MARKER.sub(" ", sentence)  # "shall not (a) use ...": "(a)" is a list marker, not an article
     toks = tokens(sentence)
     tags = tag(toks, trie)
     if ("THING", "RIGHTS") in [tuple(t) for t in frame.things]:
@@ -982,14 +1028,19 @@ def _judge(frame: Frame, sentence: str, trie: dict) -> tuple[str, str | None] | 
                 else t for t in tags]
     literal = {a[len(OPEN):] for a in (frame.actions or [frame.action]) if a and a.startswith(OPEN)}
     if literal:
-        tags = [Tag("ACTION", OPEN + t.name, t.start, t.end) if t.kind == "WORD" and t.name in literal else t for t in tags]
+        tags = [Tag("ACTION", OPEN + toks[t.start], t.start, t.end) if (t.kind == "WORD" and t.name in literal or
+                t.kind == "ACTION" and t.end in (-1, t.start + 1) and toks[t.start] in literal)
+                and not (t.start and toks[t.start - 1] in _DETERMINERS) else t for t in tags]  # "as a release": a noun
     caps = _case_flags(sentence)
+    raw = _raw_tokens(sentence)
     for clause in _clauses(tags):
         wanted = set(frame.actions or [frame.action])
         composite = {v for a in wanted if a in COMPOSITE for v in COMPOSITE[a][0]
                      if any(t.kind == "THING" and t.name == COMPOSITE[a][1] for t in clause)}
         # a composite verb needs its thing close after it ("provide ... with prompt written notice", "maintain ...
         # insurance"), not anywhere in the clause ("not prohibited from disclosing ..., provided that it gives notice")
+        clause = [Tag("WORD", toks[t.start], t.start, t.end) if t.kind == "ACTION" and t.start and toks[t.start - 1] in
+                  _DETERMINERS and t.end in (-1, t.start + 1) else t for t in clause]  # "construed as a release": a noun
         actions = [t for t in clause if t.kind == "ACTION" and (t.name in wanted or t.name in composite and (
             "NOTIFY" not in wanted or any(u.kind == "THING" and u.name == "NOTICE" and 0 < u.start - t.start <= 8
                                           for u in clause)))]
@@ -1023,7 +1074,14 @@ def _judge(frame: Frame, sentence: str, trie: dict) -> tuple[str, str | None] | 
                         modals.add(before[k].name)
                         words.add(toks[before[k].start])
                     k -= 1
+                if not modals and action.start >= 2 and toks[action.start - 2] in ("and", "or"):
+                    # "Vacation shall accrue, and be carried forward": the modal of the first verb carries over
+                    shared = [t for t in before if t.kind == "MODAL" and action.start - 10 <= t.start < action.start - 2]
+                    if shared and not any(t.kind == "ACTOR" and shared[-1].start < t.start for t in before):
+                        modals, words = {shared[-1].name}, {toks[shared[-1].start]}
                 if not all(_has_thing(th, [t for t in clause if t is not actor]) for th in frame.things):
+                    continue
+                if frame.qualifiers and not _stretch_has(frame.qualifiers, toks, tags, action):
                     continue
                 if _describes_only(frame, modals, words | {toks[action.start - 1]}):
                     continue
@@ -1042,6 +1100,9 @@ def _judge(frame: Frame, sentence: str, trie: dict) -> tuple[str, str | None] | 
             if not actors:
                 continue
             actor = actors[-1]
+            if actor.name == "IT" and actor.start and (raw[actor.start - 1].endswith("ing") or any(
+                    t.kind == "ACTION" and (t.end if t.end > 0 else t.start + 1) == actor.start for t in clause)):
+                continue  # "such as translating it, modifying the size": "it" is what is translated, not who modifies
             if actor.name == "IT":  # "Each Party agrees that it shall maintain": the actor named before
                 named = [t for t in tags if t.kind == "ACTOR" and t.name != "IT" and t.start < actor.start]
                 if not named:
@@ -1072,9 +1133,20 @@ def _judge(frame: Frame, sentence: str, trie: dict) -> tuple[str, str | None] | 
                 continue
             if frame.any_things and not _any_scope(frame, toks, clause):
                 continue  # "from any insurer" isn't "with financially sound and reputable insurers"
+            if frame.qualifiers and not _stretch_has(frame.qualifiers, toks, tags, action):
+                continue
             modals = {t.name for t in before if t.kind == "MODAL" and t.start > actor.start}
+            if not modals & {"NOT", "BAN"} and _thing_only_excluded(frame, toks, clause):
+                continue  # "shall pay all Impositions ... except for Permitted Liens" (in a ban, "other than its
+                # employees" permits them: _permitted_by_exception)
             if actor.start and toks[actor.start - 1] == "no":
                 modals = modals | {"NOT"}  # "no Corporation match of 401(k) contributions can be made"
+            nxt = action.end if action.end > action.start else action.start + 1
+            if nxt < len(raw) and raw[nxt] in ("no", "nothing") and not (
+                    nxt + 1 < len(raw) and raw[nxt + 1] in _NOT_NEGATION_AFTER):
+                modals = modals | {"NOT"}  # "provided that the Grantee receives no consideration for such transfer"
+            if "avoid" in toks[max(actor.start + 1, action.start - 3):action.start]:
+                modals = modals | {"NOT"}  # "your obligation to avoid displaying or making available your content"
             if _describes_only(frame, modals, {toks[t.start] for t in before if t.kind == "MODAL" and t.start > actor.start}):
                 continue
             prev = max((t.start for t in clause if t.kind == "ACTION" and t.start < actor.start), default=-1)
@@ -1174,6 +1246,29 @@ def _object_of_preposition(toks: list, start: int) -> bool:
     while j >= 0 and toks[j] in ("the", "such", "each", "any", "a", "an", "said"):
         j -= 1
     return j >= 1 and toks[j] in ("to", "for", "from") and toks[j - 1] in _OWED_TO
+
+
+_EXCLUDE_TOKS = (("except", "for"), ("other", "than"), ("excluding",), ("exclusive", "of"), ("but", "not"))
+
+
+def _thing_only_excluded(frame, toks, clause) -> bool:
+    """Whether a thing the question asks about is in the clause only right after "except for", "other than",
+    "excluding" ...: named to be left out. Also the question's whole object ("permitted liens") when the sentence
+    has it only that way ("... a Lien ..., except for Permitted Liens")."""
+    ob = frame.object_toks
+    if len(ob) >= 2:
+        at = [i for i in range(len(toks) - len(ob) + 1)
+              if [w for w in toks[i:i + len(ob) + 2] if w not in STOPWORDS][:len(ob)] == ob and toks[i] not in STOPWORDS]
+        if at and all(any(tuple(toks[max(0, i - j - len(x)):i - j]) == x for x in _EXCLUDE_TOKS for j in range(0, 3)) for i in at):
+            return True
+    for th in frame.things:
+        if th[0] not in ("THING", "WORD"):
+            continue
+        hits = [t for t in clause if _has_thing(th, [t])]
+        if hits and all(any(tuple(toks[max(0, t.start - j - len(x)):t.start - j]) == x for x in _EXCLUDE_TOKS for j in range(0, 3))
+                        for t in hits):
+            return True
+    return False
 
 
 def _any_scope(frame, toks, clause) -> bool:
@@ -1942,7 +2037,7 @@ def _answer(question: str, document: str, parties) -> FrameResult:
         # to something else, makes it depend: "shall not disclose to any third
         # party" vs "may disclose to its legal counsel".
         bare = Frame(frame.asks, frame.actor, frame.action, [], actions=frame.actions, conds=frame.conds, only=frame.only,
-                     cues=frame.cues, cue_words=frame.cue_words)
+                     cues=frame.cues, cue_words=frame.cue_words, object_toks=frame.object_toks)
         bare_slots = [_action_slot(frame, lexicon)]
         if (actor := _actor_slot(frame, lexicon)) is not None:
             bare_slots.append(actor)

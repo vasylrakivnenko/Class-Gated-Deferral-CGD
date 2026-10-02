@@ -3,8 +3,15 @@ guards for user-style questions, open-vocabulary actions, legal equivalences (ro
 document's own names for its confidential information. Each case is a pattern a generated or real question showed."""
 import pytest
 
-from router import frames, qshapes
+from router import frames, pretier0, qshapes
 from router.pretier0 import check
+
+
+@pytest.fixture(autouse=True)
+def _rules_themselves(monkeypatch):
+    """These cases test how the rules read each shape; the router leaves some shapes to the reader network
+    (pretier0.ROUTE_RISKY), tested in test_risky_paths_are_left_to_the_network."""
+    monkeypatch.setattr(pretier0, "ROUTE_RISKY", False)
 
 
 @pytest.mark.parametrize("question, shape", [
@@ -158,3 +165,102 @@ def test_document_names_its_confidential_information():
     assert frames.info_aliases(doc) == ["information"]
     r = check("Can the receiving party share confidential information with its consultants or advisors?", doc)
     assert (r.fired, r.answer) == (True, "yes")
+
+
+# Passive and noun shapes (2026-10-02)
+@pytest.mark.parametrize("question, shape", [
+    ("Is there a requirement for notices to be in writing?", "Must notices be in writing?"),
+    ("Is there a right for the Company to amend the Plan?", "Can the Company amend the Plan?"),
+    ("Is there a requirement that Renren must provide the accounting rules to Kaixin?",
+     "Must Renren provide the accounting rules to Kaixin?"),
+    ("Is there any right for me to own the game code?", "Can I own the game code?"),
+    ("Is there a prohibition on assignment of the agreement?", "Is a party prohibited from assigning the agreement?"),
+    ("Is there a limitation on liability?", "Is liability capped?"),
+    ("Is assignment of this Agreement prohibited without consent?",
+     "Is a party prohibited from assigning this Agreement without consent?"),
+    ("Must the Participant refrain from disparaging the Company?", "Is the Participant prohibited from disparaging the Company?"),
+])
+def test_noun_and_refrain_shapes(question, shape):
+    assert qshapes.canonical(question) == shape
+
+
+@pytest.mark.parametrize("question, text, answer", [
+    ("Is there a right for the Company to amend the Plan?", "The Company reserves the right to amend the Plan at any time.", "yes"),
+    ("Must vacation be carried over to the next year?",
+     "Vacation shall accrue, and be carried forward into the next year of employment.", "yes"),
+    ("Must the indemnification survive after the lease ends?",
+     "The foregoing indemnification shall survive the termination or expiration of this Lease.", "yes"),
+    ("Must any amendment be in writing signed by both parties?",
+     "No provision of this Agreement may be amended or waived except in a writing signed by both parties.", "yes"),
+    ("Are the Exhibits part of the agreement?", "The Exhibits constitute a part hereof as though set forth in full above.", "yes"),
+])
+def test_passive_and_noun_answers(question, text, answer):
+    r = check(question, text)
+    assert (r.fired, r.answer) == (True, answer)
+
+
+@pytest.mark.parametrize("question, text", [
+    ("Is there a requirement for the Trustor to pay permitted liens?",
+     "Trustor shall pay all Impositions which are a Lien on the Trust Estate, except for Permitted Liens."),
+    ("Is there a tax withholding on the consulting arrangements in Paragraphs 2 and 6?",
+     "All compensation will be less applicable withholdings and taxes except for the consulting arrangements in Paragraphs 2 and 6."),
+    ("Can the agreement be changed without a written signature from both parties?",
+     "This Agreement may not be modified except by a written agreement signed by both parties."),
+    ("Are the Recitals to this Amendment incorporated for the Lender by reference?",
+     "The Recitals to this Amendment are incorporated herein in their entirety by this reference thereto."),
+])
+def test_passive_and_noun_defer(question, text):
+    assert check(question, text).answer != "yes"
+
+
+def test_other_than_in_a_ban_still_permits():
+    r = check("Can the receiving party share confidential information with its employees?",
+              "Recipient shall not disclose the Confidential Information to any person other than those employees of "
+              "Recipient who have a need for such access.")
+    assert (r.fired, r.answer) == (True, "yes")
+
+
+def test_risky_paths_are_left_to_the_network(monkeypatch):
+    monkeypatch.setattr(pretier0, "ROUTE_RISKY", True)
+    text = "Recipient shall not reverse engineer, decompile or disassemble any of the Confidential Information."
+    reworded = check("Is reverse engineering prohibited?", text)  # rewritten by qshapes: the network answers
+    assert not reworded.fired and "reader network" in reworded.reason
+    direct = check("Is the receiving party prohibited from reverse engineering the confidential information?", text)
+    assert (direct.fired, direct.answer) == (True, "yes")
+
+
+# 2026-10-02: the rule errors left on v7 / v6b (open), fixed one by one
+@pytest.mark.parametrize("question, text", [
+    ("Must the Guarantor waive the right to demand?",  # not "Can the Guarantor demand?"
+     "The Guarantor hereby waives diligence, presentment and demand."),
+    ("May the Employee use confidential information for his own benefit?",
+     "The Employee agrees to use confidential information for the benefit of the Company only."),
+    ("Must the Bank give written notice to the Borrowers after an assignment?",
+     "The Bank may assign its rights, provided that the Bank shall notify the Borrowers promptly following such assignment."),
+    ("Can the Grantee receive consideration for the transfer?",
+     "The Option may be transferred, provided that the Grantee receives no consideration for such transfer."),
+    ("Do we have to notify the other party when obligations survive after the contract ends?",
+     "The rights and obligations of the Parties shall survive any termination or expiration of this Agreement."),
+    ("Can the Lender sell or transfer the Borrower's financial information?",
+     "The Borrower authorizes each Lender to disclose any financial information concerning the Borrower to any Participant."),
+])
+def test_v7_errors_defer(question, text):
+    p = check(question, text)
+    assert not p.fired, (p.answer, p.reason)
+
+
+def test_v7_fixes_keep_their_answers():
+    text = "while we may edit and make formatting changes to your content (such as translating it, modifying the size), " \
+           "we will not modify the meaning of your expression."
+    assert (check("Must the Company modify the meaning of my expression?", text).answer) == "no"  # "it" is translated
+    assert check("Can a party pay its own expenses?", "Each party shall pay its own expenses.").answer == "yes"
+    assert check("Is a party prohibited from disparaging the other party?",
+                 "Licensee will avoid making disparaging statements about the other party.").answer == "yes"
+
+
+def test_lemmas_dont_depend_on_the_hash_seed():
+    import subprocess, sys
+    code = "from router.frames import normalize; print(normalize('fees'))"
+    out = {subprocess.run([sys.executable, "-c", code], env={"PYTHONHASHSEED": str(s), "PATH": ""}, cwd=".",
+                          capture_output=True, text=True).stdout.strip() for s in range(1, 9)}
+    assert out == {"fee"}, out  # (a failed run prints nothing: the set would still have one element)

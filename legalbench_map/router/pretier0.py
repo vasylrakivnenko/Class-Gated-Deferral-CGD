@@ -27,6 +27,7 @@ information?"), "yes" only.
 """
 from __future__ import annotations
 
+import os
 import re
 import time
 from dataclasses import asdict, dataclass, field
@@ -191,13 +192,36 @@ def _read_first_person(question: str, document: str, parties: list) -> tuple[str
     return me, out
 
 
+# Routing (2026-10-02, STATUS.md "passive and noun shapes"): on unseen user-style questions, Pre-Tier 0's answers
+# from a catch-all presence frame (every word of the question in one sentence, its structure unchecked) or from an
+# action frame on a question qshapes had to reword (passives, nouns, conditions first ...) were right ~88-92%, and
+# on those same questions the reader network was right on every one it answered. So Pre-Tier 0 abstains there and
+# the network (then Jev) answers. Measured on v7: rules + network 95.9% -> 98.3%, answered 24.0% -> 21.6%.
+ROUTE_RISKY = os.environ.get("PRETIER0_ROUTE_RISKY", "1") == "1"
+
+
+def _left_to_the_network(fr: dict, asked: str) -> bool:
+    if not ROUTE_RISKY:
+        return False
+    frame = fr.get("frame") or {}
+    if frame.get("asks") == "EXISTS":
+        return bool(frame.get("strict"))
+    if frame.get("asks") == "PROPERTY":
+        return False
+    return frames.qshapes.canonical(asked) != asked
+
+
 def check(question: str, document: str) -> PreTier0Result:
     start = time.perf_counter()
     result = _check(question, document)
     if not result.fired:
         fr = frames.answer(result.rewritten or question, document, result.parties)
         result.frames = fr.to_dict()
-        if fr.answer:
+        if fr.answer and _left_to_the_network(fr.to_dict() if hasattr(fr, "to_dict") else {}, result.rewritten or question):
+            result.reason = ("left to the reader network: Pre-Tier 0's answers from this kind of match (a reworded "
+                             "question, or the words of a question without its structure) were right ~90% on unseen "
+                             "questions, the network's 99-100%")
+        elif fr.answer:
             result.fired, result.answer, result.evidence = True, fr.answer, fr.evidence
             qualifier = fr.qualifier or ""
             result.reason = "one clause settles it" + (' (the text permits it: "may", not "must")' if qualifier.startswith("may") else "")
